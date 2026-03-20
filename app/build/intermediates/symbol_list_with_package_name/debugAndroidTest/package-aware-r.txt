@@ -1,0 +1,3 @@
+com.wpspasswordmanager.test
+style WhiteBackgroundDialogTheme
+style WhiteBackgroundTheme

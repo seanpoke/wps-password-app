@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">WPS密码管理</string>
+    <string name="action_settings">设置</string>
+    <string name="enable_accessibility">启用无障碍服务</string>
+    <string name="generate_password">生成密码</string>
+    <string name="manage_passwords">管理密码</string>
+    <string name="about">关于</string>
+    <string name="accessibility_service_description">WPS密码管理辅助服务，用于自动填充WPS文档密码</string>
+    <string name="password_generated">密码已生成</string>
+    <string name="password_saved">密码已保存</string>
+    <string name="error_generating_password">生成密码失败</string>
+    <string name="error_saving_password">保存密码失败</string>
+    <string name="success">成功</string>
+    <string name="error">错误</string>
+</resources>

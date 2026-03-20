@@ -1,0 +1,34 @@
+R_DEF: Internal format may change without notice
+local
+color black
+color purple_200
+color purple_500
+color purple_700
+color teal_200
+color teal_700
+color white
+id enable_accessibility_button
+id generate_password_button
+id manage_passwords_button
+layout activity_main
+layout activity_settings
+layout floating_button
+mipmap ic_launcher
+mipmap ic_launcher_round
+string about
+string accessibility_service_description
+string action_settings
+string app_name
+string enable_accessibility
+string error
+string error_generating_password
+string error_saving_password
+string generate_password
+string manage_passwords
+string password_generated
+string password_saved
+string success
+style Theme.WpsPasswordManager
+xml accessibility_service_config
+xml backup_rules
+xml data_extraction_rules
