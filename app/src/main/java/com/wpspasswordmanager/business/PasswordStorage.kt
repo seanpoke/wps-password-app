@@ -24,6 +24,8 @@ class PasswordStorage private constructor() {
         private const val ENCRYPTION_BLOCK_MODE = KeyProperties.BLOCK_MODE_GCM
         private const val ENCRYPTION_PADDING = KeyProperties.ENCRYPTION_PADDING_NONE
         private const val TRANSFORMATION = "$ENCRYPTION_ALGORITHM/$ENCRYPTION_BLOCK_MODE/$ENCRYPTION_PADDING"
+        private const val PREFERENCES_NAME = "wps_passwords"
+        private const val HMAC_ALGORITHM = "HmacSHA256"
 
         private var instance: PasswordStorage? = null
 
@@ -36,11 +38,13 @@ class PasswordStorage private constructor() {
     }
 
     private var keyStore: KeyStore? = null
+    private var hmacKey: SecretKey? = null
 
     init {
         try {
             keyStore = KeyStore.getInstance(KEYSTORE_NAME)
             keyStore?.load(null)
+            hmacKey = generateHmacKey()
         } catch (e: Exception) {
             Log.e(TAG, "初始化KeyStore失败", e)
         }
@@ -51,10 +55,22 @@ class PasswordStorage private constructor() {
      */
     fun storePassword(context: Context, key: String, password: String): Boolean {
         try {
+            Log.d(TAG, "开始存储密码，文件路径: $key")
             val encryptedPassword = encrypt(password)
-            val sharedPreferences = context.getSharedPreferences("wps_passwords", Context.MODE_PRIVATE)
-            sharedPreferences.edit().putString(key, encryptedPassword).apply()
-            return true
+            val hmac = generateHmac(encryptedPassword)
+            val sharedPreferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
+            val editor = sharedPreferences.edit()
+            editor.putString(key, encryptedPassword)
+            editor.putString("${key}_hmac", hmac)
+            val success = editor.commit() // 使用commit确保操作同步完成
+            
+            if (success) {
+                Log.d(TAG, "密码存储成功，文件路径: $key")
+                return true
+            } else {
+                Log.e(TAG, "密码存储失败，提交操作未成功")
+                return false
+            }
         } catch (e: Exception) {
             Log.e(TAG, "存储密码失败", e)
             return false
@@ -66,11 +82,25 @@ class PasswordStorage private constructor() {
      */
     fun getPassword(context: Context, key: String): String? {
         try {
-            val sharedPreferences = context.getSharedPreferences("wps_passwords", Context.MODE_PRIVATE)
+            Log.d(TAG, "开始读取密码，文件路径: $key")
+            val sharedPreferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
             val encryptedPassword = sharedPreferences.getString(key, null)
-            if (encryptedPassword != null) {
-                return decrypt(encryptedPassword)
+            val storedHmac = sharedPreferences.getString("${key}_hmac", null)
+            
+            if (encryptedPassword != null && storedHmac != null) {
+                // 验证数据完整性
+                val calculatedHmac = generateHmac(encryptedPassword)
+                if (calculatedHmac == storedHmac) {
+                    Log.d(TAG, "数据完整性验证通过，开始解密密码")
+                    val decryptedPassword = decrypt(encryptedPassword)
+                    Log.d(TAG, "密码读取成功，文件路径: $key")
+                    return decryptedPassword
+                } else {
+                    Log.e(TAG, "数据完整性验证失败，密码可能被篡改")
+                    return null
+                }
             }
+            Log.d(TAG, "未找到存储的密码，文件路径: $key")
             return null
         } catch (e: Exception) {
             Log.e(TAG, "读取密码失败", e)
@@ -83,9 +113,20 @@ class PasswordStorage private constructor() {
      */
     fun deletePassword(context: Context, key: String): Boolean {
         try {
-            val sharedPreferences = context.getSharedPreferences("wps_passwords", Context.MODE_PRIVATE)
-            sharedPreferences.edit().remove(key).apply()
-            return true
+            Log.d(TAG, "开始删除密码，文件路径: $key")
+            val sharedPreferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
+            val editor = sharedPreferences.edit()
+            editor.remove(key)
+            editor.remove("${key}_hmac")
+            val success = editor.commit() // 使用commit确保操作同步完成
+            
+            if (success) {
+                Log.d(TAG, "密码删除成功，文件路径: $key")
+                return true
+            } else {
+                Log.e(TAG, "密码删除失败，提交操作未成功")
+                return false
+            }
         } catch (e: Exception) {
             Log.e(TAG, "删除密码失败", e)
             return false
@@ -131,6 +172,35 @@ class PasswordStorage private constructor() {
     }
 
     /**
+     * 生成HMAC用于数据完整性校验
+     */
+    private fun generateHmac(data: String): String {
+        try {
+            val mac = Mac.getInstance(HMAC_ALGORITHM)
+            mac.init(hmacKey)
+            val hmacBytes = mac.doFinal(data.toByteArray())
+            return Base64.encodeToString(hmacBytes, Base64.DEFAULT)
+        } catch (e: Exception) {
+            Log.e(TAG, "生成HMAC失败", e)
+            throw e
+        }
+    }
+
+    /**
+     * 生成HMAC密钥
+     */
+    private fun generateHmacKey(): SecretKey {
+        try {
+            val keyGenerator = KeyGenerator.getInstance(HMAC_ALGORITHM)
+            keyGenerator.init(256)
+            return keyGenerator.generateKey()
+        } catch (e: Exception) {
+            Log.e(TAG, "生成HMAC密钥失败", e)
+            throw e
+        }
+    }
+
+    /**
      * 获取或创建密钥
      */
     private fun getOrCreateSecretKey(): SecretKey {
@@ -168,6 +238,34 @@ class PasswordStorage private constructor() {
         } catch (e: Exception) {
             Log.e(TAG, "获取或创建密钥失败", e)
             throw e
+        }
+    }
+
+    /**
+     * 检查密码是否存在
+     */
+    fun hasPassword(context: Context, key: String): Boolean {
+        try {
+            val sharedPreferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
+            return sharedPreferences.contains(key)
+        } catch (e: Exception) {
+            Log.e(TAG, "检查密码是否存在失败", e)
+            return false
+        }
+    }
+
+    /**
+     * 获取所有存储的密码键
+     */
+    fun getAllKeys(context: Context): Set<String> {
+        try {
+            val sharedPreferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
+            val allKeys = sharedPreferences.all.keys
+            // 过滤掉HMAC键
+            return allKeys.filter { !it.endsWith("_hmac") }.toSet()
+        } catch (e: Exception) {
+            Log.e(TAG, "获取所有密码键失败", e)
+            return emptySet()
         }
     }
 }

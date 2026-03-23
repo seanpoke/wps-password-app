@@ -20,10 +20,16 @@ class AccessibilityServiceManager private constructor() {
     }
 
     private var accessibilityService: WpsAccessibilityService? = null
+    private var floatingButtonService: com.wpspasswordmanager.ui.FloatingButtonService? = null
 
     fun setService(service: WpsAccessibilityService) {
         this.accessibilityService = service
         Log.d(TAG, "无障碍服务已设置")
+    }
+
+    fun setFloatingButtonService(service: com.wpspasswordmanager.ui.FloatingButtonService) {
+        this.floatingButtonService = service
+        Log.d(TAG, "悬浮按钮服务已设置")
     }
 
     fun getService(): WpsAccessibilityService? {
@@ -46,5 +52,13 @@ class AccessibilityServiceManager private constructor() {
 
     fun fillPassword(password: String) {
         accessibilityService?.fillPassword(password)
+    }
+
+    fun showFloatingButton() {
+        floatingButtonService?.showFloatingButton()
+    }
+
+    fun hideFloatingButton() {
+        floatingButtonService?.hideFloatingButton()
     }
 }

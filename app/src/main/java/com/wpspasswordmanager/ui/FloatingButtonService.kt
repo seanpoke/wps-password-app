@@ -34,7 +34,9 @@ class FloatingButtonService : Service() {
     override fun onCreate() {
         super.onCreate()
         Log.d(TAG, "悬浮按钮服务创建")
-        initFloatingButton()
+        // 注册服务到管理器
+        AccessibilityServiceManager.getInstance().setFloatingButtonService(this)
+        // 不自动初始化悬浮按钮，只在需要时通过showFloatingButton方法显示
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -58,6 +60,8 @@ class FloatingButtonService : Service() {
             
             startForeground(1, notification)
         }
+        
+        // 不自动初始化悬浮按钮，只在需要时通过showFloatingButton方法显示
         
         return START_STICKY
     }
@@ -205,5 +209,36 @@ class FloatingButtonService : Service() {
         
         notificationManager.notify(1, notification)
         Log.d(TAG, "显示权限通知")
+    }
+    
+    /**
+     * 显示操作状态通知
+     */
+    fun showOperationNotification(title: String, content: String, autoCancel: Boolean = true) {
+        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as android.app.NotificationManager
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = android.app.NotificationChannel(
+                "operation_channel",
+                "操作通知",
+                android.app.NotificationManager.IMPORTANCE_LOW
+            )
+            notificationManager.createNotificationChannel(channel)
+        }
+        
+        val notification = android.app.Notification.Builder(this)
+            .setContentTitle(title)
+            .setContentText(content)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setAutoCancel(autoCancel)
+            .apply {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    setChannelId("operation_channel")
+                }
+            }
+            .build()
+        
+        notificationManager.notify(2, notification)
+        Log.d(TAG, "显示操作通知: $title - $content")
     }
 }
