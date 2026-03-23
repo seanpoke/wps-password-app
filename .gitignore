@@ -1,0 +1,41 @@
+# Gradle files
+.gradle/
+build/
+
+# IDE files
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Android build outputs
+app/build/
+app/src/main/assets/
+app/src/main/res/raw/
+
+# Local configuration files
+local.properties
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Log files
+logs/
+*.log
+
+# Temporary files
+tmp/
+temp/
+
+# Test files
+**/test-results/
+**/coverage/
+
+# Generated files
+build/generated/
+app/build/generated/
+
+# DEX files
+dex/
+app/build/intermediates/dex/
