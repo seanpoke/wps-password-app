@@ -91,7 +91,29 @@ class ProxyActivity : AppCompatActivity() {
         Log.d(TAG, "传入的文件名: '$fileName'")
         Log.d(TAG, "文件名长度: ${fileName.length}")
         
-        // 复制文件到应用私有目录
+        // 优先尝试直接从原始URI读取密码，避免不必要的文件拷贝
+        try {
+            Log.d(TAG, "尝试直接从原始URI读取密码")
+            val password = PasswordStorage.getInstance().getPassword(this, fileIdentifier)
+            if (password != null) {
+                Log.d(TAG, "从原始URI读取到密码: $password")
+                // 存储密码到PasswordHolder，供无障碍服务使用
+                com.wpspasswordmanager.business.PasswordHolder.storePassword(password, fileName)
+                // 同时存储到MemoryPasswordStorage作为备份
+                com.wpspasswordmanager.business.MemoryPasswordStorage.getInstance().storePasswordInMemory(fileIdentifier, password, fileIdentifier)
+                // 保存原始URI到SharedPreferences
+                saveFileUriToPreferences(fileIdentifier)
+                // 直接使用原始URI转发给WPS
+                forwardToWps(null, uri)
+                return
+            } else {
+                Log.d(TAG, "原始URI中未找到密码")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "从原始URI读取密码失败，尝试使用本地文件", e)
+        }
+        
+        // 如果直接读取失败，再复制文件到应用私有目录
         val localFile = copyFileToLocalCache(uri, fileName)
         if (localFile != null) {
             val localFilePath = localFile.absolutePath

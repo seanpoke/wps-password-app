@@ -661,8 +661,8 @@ class WpsAccessibilityService : AccessibilityService() {
                                     Log.i(TAG, "密码填充成功")
                                     
                                     // 检查是否需要自动点击确认按钮
-                                    // 场景1：首次打开加密文件（从PasswordHolder或内存中读取密码）
-                                    // 场景2：点击生成密码按钮（用户可能需要修改密码）
+                                    // 只有在首次打开加密文件的场景中才自动提交
+                                    // 【添加密码】窗口不允许自动关闭，必须由用户手动操作
                                     val shouldAutoSubmit = !hasClickedGeneratePassword
                                     
                                     Log.i(TAG, "是否自动提交: $shouldAutoSubmit, 场景类型: ${if (hasClickedGeneratePassword) "生成密码" else "首次打开"}")
@@ -682,6 +682,8 @@ class WpsAccessibilityService : AccessibilityService() {
                                         } else {
                                             Log.d(TAG, "未找到确认按钮")
                                         }
+                                    } else {
+                                        Log.i(TAG, "此场景不自动提交，保持窗口打开")
                                     }
                                     
                                     // 填充后清除PasswordHolder缓存
@@ -711,6 +713,46 @@ class WpsAccessibilityService : AccessibilityService() {
             Log.e(TAG, "自动填充密码失败", e)
             isFillingPassword = false
         }
+    }
+    
+    /**
+     * 检查当前窗口是否是首次打开加密文件的窗口
+     * 只有 OpenEditDecryptDialog 窗口才允许自动提交
+     */
+    private fun isOpenEditDecryptDialog(): Boolean {
+        val rootNode = rootInActiveWindow
+        if (rootNode != null) {
+            // 检查根节点的类名
+            val rootClassName = rootNode.className?.toString() ?: ""
+            if (rootClassName.contains("OpenEditDecryptDialog")) {
+                Log.d(TAG, "当前窗口类名: $rootClassName, 是否为OpenEditDecryptDialog: true")
+                return true
+            }
+            
+            // 如果根节点是FrameLayout，检查其子节点是否包含OpenEditDecryptDialog
+            if (rootClassName.contains("FrameLayout")) {
+                for (i in 0 until rootNode.childCount) {
+                    val child = rootNode.getChild(i)
+                    if (child != null) {
+                        val childClassName = child.className?.toString() ?: ""
+                        if (childClassName.contains("OpenEditDecryptDialog")) {
+                            Log.d(TAG, "子节点类名: $childClassName, 是否为OpenEditDecryptDialog: true")
+                            return true
+                        }
+                    }
+                }
+            }
+            
+            // 检查窗口标题或其他元素
+            val windowTitle = rootNode.text?.toString() ?: ""
+            if (windowTitle.contains("文档已加密") || windowTitle.contains("Document is encrypted")) {
+                Log.d(TAG, "窗口标题: $windowTitle, 判断为加密文档窗口")
+                return true
+            }
+            
+            Log.d(TAG, "当前窗口类名: $rootClassName, 是否为OpenEditDecryptDialog: false")
+        }
+        return false
     }
 
     private fun detectDocumentPath(rootNode: AccessibilityNodeInfo, enableLogging: Boolean = true) {

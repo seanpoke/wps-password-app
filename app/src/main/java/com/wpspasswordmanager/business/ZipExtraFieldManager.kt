@@ -303,22 +303,64 @@ class ZipExtraFieldManager private constructor() {
             System.arraycopy(byteArray, startPosition, buffer, 0, readSize)
 
             // 按照C++实现，从后向前搜索WPPM签名
-            val signatureIndex = findSignatureFromEnd(buffer, readSize)
-            if (signatureIndex != -1) {
-                Log.d(TAG, "找到WPPM签名，位置: $startPosition")
-                
-                // 计算实际数据位置
-                val dataPosition = startPosition + signatureIndex
-                
-                // 检查剩余数据长度是否足够
-                if (fileLength - dataPosition < 15) { // Magic(4) + Version(2) + Type(1) + DataLength(4) + Checksum(4) = 15
-                    Log.w(TAG, "数据不足，无法解析")
-                    return null
+            // 查找所有WPPM签名，找到类型为1的密码元数据
+            val signatureBytes = WPS_PASSWORD_SIGNATURE.toByteArray()
+            val signatureLength = signatureBytes.size
+            
+            // 从后向前搜索，找到最后一个类型为1的密码元数据
+            for (i in readSize - signatureLength downTo 0) {
+                var match = true
+                for (j in 0 until signatureLength) {
+                    if (buffer[i + j] != signatureBytes[j]) {
+                        match = false
+                        break
+                    }
                 }
-                
-                // 创建一个字节数组输入流来解析数据
-                val dataInputStream = ByteArrayInputStream(byteArray, dataPosition, (fileLength - dataPosition).toInt())
-                return parseExtraFieldData(dataInputStream)
+                if (match) {
+                    Log.d(TAG, "找到WPPM签名，位置: ${startPosition + i}")
+                    
+                    // 计算实际数据位置
+                    val dataPosition = startPosition + i
+                    
+                    // 检查剩余数据长度是否足够
+                    if (fileLength - dataPosition < 15) { // Magic(4) + Version(2) + Type(1) + DataLength(4) + Checksum(4) = 15
+                        Log.w(TAG, "数据不足，无法解析")
+                        continue
+                    }
+                    
+                    // 读取元数据块头部信息
+                    val dataInputStream = ByteArrayInputStream(byteArray, dataPosition, (fileLength - dataPosition).toInt())
+                    
+                    // 读取Magic（4字节）
+                    val magic = ByteArray(4)
+                    dataInputStream.read(magic)
+                    
+                    // 读取Version（2字节）
+                    val versionBytes = ByteArray(2)
+                    dataInputStream.read(versionBytes)
+                    val version = byteArrayToShort(versionBytes)
+                    
+                    // 读取Type（1字节）
+                    val type = dataInputStream.read().toByte()
+                    Log.d(TAG, "元数据类型: $type, 版本: $version")
+                    
+                    // 打印WPPM后的内容，方便排查问题
+                    val metadataBuffer = ByteArray(50) // 读取足够的字节来查看内容
+                    val bytesRead = dataInputStream.read(metadataBuffer)
+                    Log.d(TAG, "WPPM后的内容: ${metadataBuffer.sliceArray(0 until bytesRead).joinToString(", ") { it.toString(16).padStart(2, '0') }}")
+                    
+                    if (type == METADATA_TYPE_PASSWORD.toByte()) {
+                        // 找到密码类型，重新创建输入流解析数据
+                        val passwordInputStream = ByteArrayInputStream(byteArray, dataPosition, (fileLength - dataPosition).toInt())
+                        val password = parseExtraFieldData(passwordInputStream)
+                        if (password != null) {
+                            Log.d(TAG, "成功读取密码: $password")
+                            return password
+                        }
+                    } else {
+                        Log.w(TAG, "跳过非密码类型的元数据: $type")
+                    }
+                }
             }
 
             Log.d(TAG, "未找到WPPM密码数据")
