@@ -13,9 +13,12 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.widget.Button
+import android.widget.Toast
 import com.wpspasswordmanager.R
 import com.wpspasswordmanager.business.PasswordGenerator
+import com.wpspasswordmanager.business.PasswordStorage
 import com.wpspasswordmanager.monitor.AccessibilityServiceManager
+import com.wpspasswordmanager.monitor.WpsAccessibilityService
 
 class FloatingButtonService : Service() {
 
@@ -107,6 +110,11 @@ class FloatingButtonService : Service() {
             generateAndFillPassword()
         }
 
+        val viewPasswordButton = floatingView.findViewById<Button>(R.id.view_password_button)
+        viewPasswordButton.setOnClickListener {
+            viewPassword()
+        }
+
         // 添加触摸事件，实现悬浮按钮的拖动
         floatingView.setOnTouchListener {
             v, event ->
@@ -157,6 +165,31 @@ class FloatingButtonService : Service() {
         AccessibilityServiceManager.getInstance().fillPassword(password)
     }
 
+    private fun viewPassword() {
+        // 获取稳定文档路径（存储密码时使用的路径）
+        val documentPath = WpsAccessibilityService.stableDocumentPath
+        if (documentPath.isNullOrEmpty()) {
+            showOperationNotification("查看密码", "未找到文档路径")
+            Toast.makeText(this, "未找到文档路径", Toast.LENGTH_SHORT).show()
+            Log.e(TAG, "未找到文档路径")
+            return
+        }
+
+        // 从文件扩展属性读取密码
+        val password = PasswordStorage.getInstance().getPassword(this, documentPath)
+        if (password != null && password.isNotEmpty()) {
+            // 显示密码通知
+            showOperationNotification("查看密码", "密码: $password")
+            // 显示Toast提示
+            Toast.makeText(this, "密码: $password", Toast.LENGTH_LONG).show()
+            Log.d(TAG, "从文件扩展属性读取密码成功: $password")
+        } else {
+            showOperationNotification("查看密码", "未找到存储的密码")
+            Toast.makeText(this, "未找到存储的密码", Toast.LENGTH_SHORT).show()
+            Log.e(TAG, "未找到存储的密码，文件路径: $documentPath")
+        }
+    }
+
     fun showFloatingButton() {
         if (!isFloatingButtonVisible) {
             // 再次检查权限
@@ -175,39 +208,12 @@ class FloatingButtonService : Service() {
     }
 
     private fun showPermissionNotification() {
-        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as android.app.NotificationManager
-        
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = android.app.NotificationChannel(
-                "permission_channel",
-                "权限通知",
-                android.app.NotificationManager.IMPORTANCE_DEFAULT
-            )
-            notificationManager.createNotificationChannel(channel)
-        }
-        
         val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
-        val pendingIntent = android.app.PendingIntent.getActivity(
-            this,
-            0,
-            intent,
-            android.app.PendingIntent.FLAG_IMMUTABLE
+        AppNotificationManager.getInstance(this).showActionNotification(
+            "需要权限",
+            "请开启显示在其他应用之上的权限，以使用悬浮按钮功能",
+            intent
         )
-        
-        val notification = android.app.Notification.Builder(this)
-            .setContentTitle("需要权限")
-            .setContentText("请开启显示在其他应用之上的权限，以使用悬浮按钮功能")
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
-            .apply {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    setChannelId("permission_channel")
-                }
-            }
-            .build()
-        
-        notificationManager.notify(1, notification)
         Log.d(TAG, "显示权限通知")
     }
     
@@ -215,30 +221,7 @@ class FloatingButtonService : Service() {
      * 显示操作状态通知
      */
     fun showOperationNotification(title: String, content: String, autoCancel: Boolean = true) {
-        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as android.app.NotificationManager
-        
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = android.app.NotificationChannel(
-                "operation_channel",
-                "操作通知",
-                android.app.NotificationManager.IMPORTANCE_LOW
-            )
-            notificationManager.createNotificationChannel(channel)
-        }
-        
-        val notification = android.app.Notification.Builder(this)
-            .setContentTitle(title)
-            .setContentText(content)
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setAutoCancel(autoCancel)
-            .apply {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    setChannelId("operation_channel")
-                }
-            }
-            .build()
-        
-        notificationManager.notify(2, notification)
+        AppNotificationManager.getInstance(this).showOperationNotification(title, content, autoCancel)
         Log.d(TAG, "显示操作通知: $title - $content")
     }
 }

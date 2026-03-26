@@ -1,31 +1,16 @@
 package com.wpspasswordmanager.business
 
 import android.content.Context
-import android.os.Build
-import android.security.keystore.KeyGenParameterSpec
-import android.security.keystore.KeyProperties
-import android.util.Base64
+import android.net.Uri
 import android.util.Log
-import java.io.IOException
-import java.security.*
-import java.security.cert.CertificateException
-import javax.crypto.*
-import javax.crypto.SecretKey
-import javax.crypto.spec.GCMParameterSpec
-import javax.crypto.spec.SecretKeySpec
+import java.io.File
+import java.io.InputStream
 
 class PasswordStorage private constructor() {
 
     companion object {
         private const val TAG = "PasswordStorage"
-        private const val KEYSTORE_NAME = "AndroidKeyStore"
-        private const val KEY_ALIAS = "wps_password_key"
-        private const val ENCRYPTION_ALGORITHM = KeyProperties.KEY_ALGORITHM_AES
-        private const val ENCRYPTION_BLOCK_MODE = KeyProperties.BLOCK_MODE_GCM
-        private const val ENCRYPTION_PADDING = KeyProperties.ENCRYPTION_PADDING_NONE
-        private const val TRANSFORMATION = "$ENCRYPTION_ALGORITHM/$ENCRYPTION_BLOCK_MODE/$ENCRYPTION_PADDING"
-        private const val PREFERENCES_NAME = "wps_passwords"
-        private const val HMAC_ALGORITHM = "HmacSHA256"
+        private const val WPS_PASSWORD_METADATA_KEY = "wpsPassword"
 
         private var instance: PasswordStorage? = null
 
@@ -37,71 +22,27 @@ class PasswordStorage private constructor() {
         }
     }
 
-    private var keyStore: KeyStore? = null
-    private var hmacKey: SecretKey? = null
-
-    init {
-        try {
-            keyStore = KeyStore.getInstance(KEYSTORE_NAME)
-            keyStore?.load(null)
-            hmacKey = generateHmacKey()
-        } catch (e: Exception) {
-            Log.e(TAG, "初始化KeyStore失败", e)
-        }
-    }
-
     /**
-     * 存储密码
-     */
-    fun storePassword(context: Context, key: String, password: String): Boolean {
-        try {
-            Log.d(TAG, "开始存储密码，文件路径: $key")
-            val encryptedPassword = encrypt(password)
-            val hmac = generateHmac(encryptedPassword)
-            val sharedPreferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
-            val editor = sharedPreferences.edit()
-            editor.putString(key, encryptedPassword)
-            editor.putString("${key}_hmac", hmac)
-            val success = editor.commit() // 使用commit确保操作同步完成
-            
-            if (success) {
-                Log.d(TAG, "密码存储成功，文件路径: $key")
-                return true
-            } else {
-                Log.e(TAG, "密码存储失败，提交操作未成功")
-                return false
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "存储密码失败", e)
-            return false
-        }
-    }
-
-    /**
-     * 读取密码
+     * 从文件元数据读取密码
      */
     fun getPassword(context: Context, key: String): String? {
         try {
             Log.d(TAG, "开始读取密码，文件路径: $key")
-            val sharedPreferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
-            val encryptedPassword = sharedPreferences.getString(key, null)
-            val storedHmac = sharedPreferences.getString("${key}_hmac", null)
             
-            if (encryptedPassword != null && storedHmac != null) {
-                // 验证数据完整性
-                val calculatedHmac = generateHmac(encryptedPassword)
-                if (calculatedHmac == storedHmac) {
-                    Log.d(TAG, "数据完整性验证通过，开始解密密码")
-                    val decryptedPassword = decrypt(encryptedPassword)
-                    Log.d(TAG, "密码读取成功，文件路径: $key")
-                    return decryptedPassword
+            // 检查是否是content URI
+            if (key.startsWith("content://")) {
+                val uri = Uri.parse(key)
+                return readPasswordFromContentUri(context, uri)
+            } else {
+                // 处理普通文件路径
+                val file = File(key)
+                if (file.exists()) {
+                    return readPasswordFromFile(context, file)
                 } else {
-                    Log.e(TAG, "数据完整性验证失败，密码可能被篡改")
+                    Log.e(TAG, "文件不存在，无法读取密码")
                     return null
                 }
             }
-            Log.d(TAG, "未找到存储的密码，文件路径: $key")
-            return null
         } catch (e: Exception) {
             Log.e(TAG, "读取密码失败", e)
             return null
@@ -109,163 +50,257 @@ class PasswordStorage private constructor() {
     }
 
     /**
-     * 删除密码
-     */
-    fun deletePassword(context: Context, key: String): Boolean {
-        try {
-            Log.d(TAG, "开始删除密码，文件路径: $key")
-            val sharedPreferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
-            val editor = sharedPreferences.edit()
-            editor.remove(key)
-            editor.remove("${key}_hmac")
-            val success = editor.commit() // 使用commit确保操作同步完成
-            
-            if (success) {
-                Log.d(TAG, "密码删除成功，文件路径: $key")
-                return true
-            } else {
-                Log.e(TAG, "密码删除失败，提交操作未成功")
-                return false
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "删除密码失败", e)
-            return false
-        }
-    }
-
-    /**
-     * 加密密码
-     */
-    private fun encrypt(password: String): String {
-        try {
-            val secretKey = getOrCreateSecretKey()
-            val cipher = Cipher.getInstance(TRANSFORMATION)
-            cipher.init(Cipher.ENCRYPT_MODE, secretKey)
-            val iv = cipher.iv
-            val encrypted = cipher.doFinal(password.toByteArray())
-            val combined = iv + encrypted
-            return Base64.encodeToString(combined, Base64.DEFAULT)
-        } catch (e: Exception) {
-            Log.e(TAG, "加密失败", e)
-            throw e
-        }
-    }
-
-    /**
-     * 解密密码
-     */
-    private fun decrypt(encryptedPassword: String): String {
-        try {
-            val secretKey = getOrCreateSecretKey()
-            val combined = Base64.decode(encryptedPassword, Base64.DEFAULT)
-            val iv = combined.copyOfRange(0, 12) // GCM模式使用12字节IV
-            val encrypted = combined.copyOfRange(12, combined.size)
-            val cipher = Cipher.getInstance(TRANSFORMATION)
-            val spec = GCMParameterSpec(128, iv)
-            cipher.init(Cipher.DECRYPT_MODE, secretKey, spec)
-            val decrypted = cipher.doFinal(encrypted)
-            return String(decrypted)
-        } catch (e: Exception) {
-            Log.e(TAG, "解密失败", e)
-            throw e
-        }
-    }
-
-    /**
-     * 生成HMAC用于数据完整性校验
-     */
-    private fun generateHmac(data: String): String {
-        try {
-            val mac = Mac.getInstance(HMAC_ALGORITHM)
-            mac.init(hmacKey)
-            val hmacBytes = mac.doFinal(data.toByteArray())
-            return Base64.encodeToString(hmacBytes, Base64.DEFAULT)
-        } catch (e: Exception) {
-            Log.e(TAG, "生成HMAC失败", e)
-            throw e
-        }
-    }
-
-    /**
-     * 生成HMAC密钥
-     */
-    private fun generateHmacKey(): SecretKey {
-        try {
-            val keyGenerator = KeyGenerator.getInstance(HMAC_ALGORITHM)
-            keyGenerator.init(256)
-            return keyGenerator.generateKey()
-        } catch (e: Exception) {
-            Log.e(TAG, "生成HMAC密钥失败", e)
-            throw e
-        }
-    }
-
-    /**
-     * 获取或创建密钥
-     */
-    private fun getOrCreateSecretKey(): SecretKey {
-        try {
-            // 检查密钥是否存在
-            if (keyStore?.containsAlias(KEY_ALIAS) == true) {
-                val key = keyStore?.getKey(KEY_ALIAS, null) as? SecretKey
-                if (key != null) {
-                    return key
-                }
-            }
-
-            // 创建新密钥
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                val keyGenerator = KeyGenerator.getInstance(
-                    ENCRYPTION_ALGORITHM,
-                    KEYSTORE_NAME
-                )
-                val spec = KeyGenParameterSpec.Builder(
-                    KEY_ALIAS,
-                    KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
-                )
-                    .setBlockModes(ENCRYPTION_BLOCK_MODE)
-                    .setEncryptionPaddings(ENCRYPTION_PADDING)
-                    .setRandomizedEncryptionRequired(true)
-                    .build()
-                keyGenerator.init(spec)
-                return keyGenerator.generateKey()
-            } else {
-                // 兼容旧版本
-                val keyGenerator = KeyGenerator.getInstance(ENCRYPTION_ALGORITHM)
-                keyGenerator.init(256)
-                return keyGenerator.generateKey()
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "获取或创建密钥失败", e)
-            throw e
-        }
-    }
-
-    /**
      * 检查密码是否存在
      */
     fun hasPassword(context: Context, key: String): Boolean {
+        return getPassword(context, key) != null
+    }
+
+    /**
+     * 写入密码
+     * 按照核心流程文档要求：
+     * 1. 对于本地文件，直接写入密码
+     * 2. 对于Content URI，尝试使用ParcelFileDescriptor直接操作
+     */
+    fun writePassword(context: Context, key: String, password: String): Boolean {
         try {
-            val sharedPreferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
-            return sharedPreferences.contains(key)
+            Log.d(TAG, "开始写入密码，文件路径: $key")
+            Log.d(TAG, "密码长度: ${password.length}")
+            
+            // 检查是否是content URI
+            if (key.startsWith("content://")) {
+                val uri = Uri.parse(key)
+                Log.d(TAG, "写入密码到Content URI: $uri")
+                val result = writePasswordToContentUri(context, uri, password)
+                Log.d(TAG, "写入密码到Content URI结果: $result")
+                return result
+            } else {
+                // 处理普通文件路径
+                val file = File(key)
+                if (file.exists() && file.canWrite()) {
+                    Log.d(TAG, "文件存在，大小: ${file.length()} bytes")
+                    // 直接写入密码到本地文件
+                    return writePasswordToFile(context, file, password)
+                } else {
+                    Log.e(TAG, "文件不存在或不可写，无法写入密码")
+                    return false
+                }
+            }
         } catch (e: Exception) {
-            Log.e(TAG, "检查密码是否存在失败", e)
+            Log.e(TAG, "写入密码失败", e)
             return false
         }
     }
 
     /**
-     * 获取所有存储的密码键
+     * 从Content URI写入密码
      */
-    fun getAllKeys(context: Context): Set<String> {
+    private fun writePasswordToContentUri(context: Context, uri: Uri, password: String): Boolean {
         try {
-            val sharedPreferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
-            val allKeys = sharedPreferences.all.keys
-            // 过滤掉HMAC键
-            return allKeys.filter { !it.endsWith("_hmac") }.toSet()
+            Log.d(TAG, "尝试从Content URI写入密码: $uri")
+            
+            // 按照核心流程文档要求：采用方案5（ParcelFileDescriptor直接操作）
+            Log.d(TAG, "使用ParcelFileDescriptor直接操作写入密码")
+            val parcelResult = ZipExtraFieldManager.getInstance().writePasswordWithParcelFileDescriptor(context, uri, password)
+            if (parcelResult) {
+                Log.d(TAG, "使用ParcelFileDescriptor直接操作写入密码成功")
+                return true
+            }
+            
+            Log.e(TAG, "ParcelFileDescriptor直接操作失败")
+            return false
         } catch (e: Exception) {
-            Log.e(TAG, "获取所有密码键失败", e)
-            return emptySet()
+            Log.e(TAG, "从Content URI写入密码失败", e)
+            return false
+        }
+    }
+    
+    /**
+     * 使用临时文件从Content URI写入密码
+     */
+    private fun writePasswordToContentUriWithTempFile(context: Context, uri: Uri, password: String): Boolean {
+        try {
+            Log.d(TAG, "尝试使用临时文件从Content URI写入密码")
+            
+            // 创建临时文件
+            val tempFile = File.createTempFile("temp", ".docx")
+            tempFile.deleteOnExit()
+            
+            // 复制内容到临时文件
+            context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                tempFile.outputStream().use { outputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+            }
+            
+            // 写入密码到临时文件
+            val success = writePasswordToFile(context, tempFile, password)
+            
+            if (success) {
+                // 写回原文件
+                context.contentResolver.openOutputStream(uri)?.use { outputStream ->
+                    tempFile.inputStream().use { inputStream ->
+                        inputStream.copyTo(outputStream)
+                    }
+                }
+            }
+            
+            return success
+        } catch (e: Exception) {
+            Log.e(TAG, "使用临时文件写入密码失败", e)
+            return false
+        }
+    }
+
+    /**
+     * 写入密码到文件
+     */
+    private fun writePasswordToFile(context: Context, file: File, password: String): Boolean {
+        try {
+            Log.d(TAG, "尝试写入密码到文件: ${file.absolutePath}")
+            
+            // 尝试使用ZIP Extra Field
+            val zipResult = ZipExtraFieldManager.getInstance().writePassword(file, password)
+            if (zipResult) {
+                Log.d(TAG, "使用ZIP Extra Field写入密码成功")
+                return true
+            }
+            
+            // 备用方案：使用文件属性
+            Log.w(TAG, "ZIP Extra Field写入失败，尝试使用文件属性")
+            return FileManager.getInstance().writePasswordToFileComment(context, file.absolutePath, password)
+        } catch (e: Exception) {
+            Log.e(TAG, "写入密码失败", e)
+            return false
+        }
+    }
+
+    /**
+     * 从Content URI读取密码
+     */
+    private fun readPasswordFromContentUri(context: Context, uri: Uri): String? {
+        try {
+            Log.d(TAG, "尝试从Content URI读取密码: $uri")
+            
+            // 尝试使用不同的方法打开输入流
+            try {
+                context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                    // 检查输入流是否为空
+                    val available = inputStream.available()
+                    if (available == 0) {
+                        Log.w(TAG, "Content URI输入流为空，可能是权限问题或文件未准备好")
+                        // 尝试使用临时文件方法
+                        return readPasswordFromContentUriWithTempFile(context, uri)
+                    }
+                    return readPasswordFromInputStream(inputStream)
+                }
+            } catch (securityException: SecurityException) {
+                Log.e(TAG, "权限被拒绝，尝试使用其他方法")
+                // 尝试使用临时文件方法
+                return readPasswordFromContentUriWithTempFile(context, uri)
+            } catch (e: Exception) {
+                Log.e(TAG, "打开Content URI输入流失败", e)
+                return null
+            }
+            
+            Log.e(TAG, "无法打开Content URI输入流")
+            return null
+        } catch (e: Exception) {
+            Log.e(TAG, "从Content URI读取密码失败", e)
+            return null
+        }
+    }
+    
+    /**
+     * 使用临时文件从Content URI读取密码
+     */
+    private fun readPasswordFromContentUriWithTempFile(context: Context, uri: Uri): String? {
+        try {
+            Log.d(TAG, "尝试使用临时文件从Content URI读取密码")
+            
+            // 创建临时文件
+            val tempFile = File.createTempFile("temp", ".docx")
+            tempFile.deleteOnExit()
+            
+            // 复制内容到临时文件
+            context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                tempFile.outputStream().use { outputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+            }
+            
+            // 从临时文件读取密码
+            return readPasswordFromFile(context, tempFile)
+        } catch (e: Exception) {
+            Log.e(TAG, "使用临时文件读取密码失败", e)
+            return null
+        }
+    }
+
+    /**
+     * 从文件读取密码
+     * 只使用ZIP Extra Field方式读取，按照读数据.md文档要求
+     */
+    private fun readPasswordFromFile(context: Context, file: File): String? {
+        try {
+            Log.d(TAG, "尝试从文件读取密码: ${file.absolutePath}")
+            
+            // 从ZIP Extra Field读取密码（按照读数据.md文档要求）
+            val zipPassword = ZipExtraFieldManager.getInstance().readPassword(file)
+            if (zipPassword != null) {
+                Log.d(TAG, "从ZIP Extra Field读取密码成功")
+                return zipPassword
+            }
+            
+            Log.d(TAG, "ZIP Extra Field未找到密码")
+            return null
+        } catch (e: Exception) {
+            Log.e(TAG, "从文件读取密码失败", e)
+            return null
+        }
+    }
+
+    /**
+     * 从输入流读取密码（直接流读取模式）
+     * 按照读数据.md文档要求：从输入流中读取ZIP Extra Field中的密码
+     */
+    private fun readPasswordFromInputStream(inputStream: InputStream): String? {
+        try {
+            Log.d(TAG, "尝试从输入流读取密码")
+            
+            // 检查输入流是否为空
+            val available = inputStream.available()
+            if (available == 0) {
+                Log.w(TAG, "输入流为空，无法读取密码")
+                return null
+            }
+            
+            // 从ZIP Extra Field读取密码（直接流读取模式，按照读数据.md文档要求）
+            val zipPassword = ZipExtraFieldManager.getInstance().readPasswordFromInputStream(inputStream)
+            if (zipPassword != null) {
+                Log.d(TAG, "从ZIP Extra Field读取密码成功")
+                return zipPassword
+            }
+            
+            Log.d(TAG, "ZIP Extra Field未找到密码")
+            return null
+        } catch (e: Exception) {
+            Log.e(TAG, "从输入流读取密码失败", e)
+            return null
+        }
+    }
+
+
+
+    /**
+     * 获取文件扩展名
+     */
+    private fun getFileExtension(fileName: String): String {
+        val lastDotIndex = fileName.lastIndexOf('.')
+        return if (lastDotIndex > 0) {
+            fileName.substring(lastDotIndex + 1).lowercase()
+        } else {
+            ""
         }
     }
 }

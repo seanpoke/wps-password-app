@@ -17,25 +17,139 @@
         android:textSize="24sp"
         android:textStyle="bold" />
 
-    <Button
-        android:id="@+id/enable_accessibility_button"
+    <!-- 权限状态区域 -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:text="@string/enable_accessibility" />
+        android:orientation="vertical"
+        android:background="@android:color/darker_gray"
+        android:padding="16dp"
+        android:layout_marginBottom="24dp"
+        android:radius="8dp">
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="权限状态"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="8dp">
+
+            <TextView
+                android:id="@+id/accessibility_status"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="无障碍服务: 未启用"
+                android:textColor="@android:color/holo_red_dark" />
+
+            <Button
+                android:id="@+id/enable_accessibility_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="启用" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="8dp">
+
+            <TextView
+                android:id="@+id/overlay_status"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="悬浮窗权限: 未启用"
+                android:textColor="@android:color/holo_red_dark" />
+
+            <Button
+                android:id="@+id/enable_overlay_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="启用" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- 功能按钮区域 -->
     <Button
         android:id="@+id/generate_password_button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
-        android:text="@string/generate_password" />
+        android:text="生成密码"
+        android:background="@android:color/holo_blue_light"
+        android:textColor="@android:color/white" />
 
     <Button
         android:id="@+id/manage_passwords_button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
-        android:text="@string/manage_passwords" />
+        android:text="管理密码"
+        android:background="@android:color/holo_green_light"
+        android:textColor="@android:color/white" />
+
+    <Button
+        android:id="@+id/settings_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:text="设置"
+        android:background="@android:color/holo_orange_light"
+        android:textColor="@android:color/white" />
+
+    <!-- 权限引导信息 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@android:color/darker_gray"
+        android:padding="16dp"
+        android:layout_marginTop="24dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="使用指南"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="1. 启用无障碍服务和悬浮窗权限"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="2. 从文件管理器或其他应用选择文件，使用 WPS 密码助手打开"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="3. 首次打开加密文件时手动输入密码，系统会自动保存"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="4. 再次打开同一文件时，系统会自动填充密码"
+            android:layout_marginBottom="4dp" />
+
+    </LinearLayout>
 
 </LinearLayout>

@@ -1,5 +1,6 @@
 package com.wpspasswordmanager.business
 
+import android.content.Context
 import android.util.Log
 import java.util.concurrent.ConcurrentHashMap
 
@@ -8,12 +9,17 @@ class MemoryPasswordStorage private constructor() {
     companion object {
         private const val TAG = "MemoryPasswordStorage"
         private var instance: MemoryPasswordStorage? = null
+        private var context: Context? = null
 
         fun getInstance(): MemoryPasswordStorage {
             if (instance == null) {
                 instance = MemoryPasswordStorage()
             }
             return instance!!
+        }
+
+        fun init(context: Context) {
+            this.context = context
         }
     }
 
@@ -23,13 +29,15 @@ class MemoryPasswordStorage private constructor() {
     /**
      * 存储密码到内存
      */
-    fun storePasswordInMemory(key: String, password: String): Boolean {
+    fun storePasswordInMemory(key: String, password: String, fileUri: String? = null): Boolean {
         try {
+            // 存储到内存
             passwordMap[key] = password
             Log.d(TAG, "密码已存储到内存: $key")
+
             return true
         } catch (e: Exception) {
-            Log.e(TAG, "存储密码到内存失败", e)
+            Log.e(TAG, "存储密码失败", e)
             return false
         }
     }
@@ -39,11 +47,16 @@ class MemoryPasswordStorage private constructor() {
      */
     fun getPasswordFromMemory(key: String): String? {
         try {
+            // 从内存中获取
             val password = passwordMap[key]
-            Log.d(TAG, "从内存中获取密码: $key")
-            return password
+            if (password != null) {
+                Log.d(TAG, "从内存中获取密码: $key")
+                return password
+            }
+
+            return null
         } catch (e: Exception) {
-            Log.e(TAG, "从内存中获取密码失败", e)
+            Log.e(TAG, "获取密码失败", e)
             return null
         }
     }
@@ -53,11 +66,13 @@ class MemoryPasswordStorage private constructor() {
      */
     fun removePasswordFromMemory(key: String): Boolean {
         try {
+            // 从内存中移除
             passwordMap.remove(key)
             Log.d(TAG, "从内存中移除密码: $key")
+
             return true
         } catch (e: Exception) {
-            Log.e(TAG, "从内存中移除密码失败", e)
+            Log.e(TAG, "移除密码失败", e)
             return false
         }
     }
@@ -78,13 +93,19 @@ class MemoryPasswordStorage private constructor() {
      * 获取所有存储的密码键
      */
     fun getAllKeys(): Set<String> {
-        return passwordMap.keys
+        val keys = mutableSetOf<String>()
+        
+        // 添加内存中的键
+        keys.addAll(passwordMap.keys)
+        
+        return keys
     }
 
     /**
      * 检查内存中是否存在密码
      */
     fun containsPassword(key: String): Boolean {
+        // 检查内存
         return passwordMap.containsKey(key)
     }
 }

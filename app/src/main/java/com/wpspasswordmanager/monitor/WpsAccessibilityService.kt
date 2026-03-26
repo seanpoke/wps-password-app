@@ -2,6 +2,7 @@ package com.wpspasswordmanager.monitor
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -18,15 +19,25 @@ class WpsAccessibilityService : AccessibilityService() {
         private const val TAG = "WpsAccessibilityService"
         private val WPS_PACKAGES = arrayOf("cn.wps.moffice_eng", "cn.wps.moffice")
         private var lastPassword: String? = null
-        private var currentDocumentPath: String? = null
-        private var stableDocumentPath: String? = null // 稳定的文档路径
+        var currentDocumentPath: String? = null
+        var stableDocumentPath: String? = null // 稳定的文档路径
+        var currentFileUri: String? = null // 当前文件的URI
         private var isFillingPassword = false // 防止自动填充无限循环的标志
         private var hasClickedShowPassword = false // 防止重复点击显示密码选项的标志
+        private var hasClickedGeneratePassword = false // 标记是否点击了生成密码按钮
+        private const val PREFS_NAME = "WpsPasswordManagerPrefs"
+        private const val KEY_CURRENT_FILE_URI = "current_file_uri"
     }
 
     override fun onServiceConnected() {
         super.onServiceConnected()
         Log.d(TAG, "无障碍服务已连接")
+
+        // 初始化 MemoryPasswordStorage
+        MemoryPasswordStorage.init(this)
+
+        // 从SharedPreferences获取当前文件URI
+        loadCurrentFileUri()
 
         // 注册服务到管理器
         AccessibilityServiceManager.getInstance().setService(this)
@@ -44,35 +55,91 @@ class WpsAccessibilityService : AccessibilityService() {
         serviceInfo = info
     }
 
+    /**
+     * 从SharedPreferences加载当前文件路径
+     */
+    private fun loadCurrentFileUri() {
+        try {
+            val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            currentFileUri = prefs.getString(KEY_CURRENT_FILE_URI, null)
+            if (currentFileUri != null) {
+                Log.d(TAG, "从SharedPreferences加载文件路径: $currentFileUri")
+                // 检查是否是本地文件路径
+                if (!currentFileUri!!.startsWith("content://")) {
+                    Log.d(TAG, "使用本地文件路径作为文档路径")
+                }
+                // 使用文件路径作为稳定文档路径
+                stableDocumentPath = currentFileUri
+                currentDocumentPath = currentFileUri
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "加载文件路径失败", e)
+        }
+    }
+
+    /**
+     * 保存当前文件URI到SharedPreferences
+     */
+    fun saveCurrentFileUri(uri: String) {
+        try {
+            val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            prefs.edit().putString(KEY_CURRENT_FILE_URI, uri).apply()
+            currentFileUri = uri
+            stableDocumentPath = uri
+            currentDocumentPath = uri
+            Log.d(TAG, "保存文件URI到SharedPreferences: $uri")
+        } catch (e: Exception) {
+            Log.e(TAG, "保存文件URI失败", e)
+        }
+    }
+
+    /**
+     * 清除当前文件URI
+     */
+    fun clearCurrentFileUri() {
+        try {
+            val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            prefs.edit().remove(KEY_CURRENT_FILE_URI).apply()
+            currentFileUri = null
+            Log.d(TAG, "已清除文件URI")
+        } catch (e: Exception) {
+            Log.e(TAG, "清除文件URI失败", e)
+        }
+    }
+
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
-        val packageName = event.packageName?.toString()
-        if (packageName in WPS_PACKAGES) {
-            Log.d(TAG, "收到事件: ${event.eventType}, 包名: $packageName, 类名: ${event.className}")
-            when (event.eventType) {
-                AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
-                    handleWindowStateChanged(event)
-                }
-                AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> {
-                    handleWindowContentChanged(event)
-                }
-                AccessibilityEvent.TYPE_VIEW_FOCUSED -> {
-                    handleViewFocused(event)
-                }
-                AccessibilityEvent.TYPE_VIEW_CLICKED -> {
-                    Log.d(TAG, "收到点击事件: ${event.source?.className}, 文本: ${event.source?.text}")
-                    handleViewClicked(event)
-                }
-                AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED -> {
-                    Log.d(TAG, "收到文本变化事件: ${event.source?.className}, 文本: ${event.text}")
-                    handleViewTextChanged(event)
-                }
-                AccessibilityEvent.TYPE_VIEW_SELECTED -> {
-                    Log.d(TAG, "收到视图选择事件: ${event.source?.className}")
-                }
-                AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED -> {
-                    Log.d(TAG, "收到视图无障碍焦点事件: ${event.source?.className}")
+        try {
+            val packageName = event.packageName?.toString()
+            if (packageName in WPS_PACKAGES) {
+                Log.d(TAG, "收到事件: ${event.eventType}, 包名: $packageName, 类名: ${event.className}")
+                when (event.eventType) {
+                    AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
+                        handleWindowStateChanged(event)
+                    }
+                    AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> {
+                        handleWindowContentChanged(event)
+                    }
+                    AccessibilityEvent.TYPE_VIEW_FOCUSED -> {
+                        handleViewFocused(event)
+                    }
+                    AccessibilityEvent.TYPE_VIEW_CLICKED -> {
+                        Log.d(TAG, "收到点击事件: ${event.source?.className}, 文本: ${event.source?.text}")
+                        handleViewClicked(event)
+                    }
+                    AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED -> {
+                        Log.d(TAG, "收到文本变化事件: ${event.source?.className}, 文本: ${event.text}")
+                        handleViewTextChanged(event)
+                    }
+                    AccessibilityEvent.TYPE_VIEW_SELECTED -> {
+                        Log.d(TAG, "收到视图选择事件: ${event.source?.className}")
+                    }
+                    AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED -> {
+                        Log.d(TAG, "收到视图无障碍焦点事件: ${event.source?.className}")
+                    }
                 }
             }
+        } catch (e: Exception) {
+            Log.e(TAG, "处理无障碍事件失败", e)
         }
     }
     
@@ -102,21 +169,42 @@ class WpsAccessibilityService : AccessibilityService() {
                 }
             }
             
+            // 方法3: 尝试从 source node 的 content description 获取文本
+            if (password.isEmpty()) {
+                val contentDescription = source.contentDescription?.toString() ?: ""
+                if (!contentDescription.isEmpty()) {
+                    password = contentDescription
+                }
+            }
+            
             if (password.isNotEmpty()) {
                 Log.d(TAG, "密码输入框文本变化: '$password'，长度: ${password.length}")
-                Log.i(TAG, "明文密码: '$password'")
                 // 存储密码到内存
-                if (stableDocumentPath != null) {
+                if (currentFileUri != null) {
+                    Log.d(TAG, "使用文件URI: $currentFileUri")
+                    val stored = MemoryPasswordStorage.getInstance().storePasswordInMemory(currentFileUri!!, password, currentFileUri)
+                    if (stored) {
+                        Log.i(TAG, "已成功存储用户输入的密码到内存: $currentFileUri")
+                    } else {
+                        Log.e(TAG, "存储用户输入的密码到内存失败: $currentFileUri")
+                    }
+                } else if (stableDocumentPath != null) {
                     Log.d(TAG, "使用稳定文档路径: $stableDocumentPath")
                     val stored = MemoryPasswordStorage.getInstance().storePasswordInMemory(stableDocumentPath!!, password)
                     if (stored) {
                         Log.i(TAG, "已成功存储用户输入的密码到内存: $stableDocumentPath")
-                        Log.i(TAG, "存储的明文密码: '$password'")
                     } else {
                         Log.e(TAG, "存储用户输入的密码到内存失败: $stableDocumentPath")
                     }
                 } else {
-                    Log.e(TAG, "稳定文档路径为空，无法存储密码")
+                    // 即使稳定文档路径为空，也先存储密码到内存，等文档路径确定后再处理
+                    Log.e(TAG, "稳定文档路径为空，先存储密码到临时存储")
+                    val stored = MemoryPasswordStorage.getInstance().storePasswordInMemory("temp", password)
+                    if (stored) {
+                        Log.i(TAG, "已成功存储用户输入的密码到临时内存")
+                    } else {
+                        Log.e(TAG, "存储用户输入的密码到临时内存失败")
+                    }
                 }
             }
         }
@@ -131,6 +219,15 @@ class WpsAccessibilityService : AccessibilityService() {
             Log.d(TAG, "源节点内容描述: ${source.contentDescription}")
             Log.d(TAG, "源节点ID: ${source.viewIdResourceName}")
             
+            // 检查是否是生成密码按钮
+            val isGeneratePassword = isGeneratePasswordButton(source)
+            if (isGeneratePassword) {
+                Log.i(TAG, "用户点击生成密码按钮，时间: ${System.currentTimeMillis()}")
+                hasClickedGeneratePassword = true
+                showOperationNotification("操作处理", "正在生成密码...")
+                return
+            }
+            
             // 检查是否是确认按钮
             val isConfirm = isConfirmButton(source)
             Log.d(TAG, "是否是确认按钮: $isConfirm")
@@ -139,43 +236,83 @@ class WpsAccessibilityService : AccessibilityService() {
                 Log.i(TAG, "用户点击确认按钮，时间: ${System.currentTimeMillis()}")
                 showOperationNotification("操作处理", "正在处理确认操作...")
                 
-                // 当用户点击确认按钮时，直接从内存中获取之前保存的密码
-                if (stableDocumentPath != null) {
-                    val password = MemoryPasswordStorage.getInstance().getPasswordFromMemory(stableDocumentPath!!)
-                    if (password != null && password.isNotEmpty()) {
-                        Log.i(TAG, "从内存中获取到密码，长度: ${password.length}")
-                        Log.i(TAG, "获取的明文密码: '$password'")
-                        showOperationNotification("操作处理", "密码已成功缓存到内存")
-                    } else {
-                        Log.e(TAG, "内存中未找到密码")
-                        showOperationNotification("操作失败", "未找到密码，请重新输入")
+                // 尝试获取密码，先从文件URI，再从稳定文档路径，最后从临时存储
+                var password: String? = null
+                if (currentFileUri != null) {
+                    password = MemoryPasswordStorage.getInstance().getPasswordFromMemory(currentFileUri!!)
+                }
+                if (password == null && stableDocumentPath != null) {
+                    password = MemoryPasswordStorage.getInstance().getPasswordFromMemory(stableDocumentPath!!)
+                }
+                if (password == null) {
+                    // 尝试从临时存储获取密码
+                    password = MemoryPasswordStorage.getInstance().getPasswordFromMemory("temp")
+                }
+                
+                if (password != null && password.isNotEmpty()) {
+                    Log.i(TAG, "从内存中获取到密码，长度: ${password.length}")
+                    showOperationNotification("操作处理", "密码已成功缓存到内存")
+                    
+                    // 尝试写入密码到文件
+                    try {
+                        var targetPath: String? = null
+                        if (currentFileUri != null) {
+                            targetPath = currentFileUri
+                        } else if (stableDocumentPath != null) {
+                            targetPath = stableDocumentPath
+                        }
+                        
+                        if (targetPath != null) {
+                            Log.d(TAG, "尝试写入密码到: $targetPath")
+                            // 检查是否是本地文件路径（不是Content URI）
+                            if (!targetPath.startsWith("content://")) {
+                                val file = java.io.File(targetPath)
+                                if (file.exists() && file.canWrite()) {
+                                    val success = PasswordStorage.getInstance().writePassword(this, targetPath, password)
+                                    if (success) {
+                                        Log.i(TAG, "密码写入成功")
+                                        showOperationNotification("操作成功", "密码已成功写入文件")
+                                    } else {
+                                        Log.e(TAG, "密码写入失败")
+                                        showOperationNotification("操作失败", "密码写入失败，请稍后重试")
+                                    }
+                                } else {
+                                    Log.e(TAG, "本地文件不存在或不可写: $targetPath")
+                                    showOperationNotification("操作失败", "文件不可写")
+                                }
+                            } else {
+                                Log.w(TAG, "跳过Content URI写入，使用本地文件副本")
+                                // 这里可以添加逻辑来查找对应的本地文件副本
+                            }
+                        } else {
+                            Log.e(TAG, "没有可用的文件路径")
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "写入密码时发生异常", e)
+                        showOperationNotification("操作失败", "写入密码时发生异常")
                     }
                 } else {
-                    Log.e(TAG, "稳定文档路径为空，无法获取密码")
-                    showOperationNotification("操作失败", "文档路径为空，无法处理")
-                }
-            } else if (isSaveButton(source)) {
-                Log.i(TAG, "用户点击保存按钮，时间: ${System.currentTimeMillis()}")
-                showOperationNotification("文件保存", "正在保存文件...")
-                // 执行文件保存操作
-                val saveSuccess = simulateFileSave()
-                
-                // 只有文件保存成功后，才执行密码写入元数据操作
-                if (saveSuccess) {
-                    Log.i(TAG, "文件保存成功，开始执行密码写入元数据操作")
-                    showOperationNotification("密码存储", "正在存储密码到元数据...")
-                    writePasswordToMetadata()
-                    showOperationNotification("操作完成", "密码已成功存储到元数据")
-                } else {
-                    Log.e(TAG, "文件保存失败，取消密码写入元数据操作")
-                    showOperationNotification("操作失败", "文件保存失败，请重试")
+                    Log.e(TAG, "内存中未找到密码")
+                    showOperationNotification("操作失败", "未找到密码，请重新输入")
                 }
             } else {
-                Log.d(TAG, "点击的不是确认按钮或保存按钮")
+                Log.d(TAG, "点击的不是确认按钮")
             }
         } else {
             Log.d(TAG, "点击事件的源节点为null")
         }
+    }
+    
+    /**
+     * 检查是否是生成密码按钮
+     */
+    private fun isGeneratePasswordButton(node: AccessibilityNodeInfo): Boolean {
+        val text = node.text?.toString() ?: ""
+        val contentDescription = node.contentDescription?.toString() ?: ""
+        
+        return text.contains("生成密码") || text.contains("generate password") || 
+               text.contains("Generate Password") || contentDescription.contains("生成密码") ||
+               contentDescription.contains("generate password") || contentDescription.contains("Generate Password")
     }
     
     private fun simulateFileSave(): Boolean {
@@ -203,9 +340,9 @@ class WpsAccessibilityService : AccessibilityService() {
      */
     private fun showOperationNotification(title: String, content: String) {
         try {
-            // 只记录日志，不启动悬浮按钮服务
-            // 避免在不需要时启动服务导致按钮显示
             Log.d(TAG, "操作通知: $title - $content")
+            // 使用通知管理器显示通知
+            com.wpspasswordmanager.ui.AppNotificationManager.getInstance(this).showOperationNotification(title, content)
         } catch (e: Exception) {
             Log.e(TAG, "显示操作通知失败", e)
         }
@@ -216,6 +353,82 @@ class WpsAccessibilityService : AccessibilityService() {
         val rootNode = rootInActiveWindow ?: return
         detectPasswordDialog(rootNode)
         detectDocumentPath(rootNode)
+        
+        // 检测是否回退到文件列表页
+        val className = event.className?.toString() ?: ""
+        Log.d(TAG, "当前窗口类名: $className")
+        
+        // 增强检测：多种可能的文件列表页类名
+        val isFileListScreen = className.contains("HomeRootActivity") || 
+                               className.contains("FileManagerActivity") ||
+                               className.contains("DocumentListActivity") ||
+                               className.contains("MainActivity")
+        
+        if (isFileListScreen) {
+            Log.d(TAG, "检测到回退到文件列表页，尝试写入密码")
+            // 尝试写入密码
+            try {
+                var targetPath: String? = null
+                if (currentFileUri != null) {
+                    targetPath = currentFileUri
+                } else if (stableDocumentPath != null) {
+                    targetPath = stableDocumentPath
+                }
+                
+                if (targetPath != null) {
+                    Log.d(TAG, "准备写入密码到: $targetPath")
+                    // 从内存中获取密码
+                    var password: String? = null
+                    if (currentFileUri != null) {
+                        password = MemoryPasswordStorage.getInstance().getPasswordFromMemory(currentFileUri!!)
+                        Log.d(TAG, "从currentFileUri获取密码: $password")
+                    }
+                    if (password == null && stableDocumentPath != null) {
+                        password = MemoryPasswordStorage.getInstance().getPasswordFromMemory(stableDocumentPath!!)
+                        Log.d(TAG, "从stableDocumentPath获取密码: $password")
+                    }
+                    if (password == null) {
+                        // 尝试从临时存储获取密码
+                        password = MemoryPasswordStorage.getInstance().getPasswordFromMemory("temp")
+                        Log.d(TAG, "从临时存储获取密码: $password")
+                    }
+                    
+                    if (password != null && password.isNotEmpty()) {
+                        Log.d(TAG, "从内存中获取到密码，长度: ${password.length}")
+                        // 检查是否是本地文件路径（不是Content URI）
+                        if (!targetPath.startsWith("content://")) {
+                            val file = java.io.File(targetPath)
+                            Log.d(TAG, "检查本地文件: ${file.absolutePath}, 存在: ${file.exists()}, 可写: ${file.canWrite()}")
+                            if (file.exists() && file.canWrite()) {
+                                val success = PasswordStorage.getInstance().writePassword(this, targetPath, password)
+                                if (success) {
+                                    Log.i(TAG, "密码写入成功")
+                                    showOperationNotification("操作成功", "密码已成功写入文件")
+                                } else {
+                                    Log.e(TAG, "密码写入失败")
+                                    showOperationNotification("操作失败", "密码写入失败，请稍后重试")
+                                }
+                            } else {
+                                Log.e(TAG, "本地文件不存在或不可写: $targetPath")
+                                showOperationNotification("操作失败", "文件不可写")
+                            }
+                        } else {
+                            Log.w(TAG, "跳过Content URI写入，使用本地文件副本")
+                            // 这里可以添加逻辑来查找对应的本地文件副本
+                        }
+                    } else {
+                        Log.e(TAG, "内存中未找到密码")
+                        showOperationNotification("操作失败", "未找到密码")
+                    }
+                } else {
+                    Log.e(TAG, "没有可用的文件路径")
+                    showOperationNotification("操作失败", "没有可用的文件路径")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "写入密码时发生异常", e)
+                showOperationNotification("操作失败", "写入密码时发生异常")
+            }
+        }
     }
 
     private fun handleWindowContentChanged(event: AccessibilityEvent) {
@@ -258,30 +471,10 @@ class WpsAccessibilityService : AccessibilityService() {
             // 隐藏悬浮按钮
             AccessibilityServiceManager.getInstance().hideFloatingButton()
             stopFloatingButtonService()
-            // 当没有找到密码输入框时，说明文档可能已经关闭
-            // 先将内存中的密码写入到安全存储
-            writePasswordToMetadata()
-            // 检查是否是文档进程完全关闭的情况
-            // 通过判断是否还能检测到文档路径来确定
-            val currentPath = findDocumentPathFromNodes(rootNode)
-            if (currentPath == null && stableDocumentPath != null) {
-                // 文档进程完全关闭，从内存中彻底清除密码
-                Log.i(TAG, "文档进程完全关闭，从内存中彻底清除密码: $stableDocumentPath")
-                val removed = MemoryPasswordStorage.getInstance().removePasswordFromMemory(stableDocumentPath!!)
-                if (removed) {
-                    Log.i(TAG, "已从内存中彻底清除密码: $stableDocumentPath")
-                } else {
-                    Log.e(TAG, "从内存中清除密码失败: $stableDocumentPath")
-                }
-                // 重置稳定文档路径和标志
-                stableDocumentPath = null
-                currentDocumentPath = null
-                hasClickedShowPassword = false // 重置显示密码点击标志
-                Log.i(TAG, "文档进程生命周期结束，已重置文档路径和显示密码标志")
-            } else {
-                // 文档进程仍在运行，保留密码在内存中
-                Log.d(TAG, "文档进程仍在运行，密码继续保留在内存中")
-            }
+            // 当没有找到密码输入框时，不立即认为文档进程完全关闭
+            // 只有在确定文档进程真正关闭时才清除密码和重置文档路径
+            // 避免在打开【密码加密】等其他窗口时误判
+            Log.d(TAG, "未检测到密码输入框，保持当前状态")
         }
 
         // 查找保存按钮
@@ -415,61 +608,738 @@ class WpsAccessibilityService : AccessibilityService() {
                 return
             }
             
-            // 检测文档路径
-            detectDocumentPath(rootNode)
+            // 检测文档路径（减少日志输出）
+            detectDocumentPath(rootNode, false)
             
-            // 不再自动填充密码，只在用户点击悬浮按钮时填充
-            // 这样可以避免强制填充密码的行为
-            Log.d(TAG, "跳过自动填充密码，等待用户手动操作")
+            // 尝试从PasswordHolder中获取密码
+            var password: String? = null
+            
+            // 优先从PasswordHolder中获取密码
+            if (com.wpspasswordmanager.business.PasswordHolder.hasCachedPassword()) {
+                Log.d(TAG, "尝试从PasswordHolder读取密码")
+                password = com.wpspasswordmanager.business.PasswordHolder.cachedPassword
+                if (password != null) {
+                    Log.i(TAG, "从PasswordHolder读取密码成功")
+                }
+            }
+            
+            // 如果PasswordHolder中没有找到密码，尝试从内存中获取
+            if (password == null && currentFileUri != null) {
+                Log.d(TAG, "尝试从内存读取密码: $currentFileUri")
+                password = MemoryPasswordStorage.getInstance().getPasswordFromMemory(currentFileUri!!)
+                if (password != null) {
+                    Log.i(TAG, "从内存读取密码成功: $currentFileUri")
+                }
+            }
+            
+            // 如果内存中没有找到密码，尝试使用稳定文档路径
+            if (password == null && stableDocumentPath != null) {
+                Log.d(TAG, "尝试从内存读取密码: $stableDocumentPath")
+                password = MemoryPasswordStorage.getInstance().getPasswordFromMemory(stableDocumentPath!!)
+                if (password != null) {
+                    Log.i(TAG, "从内存读取密码成功: $stableDocumentPath")
+                }
+            }
+            
+            // 不再尝试从文件元数据中读取，避免权限问题
+            
+            // 如果找到密码，自动填充
+            if (password != null && password.isNotEmpty()) {
+                Log.i(TAG, "开始自动填充密码")
+                
+                val passwordInputNodes = findPasswordInputNodes(rootNode)
+                if (passwordInputNodes.isNotEmpty()) {
+                    isFillingPassword = true
+                    try {
+                        for (node in passwordInputNodes) {
+                            try {
+                                // 填充密码
+                                val arguments = android.os.Bundle()
+                                arguments.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, password)
+                                val success = node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments)
+                                if (success) {
+                                    Log.i(TAG, "密码填充成功")
+                                    
+                                    // 检查是否需要自动点击确认按钮
+                                    // 场景1：首次打开加密文件（从PasswordHolder或内存中读取密码）
+                                    // 场景2：点击生成密码按钮（用户可能需要修改密码）
+                                    val shouldAutoSubmit = !hasClickedGeneratePassword
+                                    
+                                    Log.i(TAG, "是否自动提交: $shouldAutoSubmit, 场景类型: ${if (hasClickedGeneratePassword) "生成密码" else "首次打开"}")
+                                    
+                                    if (shouldAutoSubmit) {
+                                        // 场景1：首次打开加密文件，自动点击确认按钮
+                                        Log.i(TAG, "尝试自动点击确认按钮")
+                                        val confirmButton = findConfirmButton(rootNode)
+                                        if (confirmButton != null) {
+                                            Log.i(TAG, "找到确认按钮，尝试点击")
+                                            val clickSuccess = confirmButton.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                                            if (clickSuccess) {
+                                                Log.i(TAG, "成功点击确认按钮")
+                                            } else {
+                                                Log.e(TAG, "点击确认按钮失败")
+                                            }
+                                        } else {
+                                            Log.d(TAG, "未找到确认按钮")
+                                        }
+                                    }
+                                    
+                                    // 填充后清除PasswordHolder缓存
+                                    com.wpspasswordmanager.business.PasswordHolder.clear()
+                                    
+                                    // 重置生成密码标志
+                                    if (hasClickedGeneratePassword) {
+                                        hasClickedGeneratePassword = false
+                                    }
+                                } else {
+                                    Log.e(TAG, "密码填充失败")
+                                }
+                            } catch (e: Exception) {
+                                Log.e(TAG, "填充密码时发生异常", e)
+                            }
+                        }
+                    } finally {
+                        isFillingPassword = false
+                    }
+                } else {
+                    Log.e(TAG, "未找到密码输入框")
+                }
+            } else {
+                Log.d(TAG, "未找到密码，等待用户手动输入")
+            }
         } catch (e: Exception) {
             Log.e(TAG, "自动填充密码失败", e)
             isFillingPassword = false
         }
     }
 
-    private fun detectDocumentPath(rootNode: AccessibilityNodeInfo) {
+    private fun detectDocumentPath(rootNode: AccessibilityNodeInfo, enableLogging: Boolean = true) {
+        // 优先使用已存储的本地文件路径
+        if (currentFileUri != null && !currentFileUri!!.startsWith("content://")) {
+            if (enableLogging) {
+                Log.d(TAG, "优先使用已存储的本地文件路径: $currentFileUri")
+            }
+            stableDocumentPath = currentFileUri
+            currentDocumentPath = currentFileUri
+            if (enableLogging) {
+                Log.d(TAG, "最终确定的文档路径: $currentDocumentPath")
+                // 检查本地文件状态
+                val file = java.io.File(currentFileUri!!)
+                Log.d(TAG, "调试：本地文件存在: ${file.exists()}")
+                Log.d(TAG, "调试：文件路径: ${file.absolutePath}")
+                Log.d(TAG, "调试：文件可写: ${file.canWrite()}")
+                Log.d(TAG, "调试：文件可读: ${file.canRead()}")
+            }
+            if (enableLogging) {
+                Log.d(TAG, "文档路径检测完成")
+            }
+            return
+        }
+        
         // 尝试从窗口标题或其他元素中提取文档路径
         // 这里可以根据实际WPS界面结构进行调整
         var detectedPath: String? = null
         
-        // 方法1: 从根节点获取文本
-        val windowTitle = rootNode.text?.toString() ?: ""
-        if (windowTitle.isNotEmpty()) {
-            detectedPath = windowTitle
-            Log.d(TAG, "从根节点检测到文档路径: $detectedPath")
+        if (enableLogging) {
+            Log.d(TAG, "开始检测文档路径")
         }
         
-        // 方法2: 遍历所有节点，寻找可能的文档路径
+        // 方法1: 尝试从WPS的标题栏获取文件路径（优先使用）
+        detectedPath = findFilePathFromTitleBar(rootNode)
+        if (detectedPath != null && enableLogging) {
+            Log.d(TAG, "从标题栏检测到文档路径: $detectedPath")
+        }
+        
+        // 方法2: 从根节点获取文本
+        if (detectedPath == null) {
+            val windowTitle = rootNode.text?.toString() ?: ""
+            if (windowTitle.isNotEmpty()) {
+                detectedPath = windowTitle
+                if (enableLogging) {
+                    Log.d(TAG, "从根节点检测到文档路径: $detectedPath")
+                }
+            }
+        }
+        
+        // 方法3: 遍历所有节点，寻找可能的文档路径
         if (detectedPath == null) {
             detectedPath = findDocumentPathFromNodes(rootNode)
-            if (detectedPath != null) {
+            if (detectedPath != null && enableLogging) {
                 Log.d(TAG, "从子节点检测到文档路径: $detectedPath")
             }
         }
         
-        // 方法3: 从包名和类名中推断
+        // 方法4: 尝试从WPS特定的界面元素中获取文件路径
+        if (detectedPath == null) {
+            detectedPath = findWpsSpecificFilePath(rootNode)
+            if (detectedPath != null && enableLogging) {
+                Log.d(TAG, "从WPS特定元素检测到文档路径: $detectedPath")
+            }
+        }
+        
+        // 方法5: 尝试从WPS的文件信息区域获取文件路径
+        if (detectedPath == null) {
+            detectedPath = findFilePathFromFileInfoArea(rootNode)
+            if (detectedPath != null && enableLogging) {
+                Log.d(TAG, "从文件信息区域检测到文档路径: $detectedPath")
+            }
+        }
+        
+        // 方法6: 尝试从WPS的状态栏获取文件路径
+        if (detectedPath == null) {
+            detectedPath = findFilePathFromStatusBar(rootNode)
+            if (detectedPath != null && enableLogging) {
+                Log.d(TAG, "从状态栏检测到文档路径: $detectedPath")
+            }
+        }
+        
+        // 方法7: 尝试从WPS的文件名显示区域获取文件路径
+        if (detectedPath == null) {
+            detectedPath = findFileNameFromWps(rootNode)
+            if (detectedPath != null && enableLogging) {
+                Log.d(TAG, "从WPS文件名显示区域检测到文档路径: $detectedPath")
+            }
+        }
+        
+        // 方法8: 尝试从WPS的导航栏获取文件路径
+        if (detectedPath == null) {
+            detectedPath = findFilePathFromNavigationBar(rootNode)
+            if (detectedPath != null && enableLogging) {
+                Log.d(TAG, "从导航栏检测到文档路径: $detectedPath")
+            }
+        }
+        
+        // 方法9: 尝试从WPS的文件属性区域获取文件路径
+        if (detectedPath == null) {
+            detectedPath = findFilePathFromFileProperties(rootNode)
+            if (detectedPath != null && enableLogging) {
+                Log.d(TAG, "从文件属性区域检测到文档路径: $detectedPath")
+            }
+        }
+        
+        // 方法10: 尝试从WPS的通知或其他系统元素获取文件路径
+        if (detectedPath == null) {
+            detectedPath = findFilePathFromSystemElements(rootNode)
+            if (detectedPath != null && enableLogging) {
+                Log.d(TAG, "从系统元素检测到文档路径: $detectedPath")
+            }
+        }
+        
+        // 方法11: 从包名和类名中推断（仅作为最后的备选）
         if (detectedPath == null) {
             val className = rootNode.className?.toString() ?: ""
             if (className.isNotEmpty()) {
                 detectedPath = "wps_" + className.hashCode() + "_" + System.currentTimeMillis()
-                Log.d(TAG, "从类名推断文档路径: $detectedPath")
+                if (enableLogging) {
+                    Log.d(TAG, "从类名推断文档路径: $detectedPath")
+                }
             }
         }
         
-        // 方法4: 使用时间戳作为临时标识符
+        // 方法12: 使用时间戳作为临时标识符（仅作为最后的备选）
         if (detectedPath == null) {
             detectedPath = "temp_" + System.currentTimeMillis()
-            Log.d(TAG, "使用临时标识符作为文档路径: $detectedPath")
+            if (enableLogging) {
+                Log.d(TAG, "使用临时标识符作为文档路径: $detectedPath")
+            }
+        }
+        
+        // 检查是否是真实的文件路径
+        val isRealFilePath = detectedPath?.contains(".doc") == true || 
+                           detectedPath?.contains(".docx") == true || 
+                           detectedPath?.contains(".xls") == true || 
+                           detectedPath?.contains(".xlsx") == true || 
+                           detectedPath?.contains(".ppt") == true || 
+                           detectedPath?.contains(".pptx") == true ||
+                           detectedPath?.contains("/storage/") == true ||
+                           detectedPath?.contains("SD卡") == true ||
+                           detectedPath?.contains("Internal storage") == true ||
+                           detectedPath?.contains("file:/") == true
+        
+        if (enableLogging) {
+            Log.d(TAG, "检测到的文档路径: $detectedPath")
+            Log.d(TAG, "是否为真实文件路径: $isRealFilePath")
         }
         
         // 保持文档路径稳定，只在第一次设置或检测到新的有效路径时更新
-        if (stableDocumentPath == null) {
+        if (stableDocumentPath == null || (isRealFilePath && (!stableDocumentPath!!.contains(".doc") && !stableDocumentPath!!.contains(".xls") && !stableDocumentPath!!.contains(".ppt") && !stableDocumentPath!!.contains("/storage/")))) {
             stableDocumentPath = detectedPath
-            Log.d(TAG, "设置稳定文档路径: $stableDocumentPath")
+            if (enableLogging) {
+                Log.d(TAG, "设置稳定文档路径: $stableDocumentPath")
+            }
         }
         
         currentDocumentPath = stableDocumentPath
-        Log.d(TAG, "最终确定的文档路径: $currentDocumentPath")
+        if (enableLogging) {
+            Log.d(TAG, "最终确定的文档路径: $currentDocumentPath")
+        }
+        
+        // 调试：检查文件是否存在
+        if (stableDocumentPath != null && enableLogging) {
+            if (stableDocumentPath!!.startsWith("content://")) {
+                // 对于Content URI，只记录URI信息，不尝试访问
+                Log.d(TAG, "调试：Content URI: $stableDocumentPath")
+                Log.d(TAG, "调试：Content URI 权限处理将在需要时进行")
+                // 不再尝试检查Content URI的权限，避免权限错误
+            } else {
+                // 对于普通文件路径
+                val file = java.io.File(stableDocumentPath!!)
+                Log.d(TAG, "调试：文件存在: ${file.exists()}")
+                Log.d(TAG, "调试：文件路径: ${file.absolutePath}")
+                Log.d(TAG, "调试：文件可写: ${file.canWrite()}")
+                Log.d(TAG, "调试：文件可读: ${file.canRead()}")
+                
+                // 尝试获取文件的父目录
+                val parent = file.parent
+                if (parent != null) {
+                    val parentDir = java.io.File(parent)
+                    Log.d(TAG, "调试：父目录存在: ${parentDir.exists()}")
+                    Log.d(TAG, "调试：父目录可写: ${parentDir.canWrite()}")
+                }
+            }
+        }
+        
+        if (enableLogging) {
+            Log.d(TAG, "文档路径检测完成")
+        }
+    }
+    
+    /**
+     * 从系统元素获取文件路径
+     */
+    private fun findFilePathFromSystemElements(rootNode: AccessibilityNodeInfo): String? {
+        val queue = mutableListOf(rootNode)
+        
+        while (queue.isNotEmpty()) {
+            val currentNode = queue.removeAt(0)
+            
+            // 检查节点文本是否可能是文件路径
+            val text = currentNode.text?.toString() ?: ""
+            val contentDescription = currentNode.contentDescription?.toString() ?: ""
+            
+            // 检查是否包含文件路径特征
+            if (text.isNotEmpty() && (text.contains("/storage/") || text.contains("SD卡") || text.contains("Internal storage")) &&
+                (text.contains(".doc") || text.contains(".docx") || text.contains(".xls") || 
+                 text.contains(".xlsx") || text.contains(".ppt") || text.contains(".pptx"))) {
+                Log.d(TAG, "从系统元素找到文件路径: $text")
+                return text
+            }
+            
+            if (contentDescription.isNotEmpty() && (contentDescription.contains("/storage/") || contentDescription.contains("SD卡") || contentDescription.contains("Internal storage")) &&
+                (contentDescription.contains(".doc") || contentDescription.contains(".docx") || contentDescription.contains(".xls") || 
+                 contentDescription.contains(".xlsx") || contentDescription.contains(".ppt") || contentDescription.contains(".pptx"))) {
+                Log.d(TAG, "从系统元素内容描述找到文件路径: $contentDescription")
+                return contentDescription
+            }
+            
+            // 遍历子节点
+            for (i in 0 until currentNode.childCount) {
+                val child = currentNode.getChild(i)
+                if (child != null) {
+                    queue.add(child)
+                }
+            }
+        }
+        
+        return null
+    }
+    
+    /**
+     * 从WPS的导航栏获取文件路径
+     */
+    private fun findFilePathFromNavigationBar(rootNode: AccessibilityNodeInfo): String? {
+        val queue = mutableListOf(rootNode)
+        
+        while (queue.isNotEmpty()) {
+            val currentNode = queue.removeAt(0)
+            
+            // 检查节点文本是否可能是文件路径
+            val text = currentNode.text?.toString() ?: ""
+            val contentDescription = currentNode.contentDescription?.toString() ?: ""
+            val className = currentNode.className?.toString() ?: ""
+            
+            // 检查是否是导航栏相关的节点
+            if (className.contains("Navigation") || className.contains("navigation") || 
+                className.contains("Toolbar") || className.contains("toolbar") ||
+                className.contains("ActionBar") || className.contains("action_bar")) {
+                
+                // 检查文本是否包含文件路径特征
+                if (text.isNotEmpty() && (text.contains(".doc") || text.contains(".docx") || 
+                    text.contains(".xls") || text.contains(".xlsx") || 
+                    text.contains(".ppt") || text.contains(".pptx"))) {
+                    Log.d(TAG, "从导航栏找到文件路径: $text")
+                    return text
+                }
+                
+                // 检查内容描述
+                if (contentDescription.isNotEmpty() && (contentDescription.contains(".doc") || contentDescription.contains(".docx") || 
+                    contentDescription.contains(".xls") || contentDescription.contains(".xlsx") || 
+                    contentDescription.contains(".ppt") || contentDescription.contains(".pptx"))) {
+                    Log.d(TAG, "从导航栏内容描述找到文件路径: $contentDescription")
+                    return contentDescription
+                }
+            }
+            
+            // 遍历子节点
+            for (i in 0 until currentNode.childCount) {
+                val child = currentNode.getChild(i)
+                if (child != null) {
+                    queue.add(child)
+                }
+            }
+        }
+        
+        return null
+    }
+    
+    /**
+     * 从WPS的文件属性区域获取文件路径
+     */
+    private fun findFilePathFromFileProperties(rootNode: AccessibilityNodeInfo): String? {
+        val queue = mutableListOf(rootNode)
+        
+        while (queue.isNotEmpty()) {
+            val currentNode = queue.removeAt(0)
+            
+            // 检查节点文本是否可能是文件路径
+            val text = currentNode.text?.toString() ?: ""
+            val contentDescription = currentNode.contentDescription?.toString() ?: ""
+            
+            // 检查是否包含文件路径特征
+            if (text.isNotEmpty() && (text.contains("路径") || text.contains("Path") || text.contains("path")) &&
+                (text.contains(".doc") || text.contains(".docx") || 
+                 text.contains(".xls") || text.contains(".xlsx") || 
+                 text.contains(".ppt") || text.contains(".pptx") ||
+                 text.contains("/storage/") || text.contains("SD卡") ||
+                 text.contains("Internal storage") || text.contains("file:/"))) {
+                Log.d(TAG, "从文件属性区域找到文件路径: $text")
+                return text
+            }
+            
+            if (contentDescription.isNotEmpty() && (contentDescription.contains("路径") || contentDescription.contains("Path") || contentDescription.contains("path")) &&
+                (contentDescription.contains(".doc") || contentDescription.contains(".docx") || 
+                 contentDescription.contains(".xls") || contentDescription.contains(".xlsx") || 
+                 contentDescription.contains(".ppt") || contentDescription.contains(".pptx") ||
+                 contentDescription.contains("/storage/") || contentDescription.contains("SD卡") ||
+                 contentDescription.contains("Internal storage") || contentDescription.contains("file:/"))) {
+                Log.d(TAG, "从文件属性区域内容描述找到文件路径: $contentDescription")
+                return contentDescription
+            }
+            
+            // 遍历子节点
+            for (i in 0 until currentNode.childCount) {
+                val child = currentNode.getChild(i)
+                if (child != null) {
+                    queue.add(child)
+                }
+            }
+        }
+        
+        return null
+    }
+    
+    /**
+     * 从WPS的文件名显示区域获取文件名
+     */
+    private fun findFileNameFromWps(rootNode: AccessibilityNodeInfo): String? {
+        val queue = mutableListOf(rootNode)
+        
+        while (queue.isNotEmpty()) {
+            val currentNode = queue.removeAt(0)
+            
+            // 检查节点文本是否可能是文件名
+            val text = currentNode.text?.toString() ?: ""
+            val contentDescription = currentNode.contentDescription?.toString() ?: ""
+            val className = currentNode.className?.toString() ?: ""
+            
+            // 检查是否是文件名（包含常见的文档扩展名）
+            if (text.isNotEmpty() && (text.contains(".doc") || text.contains(".docx") || 
+                text.contains(".xls") || text.contains(".xlsx") || 
+                text.contains(".ppt") || text.contains(".pptx"))) {
+                Log.d(TAG, "从WPS找到文件名: $text")
+                return text
+            }
+            
+            if (contentDescription.isNotEmpty() && (contentDescription.contains(".doc") || contentDescription.contains(".docx") || 
+                contentDescription.contains(".xls") || contentDescription.contains(".xlsx") || 
+                contentDescription.contains(".ppt") || contentDescription.contains(".pptx"))) {
+                Log.d(TAG, "从WPS内容描述找到文件名: $contentDescription")
+                return contentDescription
+            }
+            
+            // 遍历子节点
+            for (i in 0 until currentNode.childCount) {
+                val child = currentNode.getChild(i)
+                if (child != null) {
+                    queue.add(child)
+                }
+            }
+        }
+        
+        return null
+    }
+    
+    /**
+     * 从WPS的状态栏获取文件路径
+     */
+    private fun findFilePathFromStatusBar(rootNode: AccessibilityNodeInfo): String? {
+        val queue = mutableListOf(rootNode)
+        
+        while (queue.isNotEmpty()) {
+            val currentNode = queue.removeAt(0)
+            
+            // 检查节点文本是否可能是文件路径
+            val text = currentNode.text?.toString() ?: ""
+            val contentDescription = currentNode.contentDescription?.toString() ?: ""
+            val className = currentNode.className?.toString() ?: ""
+            
+            // 检查是否是状态栏相关的节点
+            if (className.contains("Status") || className.contains("status") || 
+                className.contains("Bar") || className.contains("bar")) {
+                
+                // 检查文本是否包含文件路径特征
+                if (text.isNotEmpty() && (
+                    text.contains(".doc") || text.contains(".docx") || 
+                    text.contains(".xls") || text.contains(".xlsx") || 
+                    text.contains(".ppt") || text.contains(".pptx")
+                )) {
+                    Log.d(TAG, "从状态栏找到文件路径: $text")
+                    return text
+                }
+                
+                // 检查内容描述
+                if (contentDescription.isNotEmpty() && (
+                    contentDescription.contains(".doc") || contentDescription.contains(".docx") || 
+                    contentDescription.contains(".xls") || contentDescription.contains(".xlsx") || 
+                    contentDescription.contains(".ppt") || contentDescription.contains(".pptx")
+                )) {
+                    Log.d(TAG, "从状态栏内容描述找到文件路径: $contentDescription")
+                    return contentDescription
+                }
+            }
+            
+            // 遍历子节点
+            for (i in 0 until currentNode.childCount) {
+                val child = currentNode.getChild(i)
+                if (child != null) {
+                    queue.add(child)
+                }
+            }
+        }
+        
+        return null
+    }
+    
+    /**
+     * 从WPS的文件信息区域获取文件路径
+     */
+    private fun findFilePathFromFileInfoArea(rootNode: AccessibilityNodeInfo): String? {
+        val queue = mutableListOf(rootNode)
+        
+        while (queue.isNotEmpty()) {
+            val currentNode = queue.removeAt(0)
+            
+            // 检查节点文本是否可能是文件路径
+            val text = currentNode.text?.toString() ?: ""
+            val contentDescription = currentNode.contentDescription?.toString() ?: ""
+            
+            // 检查是否包含文件路径特征
+            if (text.isNotEmpty() && (
+                text.contains("/storage/") || 
+                text.contains("SD卡") || 
+                text.contains("Internal storage") ||
+                text.contains("file:/")
+            ) && (
+                text.contains(".doc") || 
+                text.contains(".docx") || 
+                text.contains(".xls") || 
+                text.contains(".xlsx") || 
+                text.contains(".ppt") || 
+                text.contains(".pptx")
+            )) {
+                Log.d(TAG, "从文件信息区域找到文件路径: $text")
+                return text
+            }
+            
+            if (contentDescription.isNotEmpty() && (
+                contentDescription.contains("/storage/") || 
+                contentDescription.contains("SD卡") || 
+                contentDescription.contains("Internal storage") ||
+                contentDescription.contains("file:/")
+            ) && (
+                contentDescription.contains(".doc") || 
+                contentDescription.contains(".docx") || 
+                contentDescription.contains(".xls") || 
+                contentDescription.contains(".xlsx") || 
+                contentDescription.contains(".ppt") || 
+                contentDescription.contains(".pptx")
+            )) {
+                Log.d(TAG, "从文件信息区域内容描述找到文件路径: $contentDescription")
+                return contentDescription
+            }
+            
+            // 遍历子节点
+            for (i in 0 until currentNode.childCount) {
+                val child = currentNode.getChild(i)
+                if (child != null) {
+                    queue.add(child)
+                }
+            }
+        }
+        
+        return null
+    }
+    
+    /**
+     * 从WPS特定的界面元素中获取文件路径
+     */
+    private fun findWpsSpecificFilePath(rootNode: AccessibilityNodeInfo): String? {
+        val queue = mutableListOf(rootNode)
+        
+        while (queue.isNotEmpty()) {
+            val currentNode = queue.removeAt(0)
+            
+            // 检查节点是否是WPS特定的文件信息元素
+            val text = currentNode.text?.toString() ?: ""
+            val contentDescription = currentNode.contentDescription?.toString() ?: ""
+            val className = currentNode.className?.toString() ?: ""
+            val viewId = currentNode.viewIdResourceName ?: ""
+            
+            // 检查是否是WPS的标题栏或文件信息区域
+            if (className.contains("Title") || className.contains("title") || 
+                className.contains("Bar") || className.contains("bar") ||
+                className.contains("File") || className.contains("file") ||
+                className.contains("Info") || className.contains("info") ||
+                className.contains("Toolbar") || className.contains("toolbar")) {
+                
+                // 检查文本是否包含文件路径或文件名
+                if (text.isNotEmpty()) {
+                    // 检查是否包含文件扩展名
+                    if (text.contains(".doc") || text.contains(".docx") || 
+                        text.contains(".xls") || text.contains(".xlsx") || 
+                        text.contains(".ppt") || text.contains(".pptx")) {
+                        Log.d(TAG, "从WPS特定元素找到文件路径: $text")
+                        return text
+                    }
+                }
+                
+                // 检查内容描述
+                if (contentDescription.isNotEmpty()) {
+                    // 检查是否包含文件扩展名
+                    if (contentDescription.contains(".doc") || contentDescription.contains(".docx") || 
+                        contentDescription.contains(".xls") || contentDescription.contains(".xlsx") || 
+                        contentDescription.contains(".ppt") || contentDescription.contains(".pptx")) {
+                        Log.d(TAG, "从WPS特定元素内容描述找到文件路径: $contentDescription")
+                        return contentDescription
+                    }
+                }
+            }
+            
+            // 检查是否是文件路径相关的节点
+            if (text.isNotEmpty() && (text.contains("/storage/") || text.contains("SD卡") || text.contains("Internal storage")) &&
+                (text.contains(".doc") || text.contains(".docx") || text.contains(".xls") || 
+                 text.contains(".xlsx") || text.contains(".ppt") || text.contains(".pptx"))) {
+                Log.d(TAG, "从文件路径相关节点找到文件路径: $text")
+                return text
+            }
+            
+            // 遍历子节点
+            for (i in 0 until currentNode.childCount) {
+                val child = currentNode.getChild(i)
+                if (child != null) {
+                    queue.add(child)
+                }
+            }
+        }
+        
+        return null
+    }
+    
+    /**
+     * 从WPS的标题栏获取文件路径
+     */
+    private fun findFilePathFromTitleBar(rootNode: AccessibilityNodeInfo): String? {
+        val queue = mutableListOf(rootNode)
+        
+        Log.d(TAG, "开始从标题栏获取文件路径")
+        
+        while (queue.isNotEmpty()) {
+            val currentNode = queue.removeAt(0)
+            
+            // 检查节点文本是否可能是文件路径
+            val text = currentNode.text?.toString() ?: ""
+            val contentDescription = currentNode.contentDescription?.toString() ?: ""
+            val className = currentNode.className?.toString() ?: ""
+            
+//            Log.d(TAG, "检查节点: 类名=$className, 文本=$text, 内容描述=$contentDescription")
+            
+            // 查找包含文件路径特征的文本
+            if (text.isNotEmpty()) {
+                // 检查是否包含文件扩展名
+                if (text.contains(".doc") || text.contains(".docx") || 
+                    text.contains(".xls") || text.contains(".xlsx") || 
+                    text.contains(".ppt") || text.contains(".pptx")) {
+                    Log.d(TAG, "从标题栏找到文件路径: $text")
+                    return text
+                }
+                
+                // 检查是否包含存储路径
+                if (text.contains("/storage/") || text.contains("SD卡") || 
+                    text.contains("Internal storage")) {
+                    Log.d(TAG, "从标题栏找到存储路径: $text")
+                    return text
+                }
+            }
+            
+            if (contentDescription.isNotEmpty()) {
+                // 检查是否包含文件扩展名
+                if (contentDescription.contains(".doc") || contentDescription.contains(".docx") || 
+                    contentDescription.contains(".xls") || contentDescription.contains(".xlsx") || 
+                    contentDescription.contains(".ppt") || contentDescription.contains(".pptx")) {
+                    Log.d(TAG, "从标题栏内容描述找到文件路径: $contentDescription")
+                    return contentDescription
+                }
+                
+                // 检查是否包含存储路径
+                if (contentDescription.contains("/storage/") || contentDescription.contains("SD卡") || 
+                    contentDescription.contains("Internal storage")) {
+                    Log.d(TAG, "从标题栏内容描述找到存储路径: $contentDescription")
+                    return contentDescription
+                }
+            }
+            
+            // 尝试从节点的其他属性中获取文件路径
+            try {
+                // 检查节点是否有与文件路径相关的属性
+                val nodeInfo = currentNode
+                if (nodeInfo != null) {
+                    // 尝试获取节点的包名和类名，可能包含文件信息
+                    val className = nodeInfo.className?.toString() ?: ""
+                    if (className.contains("Title") || className.contains("title") || 
+                        className.contains("bar") || className.contains("Bar")) {
+                        // 对于标题栏节点，尝试获取其文本或子节点的文本
+                        val titleText = nodeInfo.text?.toString() ?: ""
+                        if (titleText.isNotEmpty()) {
+                            Log.d(TAG, "标题栏节点文本: $titleText")
+                            return titleText
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "获取节点属性失败", e)
+            }
+            
+            // 遍历子节点
+            for (i in 0 until currentNode.childCount) {
+                val child = currentNode.getChild(i)
+                if (child != null) {
+                    queue.add(child)
+                }
+            }
+        }
+        
+        Log.d(TAG, "从标题栏未找到文件路径")
+        return null
     }
     
     private fun findDocumentPathFromNodes(node: AccessibilityNodeInfo): String? {
@@ -480,14 +1350,40 @@ class WpsAccessibilityService : AccessibilityService() {
             
             // 检查节点文本是否可能是文档路径
             val text = currentNode.text?.toString() ?: ""
-            if (text.isNotEmpty() && (text.contains(".doc") || text.contains(".docx") || text.contains(".xls") || text.contains(".xlsx") || text.contains(".ppt") || text.contains(".pptx"))) {
-                return text
+            if (text.isNotEmpty()) {
+                // 检查文本是否包含文件路径特征
+                if ((text.contains(".doc") || text.contains(".docx") || text.contains(".xls") || 
+                     text.contains(".xlsx") || text.contains(".ppt") || text.contains(".pptx")) &&
+                    (text.contains("/") || text.contains("\\") || text.contains("storage/") || 
+                     text.contains("SD卡") || text.contains("Internal storage"))) {
+                    return text
+                }
+                // 检查文本是否只是文件名（包含扩展名）
+                if (text.contains(".doc") || text.contains(".docx") || 
+                    text.contains(".xls") || text.contains(".xlsx") || 
+                    text.contains(".ppt") || text.contains(".pptx")) {
+                    return text
+                }
             }
             
             // 检查节点内容描述
             val contentDescription = currentNode.contentDescription?.toString() ?: ""
-            if (contentDescription.isNotEmpty() && (contentDescription.contains(".doc") || contentDescription.contains(".docx") || contentDescription.contains(".xls") || contentDescription.contains(".xlsx") || contentDescription.contains(".ppt") || contentDescription.contains(".pptx"))) {
-                return contentDescription
+            if (contentDescription.isNotEmpty()) {
+                // 检查内容描述是否包含文件路径特征
+                if ((contentDescription.contains(".doc") || contentDescription.contains(".docx") || 
+                     contentDescription.contains(".xls") || contentDescription.contains(".xlsx") || 
+                     contentDescription.contains(".ppt") || contentDescription.contains(".pptx")) &&
+                    (contentDescription.contains("/") || contentDescription.contains("\\") || 
+                     contentDescription.contains("storage/") || contentDescription.contains("SD卡") || 
+                     contentDescription.contains("Internal storage"))) {
+                    return contentDescription
+                }
+                // 检查内容描述是否只是文件名（包含扩展名）
+                if (contentDescription.contains(".doc") || contentDescription.contains(".docx") || 
+                    contentDescription.contains(".xls") || contentDescription.contains(".xlsx") || 
+                    contentDescription.contains(".ppt") || contentDescription.contains(".pptx")) {
+                    return contentDescription
+                }
             }
             
             // 遍历子节点
@@ -533,6 +1429,9 @@ class WpsAccessibilityService : AccessibilityService() {
         Log.d(TAG, "停止悬浮按钮服务")
     }
 
+    /**
+     * 查找密码输入框
+     */
     private fun findPasswordInputNodes(rootNode: AccessibilityNodeInfo): List<AccessibilityNodeInfo> {
         val result = mutableListOf<AccessibilityNodeInfo>()
         val queue = mutableListOf(rootNode)
@@ -557,6 +1456,9 @@ class WpsAccessibilityService : AccessibilityService() {
         return result
     }
 
+    /**
+     * 检查是否是密码输入框
+     */
     private fun isPasswordInput(node: AccessibilityNodeInfo): Boolean {
         // 检查节点是否是输入框且输入类型为密码
         val className = node.className?.toString() ?: ""
@@ -623,22 +1525,34 @@ class WpsAccessibilityService : AccessibilityService() {
         val className = node.className?.toString() ?: ""
         val text = node.text?.toString() ?: ""
         val contentDescription = node.contentDescription?.toString() ?: ""
+        val viewId = node.viewIdResourceName ?: ""
         
         // 更灵活地识别按钮，不只是检查类名是否包含Button
         val isButton = className.contains("Button") || className.contains("button") || 
                       className.contains("android.widget.Button") || className.contains("androidx.appcompat.widget.AppCompatButton") ||
                       className.contains("View") || className.contains("view") || // 增加对View类的支持，因为有些按钮可能使用View实现
-                      className.contains("TextView") || className.contains("textView") // 增加对TextView类的支持，因为有些按钮可能使用TextView实现
+                      className.contains("TextView") || className.contains("textView") || // 增加对TextView类的支持，因为有些按钮可能使用TextView实现
+                      className.contains("AppCompatButton") || className.contains("appcompat_button") // 增加对AppCompatButton的支持
         
         // 检查文本或内容描述是否包含确认相关词汇
         val hasConfirmText = text.contains("确定") || text.contains("确认") || 
                             text.contains("OK") || text.contains("Confirm") ||
                             text.contains("ok") || text.contains("confirm") ||
+                            text.contains("确定") || text.contains("确认") ||
                             contentDescription.contains("确定") || contentDescription.contains("确认") ||
                             contentDescription.contains("OK") || contentDescription.contains("Confirm") ||
                             contentDescription.contains("ok") || contentDescription.contains("confirm")
         
-        return isButton && hasConfirmText
+        // 检查是否是特定的确认按钮ID
+        val isConfirmId = viewId.contains("confirm") || viewId.contains("ok") || viewId.contains("button1")
+        
+        // 综合判断
+        val result = (isButton && hasConfirmText) || isConfirmId
+        if (result) {
+            Log.d(TAG, "确认按钮识别成功: 类名=$className, 文本=$text, 内容描述=$contentDescription, ID=$viewId")
+        }
+        
+        return result
     }
     
     private fun isSaveButton(node: AccessibilityNodeInfo): Boolean {
@@ -732,46 +1646,5 @@ class WpsAccessibilityService : AccessibilityService() {
         }
     }
 
-    private fun writePasswordToMetadata() {
-        try {
-            Log.d(TAG, "开始执行密码写入元数据操作，时间: ${System.currentTimeMillis()}")
-            // 从内存中获取密码
-            if (stableDocumentPath != null) {
-                val password = MemoryPasswordStorage.getInstance().getPasswordFromMemory(stableDocumentPath!!)
-                if (password != null) {
-                    Log.d(TAG, "获取到密码，开始写入元数据，文件路径: $stableDocumentPath")
-                    Log.i(TAG, "写入的明文密码: '$password'")
-                    try {
-                        // 写入到安全存储
-                        val success = PasswordStorage.getInstance().storePassword(this, stableDocumentPath!!, password)
-                        if (success) {
-                            Log.d(TAG, "密码已成功写入到安全存储: $stableDocumentPath，操作完成时间: ${System.currentTimeMillis()}")
-                            Log.i(TAG, "明文密码已成功写入到安全存储: '$password'")
-                        } else {
-                            Log.e(TAG, "密码写入安全存储失败: $stableDocumentPath，操作完成时间: ${System.currentTimeMillis()}")
-                            showOperationNotification("密码存储", "密码写入元数据失败，请重试")
-                        }
-                    } catch (e: Exception) {
-                        Log.e(TAG, "密码写入安全存储时发生异常", e)
-                        showOperationNotification("密码存储", "密码写入元数据时发生错误，请重试")
-                    }
-                    
-                    // 不再从内存中移除密码，实现文档进程生命周期绑定
-                    // 只有当文档进程完全关闭时，才从内存中彻底清除密码
-                    Log.d(TAG, "密码已写入安全存储，但仍保留在内存中（文档进程生命周期绑定）: $stableDocumentPath")
-                } else {
-                    Log.d(TAG, "内存中没有找到密码: $stableDocumentPath")
-                    showOperationNotification("密码存储", "内存中没有找到密码")
-                }
-            } else {
-                Log.d(TAG, "稳定文档路径为空，无法写入密码")
-                showOperationNotification("密码存储", "文档路径为空，无法写入密码")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "写入密码到元数据失败，文件路径: $stableDocumentPath", e)
-            showOperationNotification("密码存储", "操作失败，请重试")
-        } finally {
-            Log.d(TAG, "密码写入元数据操作完成，时间: ${System.currentTimeMillis()}")
-        }
-    }
+
 }

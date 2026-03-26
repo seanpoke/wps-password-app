@@ -3,7 +3,8 @@
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="@android:color/transparent">
+    android:background="@android:color/transparent"
+    android:padding="8dp">
 
     <Button
         android:id="@+id/generate_password_button"
@@ -11,6 +12,18 @@
         android:layout_height="wrap_content"
         android:background="@color/purple_500"
         android:text="生成密码"
+        android:textColor="@color/white"
+        android:padding="12dp"
+        android:elevation="4dp"
+        android:radius="20dp"
+        android:layout_marginBottom="8dp" />
+
+    <Button
+        android:id="@+id/view_password_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@color/blue_500"
+        android:text="查看密码"
         android:textColor="@color/white"
         android:padding="12dp"
         android:elevation="4dp"
