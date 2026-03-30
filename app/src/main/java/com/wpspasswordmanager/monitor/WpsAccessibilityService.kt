@@ -25,6 +25,7 @@ class WpsAccessibilityService : AccessibilityService() {
         private var isFillingPassword = false // 防止自动填充无限循环的标志
         private var hasClickedShowPassword = false // 防止重复点击显示密码选项的标志
         private var hasClickedGeneratePassword = false // 标记是否点击了生成密码按钮
+        private var isFloatingButtonServiceStarted = false // 标记悬浮按钮服务是否已启动
         private const val PREFS_NAME = "WpsPasswordManagerPrefs"
         private const val KEY_CURRENT_FILE_URI = "current_file_uri"
     }
@@ -1443,20 +1444,23 @@ class WpsAccessibilityService : AccessibilityService() {
     private fun startFloatingButtonService() {
         try {
             // 检查是否真的需要启动服务
-            // 只有在检测到密码弹框时才启动
+            // 只有在检测到密码弹框且服务未启动时才启动
             val rootNode = rootInActiveWindow ?: return
             val passwordInputNodes = findPasswordInputNodes(rootNode)
             val confirmButton = findConfirmButton(rootNode)
             val isPasswordDialog = passwordInputNodes.isNotEmpty() && confirmButton != null
             
-            if (isPasswordDialog) {
+            if (isPasswordDialog && !isFloatingButtonServiceStarted) {
                 val intent = Intent(this, com.wpspasswordmanager.ui.FloatingButtonService::class.java)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     startForegroundService(intent)
                 } else {
                     startService(intent)
                 }
+                isFloatingButtonServiceStarted = true
                 Log.d(TAG, "启动悬浮按钮服务")
+            } else if (isPasswordDialog) {
+                Log.d(TAG, "悬浮按钮服务已启动，无需重复启动")
             } else {
                 Log.d(TAG, "不是密码弹框，不启动悬浮按钮服务")
             }
@@ -1466,9 +1470,14 @@ class WpsAccessibilityService : AccessibilityService() {
     }
 
     private fun stopFloatingButtonService() {
-        val intent = Intent(this, com.wpspasswordmanager.ui.FloatingButtonService::class.java)
-        stopService(intent)
-        Log.d(TAG, "停止悬浮按钮服务")
+        if (isFloatingButtonServiceStarted) {
+            val intent = Intent(this, com.wpspasswordmanager.ui.FloatingButtonService::class.java)
+            stopService(intent)
+            isFloatingButtonServiceStarted = false
+            Log.d(TAG, "停止悬浮按钮服务")
+        } else {
+            Log.d(TAG, "悬浮按钮服务未启动，无需停止")
+        }
     }
 
     /**

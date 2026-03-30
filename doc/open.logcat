@@ -1,275 +1,923 @@
-2026-03-26 18:15:00.451 30347-31549 IoPerfPtePrereadJni     com.wpspasswordmanager               D  do pte preread content 1 10263 30347 com.wpspasswordmanager.ui.ProxyActivity /data/system/iaware/fmps/com.wpspasswordmanager/com.wpspasswordmanager.ui.ProxyActivity
-2026-03-26 18:15:00.647 30347-30363 ZrHung.AppEyeUiProbe    com.wpspasswordmanager               D  restart watching
-2026-03-26 18:15:00.647 30347-30347 ActivityThread          com.wpspasswordmanager               V  Handling launch of ActivityRecord{5ff71ab token=android.os.BinderProxy@62a77fa {com.wpspasswordmanager/com.wpspasswordmanager.ui.ProxyActivity}}
-2026-03-26 18:15:00.651 30347-32739 libMEOW                 com.wpspasswordmanager               D  meow new tls: 0xb400007bcc4bc170
-2026-03-26 18:15:00.651 30347-32739 libMEOW                 com.wpspasswordmanager               D  applied 1 plugins for [com.wpspasswordmanager]:
-2026-03-26 18:15:00.651 30347-32739 libMEOW                 com.wpspasswordmanager               D    plugin 1: [libMEOW_gift.so]: 0xb400007b94374840
-2026-03-26 18:15:00.651 30347-32739 libMEOW                 com.wpspasswordmanager               D  rebuild call chain: 0xb400007bcc43c0f0
-2026-03-26 18:15:00.651 30347-32739 libMEOW                 com.wpspasswordmanager               D  meow delete tls: 0xb400007bcc4bc170
-2026-03-26 18:15:00.674 30347-30347 ActivityThread          com.wpspasswordmanager               V  callActivityOnCreate
-2026-03-26 18:15:00.699 30347-30347 ProxyActivity           com.wpspasswordmanager               D  文件名: 
-2026-03-26 18:15:00.699 30347-30347 ProxyActivity           com.wpspasswordmanager               D  文件 URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
-2026-03-26 18:15:00.700 30347-30347 ProxyActivity           com.wpspasswordmanager               D  文件标识: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
-2026-03-26 18:15:00.700 30347-30347 ProxyActivity           com.wpspasswordmanager               D  传入的文件名: ''
-2026-03-26 18:15:00.700 30347-30347 ProxyActivity           com.wpspasswordmanager               D  文件名长度: 0
-2026-03-26 18:15:00.700 30347-30347 ProxyActivity           com.wpspasswordmanager               D  尝试直接从原始URI读取密码
-2026-03-26 18:15:00.700 30347-30347 PasswordStorage         com.wpspasswordmanager               D  开始读取密码，文件路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
-2026-03-26 18:15:00.700 30347-30347 PasswordStorage         com.wpspasswordmanager               D  尝试从Content URI读取密码: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
-2026-03-26 18:15:00.703 30347-30347 PasswordStorage         com.wpspasswordmanager               D  尝试从输入流读取密码
-2026-03-26 18:15:00.703 30347-30347 ZipExtraFieldManager    com.wpspasswordmanager               D  尝试从输入流读取密码
-2026-03-26 18:15:00.704 30347-30347 ZipExtraFieldManager    com.wpspasswordmanager               D  找到WPPM签名，位置: 13329
-2026-03-26 18:15:00.704 30347-30347 ZipExtraFieldManager    com.wpspasswordmanager               D  元数据类型: 2, 版本: 1
-2026-03-26 18:15:00.707 30347-30347 ZipExtraFieldManager    com.wpspasswordmanager               D  WPPM后的内容: 32, 00, 00, 00, 31, 37, 37, 34, 34, 39, 33, 34, 35, 39, 30, 35, 39, 5f, 66, 33, 31, 66, 32, 39, 65, 66, 2d, 34, 63, 35, 61, 2d, 34, 62, 62, 35, 2d, 39, 64, 39, 66, 2d, 34, 39, 63, 34, 65, 35, 64, 63
-2026-03-26 18:15:00.707 30347-30347 ZipExtraFieldManager    com.wpspasswordmanager               W  跳过非密码类型的元数据: 2
-2026-03-26 18:15:00.707 30347-30347 ZipExtraFieldManager    com.wpspasswordmanager               D  找到WPPM签名，位置: 13312
-2026-03-26 18:15:00.707 30347-30347 ZipExtraFieldManager    com.wpspasswordmanager               D  元数据类型: 1, 版本: 1
-2026-03-26 18:15:00.709 30347-30347 ZipExtraFieldManager    com.wpspasswordmanager               D  WPPM后的内容: 02, 00, 00, 00, 31, 35, -2, 01, 26, 38, 57, 50, 50, 4d, 01, 00, 02, 32, 00, 00, 00, 31, 37, 37, 34, 34, 39, 33, 34, 35, 39, 30, 35, 39, 5f, 66, 33, 31, 66, 32, 39, 65, 66, 2d, 34, 63, 35, 61, 2d, 34
-2026-03-26 18:15:00.710 30347-30347 ZipExtraFieldManager    com.wpspasswordmanager               D  Data Length: 2
-2026-03-26 18:15:00.710 30347-30347 ZipExtraFieldManager    com.wpspasswordmanager               D  成功读取密码: 15
-2026-03-26 18:15:00.710 30347-30347 PasswordStorage         com.wpspasswordmanager               D  从ZIP Extra Field读取密码成功
-2026-03-26 18:15:00.710 30347-30347 ProxyActivity           com.wpspasswordmanager               D  从原始URI读取到密码: 15
-2026-03-26 18:15:00.710 30347-30347 PasswordHolder          com.wpspasswordmanager               D  密码已存储: 15, 文件名: 
-2026-03-26 18:15:00.711 30347-30347 MemoryPasswordStorage   com.wpspasswordmanager               D  密码已存储到内存: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
-2026-03-26 18:15:00.712 30347-30347 ProxyActivity           com.wpspasswordmanager               D  保存文件URI到SharedPreferences: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
-2026-03-26 18:15:00.712 30347-30347 ProxyActivity           com.wpspasswordmanager               D  本地文件不存在，尝试使用原始URI
-2026-03-26 18:15:00.741 30347-30347 ProxyActivity           com.wpspasswordmanager               D  使用原始URI启动WPS成功
-2026-03-26 18:15:00.757 30347-30347 ActivityThread          com.wpspasswordmanager               I  add activity client record, r= ActivityRecord{5ff71ab token=android.os.BinderProxy@62a77fa {com.wpspasswordmanager/com.wpspasswordmanager.ui.ProxyActivity}} token= android.os.BinderProxy@62a77fa
-2026-03-26 18:15:00.765 30347-30347 ActivityThread          com.wpspasswordmanager               D  Won't deliver top position change in state=1
-2026-03-26 18:15:00.766 30347-30347 ActivityThread          com.wpspasswordmanager               I  Performing restart of ActivityRecord{50b5d1b token=android.os.BinderProxy@aee2b2a {com.wpspasswordmanager/com.wpspasswordmanager.ui.MainActivity}} start=false callers:android.app.servertransaction.TransactionExecutor.performLifecycleSequence:264 android.app.servertransaction.TransactionExecutor.cycleToPath:219 android.app.servertransaction.TransactionExecutor.executeLifecycleState:191 android.app.servertransaction.TransactionExecutor.execute:106 android.app.ActivityThread$H.handleMessage:3085 android.os.Handler.dispatchMessage:117 android.os.Looper.loopOnce:210 android.os.Looper.loop:302 android.app.ActivityThread.main:9702 java.lang.reflect.Method.invoke:-2 
-2026-03-26 18:15:00.770 30347-30347 DecorView[]             com.wpspasswordmanager               I  set decor visibility 0
-2026-03-26 18:15:00.770 30347-30347 RmeSchedManager         com.wpspasswordmanager               I  init Rme, version is: v1.0
-2026-03-26 18:15:00.770 30347-30347 RtgSched                com.wpspasswordmanager               D  resetRtgSchedHandle failed enable:1
-2026-03-26 18:15:00.771 30347-30347 ActivityThread          com.wpspasswordmanager               D  Won't deliver top position change in state=1
-2026-03-26 18:15:00.793 30347-30347 SurfaceControl          com.wpspasswordmanager               I  SurfaceControl 0xb400007a983bc7b0 com.wpspasswordmanager/com.wpspasswordmanager.ui.MainActivity#22762
-2026-03-26 18:15:00.846 30347-30347 BufferQueueConsumer     com.wpspasswordmanager               I  [](id:768b00000004,api:0,p:-1,c:30347) connect: controlledByApp=false
-2026-03-26 18:15:00.850 30347-30410 BufferQueueProducer     com.wpspasswordmanager               I  [VRI[MainActivity]#4(BLAST Consumer)4](id:768b00000004,api:0,p:-1,c:30347) connect: api=1 producerControlledByApp=true
-2026-03-26 18:15:00.850 30347-30410 OpenGLRenderer          com.wpspasswordmanager               E  Unable to match the desired swap behavior.
-2026-03-26 18:15:00.892 30347-30360 SurfaceControl          com.wpspasswordmanager               I  ~SurfaceControl 0xb400007a983bda10 com.wpspasswordmanager/com.wpspasswordmanager.ui.MainActivity#22660
-2026-03-26 18:15:00.893 30347-30347 HwViewRootImpl          com.wpspasswordmanager               I  removeInvalidNode all the node in jank list is out of time
-2026-03-26 18:15:00.893 30347-30347 Choreographer           com.wpspasswordmanager               D  still have 1 traversal callbacks
-2026-03-26 18:15:00.894 30347-30347 RmeSchedManager         com.wpspasswordmanager               I  init Rme, version is: v1.0
-2026-03-26 18:15:00.894 30347-30347 RtgSched                com.wpspasswordmanager               D  resetRtgSchedHandle failed enable:0
-2026-03-26 18:15:01.252 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 32, 包名: cn.wps.moffice_eng, 类名: cn.wps.moffice.documentmanager.PreStartActivity2
-2026-03-26 18:15:01.252 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  窗口状态改变: cn.wps.moffice.documentmanager.PreStartActivity2
-2026-03-26 18:15:01.313 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  停止悬浮按钮服务
-2026-03-26 18:15:01.313 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
-2026-03-26 18:15:01.314 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
-2026-03-26 18:15:01.314 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
-2026-03-26 18:15:01.314 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
-2026-03-26 18:15:01.322 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520101322
-2026-03-26 18:15:01.322 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520101322
-2026-03-26 18:15:01.323 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
-2026-03-26 18:15:01.323 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: wps_-2096886772_1774520065816
-2026-03-26 18:15:01.323 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件存在: false
-2026-03-26 18:15:01.323 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /wps_-2096886772_1774520065816
-2026-03-26 18:15:01.323 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: false
-2026-03-26 18:15:01.323 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: false
-2026-03-26 18:15:01.323 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
-2026-03-26 18:15:01.323 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  当前窗口类名: cn.wps.moffice.documentmanager.PreStartActivity2
-2026-03-26 18:15:01.400 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
-2026-03-26 18:15:01.405 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
-2026-03-26 18:15:01.426 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  停止悬浮按钮服务
-2026-03-26 18:15:01.426 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
-2026-03-26 18:15:01.427 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
-2026-03-26 18:15:01.427 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
-2026-03-26 18:15:01.427 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
-2026-03-26 18:15:01.433 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520101433
-2026-03-26 18:15:01.434 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520101433
-2026-03-26 18:15:01.434 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
-2026-03-26 18:15:01.434 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: wps_-2096886772_1774520065816
-2026-03-26 18:15:01.434 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件存在: false
-2026-03-26 18:15:01.434 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /wps_-2096886772_1774520065816
-2026-03-26 18:15:01.434 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: false
-2026-03-26 18:15:01.434 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: false
-2026-03-26 18:15:01.434 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
-2026-03-26 18:15:01.434 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 32, 包名: cn.wps.moffice_eng, 类名: cn.wps.moffice.documentmanager.PreStartActivity2
-2026-03-26 18:15:01.434 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  窗口状态改变: cn.wps.moffice.documentmanager.PreStartActivity2
-2026-03-26 18:15:01.444 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  停止悬浮按钮服务
-2026-03-26 18:15:01.444 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
-2026-03-26 18:15:01.444 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
-2026-03-26 18:15:01.444 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
-2026-03-26 18:15:01.445 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
-2026-03-26 18:15:01.448 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520101448
-2026-03-26 18:15:01.448 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520101448
-2026-03-26 18:15:01.448 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
-2026-03-26 18:15:01.448 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: wps_-2096886772_1774520065816
-2026-03-26 18:15:01.449 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件存在: false
-2026-03-26 18:15:01.449 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /wps_-2096886772_1774520065816
-2026-03-26 18:15:01.449 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: false
-2026-03-26 18:15:01.449 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: false
-2026-03-26 18:15:01.449 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
-2026-03-26 18:15:01.449 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  当前窗口类名: cn.wps.moffice.documentmanager.PreStartActivity2
-2026-03-26 18:15:01.489 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.LinearLayout
-2026-03-26 18:15:01.489 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.LinearLayout
-2026-03-26 18:15:01.531 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  停止悬浮按钮服务
-2026-03-26 18:15:01.531 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
-2026-03-26 18:15:01.532 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
-2026-03-26 18:15:01.532 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
-2026-03-26 18:15:01.533 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
-2026-03-26 18:15:01.540 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520101540
-2026-03-26 18:15:01.540 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520101540
-2026-03-26 18:15:01.540 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
-2026-03-26 18:15:01.540 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: wps_-2096886772_1774520065816
-2026-03-26 18:15:01.540 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件存在: false
-2026-03-26 18:15:01.540 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /wps_-2096886772_1774520065816
-2026-03-26 18:15:01.541 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: false
-2026-03-26 18:15:01.541 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: false
-2026-03-26 18:15:01.541 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
-2026-03-26 18:15:01.650 30347-30363 ZrHung.AppEyeUiProbe    com.wpspasswordmanager               D  not watching, wait.
-2026-03-26 18:15:01.822 30347-30363 ZrHung.AppEyeUiProbe    com.wpspasswordmanager               D  restart watching
-2026-03-26 18:15:01.825 30347-30347 ActivityThread          com.wpspasswordmanager               I  Remove activity client record, r= ActivityRecord{5ff71ab token=android.os.BinderProxy@62a77fa {com.wpspasswordmanager/com.wpspasswordmanager.ui.ProxyActivity}} token= android.os.BinderProxy@62a77fa
-2026-03-26 18:15:01.936 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 32, 包名: cn.wps.moffice_eng, 类名: cn.wps.moffice.common.encrypt.OpenEditDecryptDialog
-2026-03-26 18:15:01.936 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  窗口状态改变: cn.wps.moffice.common.encrypt.OpenEditDecryptDialog
-2026-03-26 18:15:01.970 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  确认按钮识别成功: 类名=android.widget.Button, 文本=确定, 内容描述=, ID=cn.wps.moffice_eng:id/dialog_button_positive
-2026-03-26 18:15:01.970 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  找到密码输入框: 1，找到确认按钮: true，判断为密码弹框
-2026-03-26 18:15:01.970 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  已经点击过【显示密码】选项，不再重复点击
-2026-03-26 18:15:01.988 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  确认按钮识别成功: 类名=android.widget.Button, 文本=确定, 内容描述=, ID=cn.wps.moffice_eng:id/dialog_button_positive
-2026-03-26 18:15:02.027 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  启动悬浮按钮服务
-2026-03-26 18:15:02.143 30347-30347 InputEventReceiver      com.wpspasswordmanager               D  dispatchInputInterval 1000000
-2026-03-26 18:15:02.148 30347-30347 HwForceDarkManager      com.wpspasswordmanager               I  isSystemInDarkMode isResUiModeYes: false, isDarkMode: false
-2026-03-26 18:15:02.148 30347-30347 FloatingButtonService   com.wpspasswordmanager               D  悬浮按钮添加成功
-2026-03-26 18:15:02.149 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
-2026-03-26 18:15:02.151 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
-2026-03-26 18:15:02.168 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  尝试从PasswordHolder读取密码
-2026-03-26 18:15:02.168 30347-30347 WpsAccessibilityService com.wpspasswordmanager               I  从PasswordHolder读取密码成功
-2026-03-26 18:15:02.168 30347-30347 WpsAccessibilityService com.wpspasswordmanager               I  开始自动填充密码
-2026-03-26 18:15:02.177 30347-30347 WpsAccessibilityService com.wpspasswordmanager               I  密码填充成功
-2026-03-26 18:15:02.177 30347-30347 WpsAccessibilityService com.wpspasswordmanager               I  是否自动提交: true, 场景类型: 首次打开
-2026-03-26 18:15:02.177 30347-30347 WpsAccessibilityService com.wpspasswordmanager               I  尝试自动点击确认按钮
-2026-03-26 18:15:02.186 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  确认按钮识别成功: 类名=android.widget.Button, 文本=确定, 内容描述=, ID=cn.wps.moffice_eng:id/dialog_button_positive
-2026-03-26 18:15:02.186 30347-30347 WpsAccessibilityService com.wpspasswordmanager               I  找到确认按钮，尝试点击
-2026-03-26 18:15:02.200 30347-30347 WpsAccessibilityService com.wpspasswordmanager               I  成功点击确认按钮
-2026-03-26 18:15:02.200 30347-30347 PasswordHolder          com.wpspasswordmanager               D  密码缓存已清除
-2026-03-26 18:15:02.202 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
-2026-03-26 18:15:02.202 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
-2026-03-26 18:15:02.205 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
-2026-03-26 18:15:02.222 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520102222
-2026-03-26 18:15:02.222 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520102222
-2026-03-26 18:15:02.222 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
-2026-03-26 18:15:02.222 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: wps_-2096886772_1774520065816
-2026-03-26 18:15:02.223 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件存在: false
-2026-03-26 18:15:02.223 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /wps_-2096886772_1774520065816
-2026-03-26 18:15:02.223 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: false
-2026-03-26 18:15:02.223 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: false
-2026-03-26 18:15:02.223 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
-2026-03-26 18:15:02.223 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  当前窗口类名: cn.wps.moffice.common.encrypt.OpenEditDecryptDialog
-2026-03-26 18:15:02.264 30347-30347 SurfaceControl          com.wpspasswordmanager               I  SurfaceControl 0xb400007a983b9330 #22790
-2026-03-26 18:15:02.268 30347-30347 BufferQueueConsumer     com.wpspasswordmanager               I  [](id:768b00000005,api:0,p:-1,c:30347) connect: controlledByApp=false
-2026-03-26 18:15:02.277 30347-30347 HwForceDarkManager      com.wpspasswordmanager               I  isSystemInDarkMode isResUiModeYes: false, isDarkMode: false
-2026-03-26 18:15:02.279 30347-30410 BufferQueueProducer     com.wpspasswordmanager               I  [VRI[]#5(BLAST Consumer)5](id:768b00000005,api:0,p:-1,c:30347) connect: api=1 producerControlledByApp=true
-2026-03-26 18:15:02.279 30347-30410 OpenGLRenderer          com.wpspasswordmanager               E  Unable to match the desired swap behavior.
-2026-03-26 18:15:02.289 30347-30347 HwForceDarkManager      com.wpspasswordmanager               I  setAllowedHwForceDark:false package:com.wpspasswordmanager mCurrProcessState:0 mIsPackageNameChange:false hwForceDarkState:0 isViewAllowedForceDark:true isLastHonorForceDark:false
-2026-03-26 18:15:02.302 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 8, 包名: cn.wps.moffice_eng, 类名: android.widget.EditText
-2026-03-26 18:15:02.302 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  视图获得焦点: android.widget.EditText
-2026-03-26 18:15:02.368 30347-30410 BufferQueueProducer     com.wpspasswordmanager               I  [VRI[]#5(BLAST Consumer)5](id:768b00000005,api:1,p:30347,c:30347) disconnect: api 1
-2026-03-26 18:15:02.369 30347-30347 FloatingButtonService   com.wpspasswordmanager               D  悬浮按钮移除成功
-2026-03-26 18:15:02.383 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  停止悬浮按钮服务
-2026-03-26 18:15:02.383 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
-2026-03-26 18:15:02.386 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
-2026-03-26 18:15:02.386 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
-2026-03-26 18:15:02.388 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
-2026-03-26 18:15:02.407 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520102407
-2026-03-26 18:15:02.407 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520102407
-2026-03-26 18:15:02.407 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
-2026-03-26 18:15:02.407 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: wps_-2096886772_1774520065816
-2026-03-26 18:15:02.408 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件存在: false
-2026-03-26 18:15:02.408 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /wps_-2096886772_1774520065816
-2026-03-26 18:15:02.408 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: false
-2026-03-26 18:15:02.408 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: false
-2026-03-26 18:15:02.408 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
-2026-03-26 18:15:02.415 30347-30347 FloatingButtonService   com.wpspasswordmanager               D  悬浮按钮服务创建
-2026-03-26 18:15:02.415 30347-30347 Accessibil...iceManager com.wpspasswordmanager               D  悬浮按钮服务已设置
-2026-03-26 18:15:02.416 30347-30347 FloatingButtonService   com.wpspasswordmanager               D  悬浮按钮服务启动
-2026-03-26 18:15:02.432 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.Button
-2026-03-26 18:15:02.432 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.Button
-2026-03-26 18:15:02.643 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  停止悬浮按钮服务
-2026-03-26 18:15:02.643 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
-2026-03-26 18:15:02.645 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
-2026-03-26 18:15:02.645 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
-2026-03-26 18:15:02.648 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
-2026-03-26 18:15:02.686 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520102686
-2026-03-26 18:15:02.686 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520102686
-2026-03-26 18:15:02.686 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
-2026-03-26 18:15:02.686 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: wps_-2096886772_1774520065816
-2026-03-26 18:15:02.687 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件存在: false
-2026-03-26 18:15:02.687 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /wps_-2096886772_1774520065816
-2026-03-26 18:15:02.687 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: false
-2026-03-26 18:15:02.687 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: false
-2026-03-26 18:15:02.687 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
-2026-03-26 18:15:02.701 30347-30347 BufferQueueProducer     com.wpspasswordmanager               I  [VRI[]#5(BLAST Consumer)5](id:768b00000005,api:0,p:-1,c:30347) connect: api=2 producerControlledByApp=true
-2026-03-26 18:15:02.701 30347-30347 BufferQueueProducer     com.wpspasswordmanager               E  [VRI[]#5(BLAST Consumer)5](id:768b00000005,api:2,p:30347,c:30347) setMaxDequeuedBufferCount: the requested maxDequeuedBuffercount (-1) exceeds the current dequeued buffer count (0)
-2026-03-26 18:15:02.701 30347-30347 Surface                 com.wpspasswordmanager               E  IGraphicBufferProducer::setBufferCount(4) returned Invalid argument
-2026-03-26 18:15:02.704 30347-30347 DMABUFHEAPS             com.wpspasswordmanager               I  Using DMA-BUF heap named: mtk_mm
-2026-03-26 18:15:02.704 30347-30347 DMABUFHEAPS             com.wpspasswordmanager               I  Using DMA-BUF heap named: mtk_mm-uncached
-2026-03-26 18:15:02.704 30347-30347 DMABUFHEAPS             com.wpspasswordmanager               I  Using DMA-BUF heap named: mtk_svp_page-uncached
-2026-03-26 18:15:02.705 30347-30347 DMABUFHEAPS             com.wpspasswordmanager               I  Using DMA-BUF heap named: mtk_prot_region
-2026-03-26 18:15:02.705 30347-30347 DMABUFHEAPS             com.wpspasswordmanager               I  Using DMA-BUF heap named: mtk_2d_fr_region
-2026-03-26 18:15:02.705 30347-30347 DMABUFHEAPS             com.wpspasswordmanager               I  Using DMA-BUF heap named: mtk_wfd_page-uncached
-2026-03-26 18:15:02.714 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.RelativeLayout
-2026-03-26 18:15:02.714 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.RelativeLayout
-2026-03-26 18:15:02.725 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  停止悬浮按钮服务
-2026-03-26 18:15:02.725 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
-2026-03-26 18:15:02.727 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
-2026-03-26 18:15:02.727 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
-2026-03-26 18:15:02.731 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
-2026-03-26 18:15:02.761 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520102760
-2026-03-26 18:15:02.761 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520102760
-2026-03-26 18:15:02.761 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
-2026-03-26 18:15:02.761 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: wps_-2096886772_1774520065816
-2026-03-26 18:15:02.761 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件存在: false
-2026-03-26 18:15:02.761 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /wps_-2096886772_1774520065816
-2026-03-26 18:15:02.761 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: false
-2026-03-26 18:15:02.761 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: false
-2026-03-26 18:15:02.761 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
-2026-03-26 18:15:02.761 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 8192, 包名: cn.wps.moffice_eng, 类名: android.widget.EditText
-2026-03-26 18:15:02.762 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
-2026-03-26 18:15:02.762 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
-2026-03-26 18:15:02.824 30347-30363 ZrHung.AppEyeUiProbe    com.wpspasswordmanager               D  not watching, wait.
-2026-03-26 18:15:02.855 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  停止悬浮按钮服务
-2026-03-26 18:15:02.856 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
-2026-03-26 18:15:02.862 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
-2026-03-26 18:15:02.863 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
-2026-03-26 18:15:02.865 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
-2026-03-26 18:15:02.908 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520102908
-2026-03-26 18:15:02.908 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520102908
-2026-03-26 18:15:02.908 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
-2026-03-26 18:15:02.908 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: wps_-2096886772_1774520065816
-2026-03-26 18:15:02.908 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件存在: false
-2026-03-26 18:15:02.908 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /wps_-2096886772_1774520065816
-2026-03-26 18:15:02.908 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: false
-2026-03-26 18:15:02.908 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: false
-2026-03-26 18:15:02.908 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
-2026-03-26 18:15:02.909 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 1, 包名: cn.wps.moffice_eng, 类名: android.widget.Button
-2026-03-26 18:15:02.911 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  收到点击事件: null, 文本: null
-2026-03-26 18:15:02.912 30347-30347 WpsAccessibilityService com.wpspasswordmanager               D  点击事件的源节点为null
-2026-03-26 18:15:02.913 30347-30347 WindowOnBackDispatcher  com.wpspasswordmanager               W  sendCancelIfRunning: isInProgress=falsecallback=android.view.ViewRootImpl$$ExternalSyntheticLambda20@def4574
-2026-03-26 18:15:02.914 30347-30347 VRI[]                   com.wpspasswordmanager               I  dispatchDetachedFromWindow in doDie
-2026-03-26 18:15:02.919 30347-30347 BufferQueueProducer     com.wpspasswordmanager               I  [VRI[]#5(BLAST Consumer)5](id:768b00000005,api:2,p:30347,c:30347) disconnect: api 2
-2026-03-26 18:15:02.921 30347-30347 SurfaceControl          com.wpspasswordmanager               I  nativeRelease 0xb400007a983b9330 count: 3 name: #22790
-2026-03-26 18:15:02.921 30347-30347 BufferQueueConsumer     com.wpspasswordmanager               I  [VRI[]#5(BLAST Consumer)5](id:768b00000005,api:0,p:-1,c:30347) disconnect
-2026-03-26 18:15:02.937 30347-30347 FloatingButtonService   com.wpspasswordmanager               D  悬浮按钮服务销毁
-2026-03-26 18:15:02.939 30347-30347 BlockMonitor            com.wpspasswordmanager               I  dispatchingThrewException In MainThread msg = { when=-561ms what=134 arg1=1 obj=com.android.internal.os.SomeArgs@e669336 target=android.app.ActivityThread$H }
-2026-03-26 18:15:02.939 30347-30347 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewExceptionLooper (main, tid 1) {44b5237}
-2026-03-26 18:15:02.940 30347-30347 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  Message 0: { when=-500ms callback=android.accessibilityservice.AccessibilityService$IAccessibilityServiceClientWrapper$$ExternalSyntheticLambda8 target=android.app.ActivityThread$H }
-2026-03-26 18:15:02.940 30347-30347 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  Message 1: { when=-464ms callback=android.accessibilityservice.AccessibilityService$IAccessibilityServiceClientWrapper$$ExternalSyntheticLambda8 target=android.app.ActivityThread$H }
-2026-03-26 18:15:02.940 30347-30347 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  Message 2: { when=-418ms callback=android.accessibilityservice.AccessibilityService$IAccessibilityServiceClientWrapper$$ExternalSyntheticLambda8 target=android.app.ActivityThread$H }
-2026-03-26 18:15:02.940 30347-30347 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  Message 3: { when=-398ms callback=android.accessibilityservice.AccessibilityService$IAccessibilityServiceClientWrapper$$ExternalSyntheticLambda8 target=android.app.ActivityThread$H }
-2026-03-26 18:15:02.940 30347-30347 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  Message 4: { when=-367ms callback=android.accessibilityservice.AccessibilityService$IAccessibilityServiceClientWrapper$$ExternalSyntheticLambda8 target=android.app.ActivityThread$H }
-2026-03-26 18:15:02.940 30347-30347 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  Message 5: { when=-255ms callback=android.accessibilityservice.AccessibilityService$IAccessibilityServiceClientWrapper$$ExternalSyntheticLambda8 target=android.app.ActivityThread$H }
-2026-03-26 18:15:02.940 30347-30347 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  Message 6: { when=-246ms callback=android.accessibilityservice.AccessibilityService$IAccessibilityServiceClientWrapper$$ExternalSyntheticLambda8 target=android.app.ActivityThread$H }
-2026-03-26 18:15:02.941 30347-30347 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  Message 7: { when=-239ms callback=android.rms.iaware.AwareAppScheduleManager$2 target=android.app.ActivityThread$H }
-2026-03-26 18:15:02.941 30347-30347 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  Message 8: { when=-227ms callback=android.view.Choreographer$$ExternalSyntheticLambda0 target=android.view.Choreographer$FrameHandler }
-2026-03-26 18:15:02.941 30347-30347 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  Message 9: { when=-201ms callback=android.accessibilityservice.AccessibilityService$IAccessibilityServiceClientWrapper$$ExternalSyntheticLambda8 target=android.app.ActivityThread$H }
-2026-03-26 18:15:02.941 30347-30347 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  Message 10: { when=-201ms callback=android.accessibilityservice.AccessibilityService$IAccessibilityServiceClientWrapper$$ExternalSyntheticLambda8 target=android.app.ActivityThread$H }
-2026-03-26 18:15:02.941 30347-30347 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  Message 11: { when=-101ms callback=android.accessibilityservice.AccessibilityService$IAccessibilityServiceClientWrapper$$ExternalSyntheticLambda8 target=android.app.ActivityThread$H }
-2026-03-26 18:15:02.941 30347-30347 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  Message 12: { when=-35ms callback=android.accessibilityservice.AccessibilityService$IAccessibilityServiceClientWrapper$$ExternalSyntheticLambda8 target=android.app.ActivityThread$H }
-2026-03-26 18:15:02.941 30347-30347 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  Message 13: { when=-26ms callback=android.window.WindowOnBackInvokedDispatcher$$ExternalSyntheticLambda0 target=android.os.Handler }
-2026-03-26 18:15:02.942 30347-30347 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  Message 14: { when=-2ms what=119 obj=android.app.ActivityThread$ContextCleanupInfo@4a8f3a4 target=android.app.ActivityThread$H }
-2026-03-26 18:15:02.943 30347-30347 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  (Total messages: 15, polling=false, quitting=false)
-2026-03-26 18:15:02.943 30347-30347 AndroidRuntime          com.wpspasswordmanager               D  Shutting down VM
-2026-03-26 18:15:02.946 30347-30347 AndroidRuntime          com.wpspasswordmanager               E  FATAL EXCEPTION: main
-                                                                                                    Process: com.wpspasswordmanager, PID: 30347
-                                                                                                    android.app.RemoteServiceException$ForegroundServiceDidNotStartInTimeException: Context.startForegroundService() did not then call Service.startForeground(): ServiceRecord{52e11ee u0 com.wpspasswordmanager/.ui.FloatingButtonService}
+2026-03-26 18:20:09.787 10508-10522 IoPerfPtePrereadJni     com.wpspasswordmanager               D  do pte preread content 1 10263 10508 com.wpspasswordmanager.ui.ProxyActivity /data/system/iaware/fmps/com.wpspasswordmanager/com.wpspasswordmanager.ui.ProxyActivity
+2026-03-26 18:20:09.925 10508-10527 ZrHung.AppEyeUiProbe    com.wpspasswordmanager               D  restart watching
+2026-03-26 18:20:09.933 10508-10508 ActivityThread          com.wpspasswordmanager               V  Handling launch of ActivityRecord{ad1020b token=android.os.BinderProxy@1c08dda {com.wpspasswordmanager/com.wpspasswordmanager.ui.ProxyActivity}}
+2026-03-26 18:20:09.935 10508-10814 libMEOW                 com.wpspasswordmanager               D  meow new tls: 0xb400007bcc44c100
+2026-03-26 18:20:09.937 10508-10814 libMEOW                 com.wpspasswordmanager               D  applied 1 plugins for [com.wpspasswordmanager]:
+2026-03-26 18:20:09.937 10508-10814 libMEOW                 com.wpspasswordmanager               D    plugin 1: [libMEOW_gift.so]: 0xb400007b94374840
+2026-03-26 18:20:09.937 10508-10814 libMEOW                 com.wpspasswordmanager               D  rebuild call chain: 0xb400007bcc43c0f0
+2026-03-26 18:20:09.937 10508-10814 libMEOW                 com.wpspasswordmanager               D  meow delete tls: 0xb400007bcc44c100
+2026-03-26 18:20:09.972 10508-10508 ActivityThread          com.wpspasswordmanager               V  callActivityOnCreate
+2026-03-26 18:20:10.011 10508-10508 ProxyActivity           com.wpspasswordmanager               D  文件名: 
+2026-03-26 18:20:10.011 10508-10508 ProxyActivity           com.wpspasswordmanager               D  文件 URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:10.011 10508-10508 ProxyActivity           com.wpspasswordmanager               D  文件标识: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:10.011 10508-10508 ProxyActivity           com.wpspasswordmanager               D  传入的文件名: ''
+2026-03-26 18:20:10.011 10508-10508 ProxyActivity           com.wpspasswordmanager               D  文件名长度: 0
+2026-03-26 18:20:10.011 10508-10508 ProxyActivity           com.wpspasswordmanager               D  尝试直接从原始URI读取密码
+2026-03-26 18:20:10.012 10508-10508 PasswordStorage         com.wpspasswordmanager               D  开始读取密码，文件路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:10.012 10508-10508 PasswordStorage         com.wpspasswordmanager               D  尝试从Content URI读取密码: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:10.015 10508-10508 PasswordStorage         com.wpspasswordmanager               D  尝试从输入流读取密码
+2026-03-26 18:20:10.017 10508-10508 ZipExtraFieldManager    com.wpspasswordmanager               D  尝试从输入流读取密码
+2026-03-26 18:20:10.020 10508-10508 ZipExtraFieldManager    com.wpspasswordmanager               D  找到WPPM签名，位置: 13329
+2026-03-26 18:20:10.020 10508-10508 ZipExtraFieldManager    com.wpspasswordmanager               D  元数据类型: 2, 版本: 1
+2026-03-26 18:20:10.049 10508-10508 ZipExtraFieldManager    com.wpspasswordmanager               D  WPPM后的内容: 32, 00, 00, 00, 31, 37, 37, 34, 34, 39, 33, 34, 35, 39, 30, 35, 39, 5f, 66, 33, 31, 66, 32, 39, 65, 66, 2d, 34, 63, 35, 61, 2d, 34, 62, 62, 35, 2d, 39, 64, 39, 66, 2d, 34, 39, 63, 34, 65, 35, 64, 63
+2026-03-26 18:20:10.049 10508-10508 ZipExtraFieldManager    com.wpspasswordmanager               W  跳过非密码类型的元数据: 2
+2026-03-26 18:20:10.049 10508-10508 ZipExtraFieldManager    com.wpspasswordmanager               D  找到WPPM签名，位置: 13312
+2026-03-26 18:20:10.049 10508-10508 ZipExtraFieldManager    com.wpspasswordmanager               D  元数据类型: 1, 版本: 1
+2026-03-26 18:20:10.054 10508-10508 ZipExtraFieldManager    com.wpspasswordmanager               D  WPPM后的内容: 02, 00, 00, 00, 31, 35, -2, 01, 26, 38, 57, 50, 50, 4d, 01, 00, 02, 32, 00, 00, 00, 31, 37, 37, 34, 34, 39, 33, 34, 35, 39, 30, 35, 39, 5f, 66, 33, 31, 66, 32, 39, 65, 66, 2d, 34, 63, 35, 61, 2d, 34
+2026-03-26 18:20:10.054 10508-10508 ZipExtraFieldManager    com.wpspasswordmanager               D  Data Length: 2
+2026-03-26 18:20:10.054 10508-10508 ZipExtraFieldManager    com.wpspasswordmanager               D  成功读取密码: 15
+2026-03-26 18:20:10.054 10508-10508 PasswordStorage         com.wpspasswordmanager               D  从ZIP Extra Field读取密码成功
+2026-03-26 18:20:10.055 10508-10508 ProxyActivity           com.wpspasswordmanager               D  从原始URI读取到密码: 15
+2026-03-26 18:20:10.055 10508-10508 PasswordHolder          com.wpspasswordmanager               D  密码已存储: 15, 文件名: 
+2026-03-26 18:20:10.055 10508-10508 MemoryPasswordStorage   com.wpspasswordmanager               D  密码已存储到内存: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:10.056 10508-10508 ProxyActivity           com.wpspasswordmanager               D  保存文件URI到SharedPreferences: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:10.056 10508-10508 ProxyActivity           com.wpspasswordmanager               D  本地文件不存在，尝试使用原始URI
+2026-03-26 18:20:10.084 10508-10508 ProxyActivity           com.wpspasswordmanager               D  使用原始URI启动WPS成功
+2026-03-26 18:20:10.110 10508-10508 ActivityThread          com.wpspasswordmanager               I  add activity client record, r= ActivityRecord{ad1020b token=android.os.BinderProxy@1c08dda {com.wpspasswordmanager/com.wpspasswordmanager.ui.ProxyActivity}} token= android.os.BinderProxy@1c08dda
+2026-03-26 18:20:10.117 10508-10508 ActivityThread          com.wpspasswordmanager               D  Won't deliver top position change in state=1
+2026-03-26 18:20:10.125 10508-10508 ActivityThread          com.wpspasswordmanager               I  Performing restart of ActivityRecord{efe5493 token=android.os.BinderProxy@6acf582 {com.wpspasswordmanager/com.wpspasswordmanager.ui.MainActivity}} start=false callers:android.app.servertransaction.TransactionExecutor.performLifecycleSequence:264 android.app.servertransaction.TransactionExecutor.cycleToPath:219 android.app.servertransaction.TransactionExecutor.executeLifecycleState:191 android.app.servertransaction.TransactionExecutor.execute:106 android.app.ActivityThread$H.handleMessage:3085 android.os.Handler.dispatchMessage:117 android.os.Looper.loopOnce:210 android.os.Looper.loop:302 android.app.ActivityThread.main:9702 java.lang.reflect.Method.invoke:-2 
+2026-03-26 18:20:10.130 10508-10508 DecorView[]             com.wpspasswordmanager               I  set decor visibility 0
+2026-03-26 18:20:10.169 10508-10508 SurfaceControl          com.wpspasswordmanager               I  SurfaceControl 0xb400007a983bb470 com.wpspasswordmanager/com.wpspasswordmanager.ui.MainActivity#23600
+2026-03-26 18:20:10.173 10508-10508 BufferQueueConsumer     com.wpspasswordmanager               I  [](id:290c00000001,api:0,p:-1,c:10508) connect: controlledByApp=false
+2026-03-26 18:20:10.292 10508-10538 BufferQueueProducer     com.wpspasswordmanager               I  [VRI[MainActivity]#1(BLAST Consumer)1](id:290c00000001,api:0,p:-1,c:10508) connect: api=1 producerControlledByApp=true
+2026-03-26 18:20:10.292 10508-10538 OpenGLRenderer          com.wpspasswordmanager               E  Unable to match the desired swap behavior.
+2026-03-26 18:20:10.340 10508-10508 HwViewRootImpl          com.wpspasswordmanager               I  removeInvalidNode all the node in jank list is out of time
+2026-03-26 18:20:10.341 10508-10508 RmeSchedManager         com.wpspasswordmanager               I  init Rme, version is: v1.0
+2026-03-26 18:20:10.341 10508-10508 RtgSched                com.wpspasswordmanager               D  resetRtgSchedHandle failed enable:1
+2026-03-26 18:20:10.342 10508-10508 RmeSchedManager         com.wpspasswordmanager               I  init Rme, version is: v1.0
+2026-03-26 18:20:10.342 10508-10508 RtgSched                com.wpspasswordmanager               D  resetRtgSchedHandle failed enable:0
+2026-03-26 18:20:10.342 10508-10508 ActivityThread          com.wpspasswordmanager               D  Won't deliver top position change in state=1
+2026-03-26 18:20:10.634 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
+2026-03-26 18:20:10.634 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
+2026-03-26 18:20:10.679 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:10.679 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:10.686 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:10.687 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:10.689 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:10.709 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520410709
+2026-03-26 18:20:10.709 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520410709
+2026-03-26 18:20:10.709 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:10.709 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:10.710 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:10.710 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:10.710 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:10.710 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
+2026-03-26 18:20:10.710 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
+2026-03-26 18:20:10.731 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:10.731 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:10.733 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:10.733 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:10.738 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:10.754 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520410754
+2026-03-26 18:20:10.755 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520410754
+2026-03-26 18:20:10.755 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:10.755 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:10.755 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:10.755 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:10.755 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:10.756 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 32, 包名: cn.wps.moffice_eng, 类名: cn.wps.moffice.documentmanager.PreStartActivity2
+2026-03-26 18:20:10.756 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口状态改变: cn.wps.moffice.documentmanager.PreStartActivity2
+2026-03-26 18:20:10.773 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:10.773 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:10.774 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:10.774 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:10.775 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:10.785 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520410784
+2026-03-26 18:20:10.785 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520410784
+2026-03-26 18:20:10.785 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:10.785 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:10.785 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:10.785 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:10.785 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:10.785 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  当前窗口类名: cn.wps.moffice.documentmanager.PreStartActivity2
+2026-03-26 18:20:10.786 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
+2026-03-26 18:20:10.786 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
+2026-03-26 18:20:10.806 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:10.807 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:10.807 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:10.807 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:10.809 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:10.818 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520410818
+2026-03-26 18:20:10.818 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520410818
+2026-03-26 18:20:10.818 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:10.818 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:10.818 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:10.818 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:10.818 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:10.819 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.LinearLayout
+2026-03-26 18:20:10.819 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.LinearLayout
+2026-03-26 18:20:10.836 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:10.836 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:10.839 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:10.839 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:10.841 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:10.853 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520410853
+2026-03-26 18:20:10.853 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520410853
+2026-03-26 18:20:10.853 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:10.853 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:10.853 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:10.853 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:10.853 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:10.927 10508-10527 ZrHung.AppEyeUiProbe    com.wpspasswordmanager               D  not watching, wait.
+2026-03-26 18:20:11.624 10508-10527 ZrHung.AppEyeUiProbe    com.wpspasswordmanager               D  restart watching
+2026-03-26 18:20:11.626 10508-10508 ActivityThread          com.wpspasswordmanager               I  Remove activity client record, r= ActivityRecord{ad1020b token=android.os.BinderProxy@1c08dda {com.wpspasswordmanager/com.wpspasswordmanager.ui.ProxyActivity}} token= android.os.BinderProxy@1c08dda
+2026-03-26 18:20:11.652 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 32, 包名: cn.wps.moffice_eng, 类名: cn.wps.moffice.writer.multiactivity.Writer1
+2026-03-26 18:20:11.652 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口状态改变: cn.wps.moffice.writer.multiactivity.Writer1
+2026-03-26 18:20:11.739 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:11.739 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:11.743 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:11.743 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:11.779 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:11.851 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520411851
+2026-03-26 18:20:11.852 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520411851
+2026-03-26 18:20:11.852 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:11.852 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:11.852 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:11.852 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:11.852 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:11.852 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  当前窗口类名: cn.wps.moffice.writer.multiactivity.Writer1
+2026-03-26 18:20:11.879 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 32, 包名: cn.wps.moffice_eng, 类名: cn.wps.moffice.common.encrypt.OpenEditDecryptDialog
+2026-03-26 18:20:11.879 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口状态改变: cn.wps.moffice.common.encrypt.OpenEditDecryptDialog
+2026-03-26 18:20:11.924 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  确认按钮识别成功: 类名=android.widget.Button, 文本=确定, 内容描述=, ID=cn.wps.moffice_eng:id/dialog_button_positive
+2026-03-26 18:20:11.924 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  找到密码输入框: 1，找到确认按钮: true，判断为密码弹框
+2026-03-26 18:20:11.929 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  找到可能的【显示密码】选项: 
+2026-03-26 18:20:11.929 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  选项类名: android.widget.CheckBox
+2026-03-26 18:20:11.929 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否可点击: true
+2026-03-26 18:20:11.929 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否可聚焦: true
+2026-03-26 18:20:11.936 10508-10508 WpsAccessibilityService com.wpspasswordmanager               I  成功点击【显示密码】选项
+2026-03-26 18:20:11.974 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  确认按钮识别成功: 类名=android.widget.Button, 文本=确定, 内容描述=, ID=cn.wps.moffice_eng:id/dialog_button_positive
+2026-03-26 18:20:11.980 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  启动悬浮按钮服务
+2026-03-26 18:20:11.980 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:11.984 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:12.015 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  尝试从PasswordHolder读取密码
+2026-03-26 18:20:12.015 10508-10508 WpsAccessibilityService com.wpspasswordmanager               I  从PasswordHolder读取密码成功
+2026-03-26 18:20:12.015 10508-10508 WpsAccessibilityService com.wpspasswordmanager               I  开始自动填充密码
+2026-03-26 18:20:12.040 10508-10508 WpsAccessibilityService com.wpspasswordmanager               I  密码填充成功
+2026-03-26 18:20:12.042 10508-10508 WpsAccessibilityService com.wpspasswordmanager               I  是否自动提交: true, 场景类型: 首次打开
+2026-03-26 18:20:12.042 10508-10508 WpsAccessibilityService com.wpspasswordmanager               I  尝试自动点击确认按钮
+2026-03-26 18:20:12.054 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  确认按钮识别成功: 类名=android.widget.Button, 文本=确定, 内容描述=, ID=cn.wps.moffice_eng:id/dialog_button_positive
+2026-03-26 18:20:12.054 10508-10508 WpsAccessibilityService com.wpspasswordmanager               I  找到确认按钮，尝试点击
+2026-03-26 18:20:12.060 10508-10508 WpsAccessibilityService com.wpspasswordmanager               I  成功点击确认按钮
+2026-03-26 18:20:12.060 10508-10508 PasswordHolder          com.wpspasswordmanager               D  密码缓存已清除
+2026-03-26 18:20:12.064 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:12.064 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:12.069 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:12.097 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520412097
+2026-03-26 18:20:12.098 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520412097
+2026-03-26 18:20:12.098 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:12.098 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:12.098 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:12.098 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:12.098 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:12.098 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  当前窗口类名: cn.wps.moffice.common.encrypt.OpenEditDecryptDialog
+2026-03-26 18:20:12.098 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 8, 包名: cn.wps.moffice_eng, 类名: android.widget.EditText
+2026-03-26 18:20:12.098 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  视图获得焦点: android.widget.EditText
+2026-03-26 18:20:12.135 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  确认按钮识别成功: 类名=android.widget.Button, 文本=确定, 内容描述=, ID=cn.wps.moffice_eng:id/dialog_button_positive
+2026-03-26 18:20:12.135 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  找到密码输入框: 1，找到确认按钮: true，判断为密码弹框
+2026-03-26 18:20:12.135 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  已经点击过【显示密码】选项，不再重复点击
+2026-03-26 18:20:12.246 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  不是密码弹框，不启动悬浮按钮服务
+2026-03-26 18:20:12.247 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:12.257 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:12.310 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  尝试从内存读取密码: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:12.310 10508-10508 MemoryPasswordStorage   com.wpspasswordmanager               D  从内存中获取密码: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:12.310 10508-10508 WpsAccessibilityService com.wpspasswordmanager               I  从内存读取密码成功: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:12.310 10508-10508 WpsAccessibilityService com.wpspasswordmanager               I  开始自动填充密码
+2026-03-26 18:20:12.329 10508-10508 WpsAccessibilityService com.wpspasswordmanager               E  密码填充失败
+2026-03-26 18:20:12.335 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:12.335 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:12.343 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:12.514 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520412514
+2026-03-26 18:20:12.514 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520412514
+2026-03-26 18:20:12.514 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:12.514 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:12.514 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:12.514 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:12.514 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:12.520 10508-10508 FloatingButtonService   com.wpspasswordmanager               D  悬浮按钮服务创建
+2026-03-26 18:20:12.520 10508-10508 Accessibil...iceManager com.wpspasswordmanager               D  悬浮按钮服务已设置
+2026-03-26 18:20:12.524 10508-10508 FloatingButtonService   com.wpspasswordmanager               D  悬浮按钮服务启动
+2026-03-26 18:20:12.529 10508-10508 HwCust                  com.wpspasswordmanager               W  CUST VERSION = false, use class = class android.app.HwCustNotificationImpl
+2026-03-26 18:20:12.558 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 8192, 包名: cn.wps.moffice_eng, 类名: android.widget.EditText
+2026-03-26 18:20:12.561 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.Button
+2026-03-26 18:20:12.562 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.Button
+2026-03-26 18:20:12.626 10508-10527 ZrHung.AppEyeUiProbe    com.wpspasswordmanager               D  not watching, wait.
+2026-03-26 18:20:12.808 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  停止悬浮按钮服务
+2026-03-26 18:20:12.809 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:12.815 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:12.815 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:12.826 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:12.876 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520412876
+2026-03-26 18:20:12.884 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520412876
+2026-03-26 18:20:12.884 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:12.884 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:12.884 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:12.884 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:12.884 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:12.885 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.Button
+2026-03-26 18:20:12.885 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.Button
+2026-03-26 18:20:12.943 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:12.943 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:12.961 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:12.962 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:12.979 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:13.045 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520413045
+2026-03-26 18:20:13.045 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520413045
+2026-03-26 18:20:13.045 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:13.045 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:13.045 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:13.045 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:13.045 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:13.046 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 1, 包名: cn.wps.moffice_eng, 类名: android.widget.CheckBox
+2026-03-26 18:20:13.047 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到点击事件: null, 文本: null
+2026-03-26 18:20:13.048 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  点击事件的源节点为null
+2026-03-26 18:20:13.048 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.CheckBox
+2026-03-26 18:20:13.048 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.CheckBox
+2026-03-26 18:20:13.101 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:13.101 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:13.106 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:13.106 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:13.114 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:13.183 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520413183
+2026-03-26 18:20:13.183 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520413183
+2026-03-26 18:20:13.183 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:13.184 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:13.184 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:13.184 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:13.184 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:13.184 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.Button
+2026-03-26 18:20:13.184 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.Button
+2026-03-26 18:20:13.224 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:13.224 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:13.230 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:13.230 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:13.234 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:13.298 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520413298
+2026-03-26 18:20:13.298 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520413298
+2026-03-26 18:20:13.298 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:13.298 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:13.298 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:13.298 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:13.298 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:13.304 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.RelativeLayout
+2026-03-26 18:20:13.304 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.RelativeLayout
+2026-03-26 18:20:13.343 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:13.343 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:13.347 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:13.347 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:13.364 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:13.454 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520413454
+2026-03-26 18:20:13.454 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520413454
+2026-03-26 18:20:13.454 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:13.454 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:13.454 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:13.454 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:13.455 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:13.455 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 8192, 包名: cn.wps.moffice_eng, 类名: android.widget.EditText
+2026-03-26 18:20:13.455 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
+2026-03-26 18:20:13.455 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
+2026-03-26 18:20:13.600 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:13.600 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:13.604 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:13.604 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:13.608 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:13.644 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520413644
+2026-03-26 18:20:13.644 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520413644
+2026-03-26 18:20:13.644 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:13.644 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:13.644 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:13.644 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:13.644 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:13.645 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 1, 包名: cn.wps.moffice_eng, 类名: android.widget.Button
+2026-03-26 18:20:13.646 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到点击事件: null, 文本: null
+2026-03-26 18:20:13.646 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  点击事件的源节点为null
+2026-03-26 18:20:13.648 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 32, 包名: cn.wps.moffice_eng, 类名: cn.wps.moffice.writer.multiactivity.Writer1
+2026-03-26 18:20:13.648 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口状态改变: cn.wps.moffice.writer.multiactivity.Writer1
+2026-03-26 18:20:13.703 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:13.703 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:13.706 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:13.706 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:13.710 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:13.747 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520413746
+2026-03-26 18:20:13.747 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520413746
+2026-03-26 18:20:13.747 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:13.747 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:13.747 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:13.747 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:13.747 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:13.747 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  当前窗口类名: cn.wps.moffice.writer.multiactivity.Writer1
+2026-03-26 18:20:13.747 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.view.View
+2026-03-26 18:20:13.747 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.view.View
+2026-03-26 18:20:13.775 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:13.775 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:13.779 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:13.779 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:13.782 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:13.811 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520413811
+2026-03-26 18:20:13.811 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520413811
+2026-03-26 18:20:13.811 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:13.811 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:13.811 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:13.811 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:13.811 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:13.812 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.view.View
+2026-03-26 18:20:13.812 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.view.View
+2026-03-26 18:20:13.839 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:13.839 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:13.843 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:13.843 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:13.847 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:13.876 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520413875
+2026-03-26 18:20:13.876 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520413875
+2026-03-26 18:20:13.876 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:13.876 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:13.876 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:13.876 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:13.876 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:13.876 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 8, 包名: cn.wps.moffice_eng, 类名: android.view.View
+2026-03-26 18:20:13.876 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  视图获得焦点: android.view.View
+2026-03-26 18:20:13.899 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:13.899 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:13.903 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:13.903 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:13.907 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:13.937 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520413937
+2026-03-26 18:20:13.937 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520413937
+2026-03-26 18:20:13.937 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:13.937 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:13.937 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:13.937 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:13.937 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:13.938 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 16384, 包名: cn.wps.moffice_eng, 类名: android.view.View
+2026-03-26 18:20:13.939 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
+2026-03-26 18:20:13.939 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
+2026-03-26 18:20:13.987 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:13.987 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:13.992 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:13.992 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:13.996 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:14.026 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520414026
+2026-03-26 18:20:14.026 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520414026
+2026-03-26 18:20:14.026 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:14.026 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:14.026 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:14.026 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:14.026 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:14.027 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 16384, 包名: cn.wps.moffice_eng, 类名: android.view.View
+2026-03-26 18:20:14.027 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 4096, 包名: cn.wps.moffice_eng, 类名: android.view.View
+2026-03-26 18:20:14.032 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
+2026-03-26 18:20:14.033 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
+2026-03-26 18:20:14.150 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:14.150 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:14.154 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:14.154 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:14.158 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:14.200 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520414200
+2026-03-26 18:20:14.200 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520414200
+2026-03-26 18:20:14.200 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:14.201 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:14.201 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:14.201 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:14.201 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:14.202 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
+2026-03-26 18:20:14.202 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
+2026-03-26 18:20:14.294 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:14.294 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:14.297 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:14.297 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:14.300 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:14.321 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520414321
+2026-03-26 18:20:14.322 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520414321
+2026-03-26 18:20:14.322 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:14.322 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:14.322 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:14.322 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:14.322 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:14.323 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
+2026-03-26 18:20:14.323 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
+2026-03-26 18:20:14.392 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:14.392 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:14.396 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:14.396 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:14.399 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:14.428 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520414428
+2026-03-26 18:20:14.428 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520414428
+2026-03-26 18:20:14.428 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:14.428 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:14.429 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:14.429 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:14.429 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:14.429 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 16384, 包名: cn.wps.moffice_eng, 类名: android.view.View
+2026-03-26 18:20:14.430 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
+2026-03-26 18:20:14.430 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
+2026-03-26 18:20:14.496 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:14.496 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:14.502 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:14.502 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:14.507 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:14.533 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520414533
+2026-03-26 18:20:14.534 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520414533
+2026-03-26 18:20:14.534 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:14.534 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:14.534 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:14.534 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:14.534 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:14.534 10508-10508 FloatingButtonService   com.wpspasswordmanager               D  悬浮按钮服务销毁
+2026-03-26 18:20:14.535 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
+2026-03-26 18:20:14.536 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
+2026-03-26 18:20:14.574 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:14.574 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:14.577 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:14.577 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:14.580 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:14.601 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520414600
+2026-03-26 18:20:14.601 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520414600
+2026-03-26 18:20:14.601 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:14.601 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:14.601 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:14.601 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:14.601 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:14.603 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 4096, 包名: cn.wps.moffice_eng, 类名: android.widget.ListView
+2026-03-26 18:20:17.108 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.view.View
+2026-03-26 18:20:17.108 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.view.View
+2026-03-26 18:20:17.166 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:17.166 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:17.170 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:17.170 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:17.174 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:17.202 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520417201
+2026-03-26 18:20:17.202 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520417201
+2026-03-26 18:20:17.202 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:17.202 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:17.202 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:17.202 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:17.202 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:17.202 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.view.View
+2026-03-26 18:20:17.202 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.view.View
+2026-03-26 18:20:17.220 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:17.220 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:17.223 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:17.223 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:17.227 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:17.254 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520417254
+2026-03-26 18:20:17.255 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520417254
+2026-03-26 18:20:17.255 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:17.255 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:17.255 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:17.255 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:17.255 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:17.259 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 1, 包名: cn.wps.moffice_eng, 类名: android.widget.ImageView
+2026-03-26 18:20:17.259 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到点击事件: android.widget.ImageView, 文本: null
+2026-03-26 18:20:17.259 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到点击事件，源节点类型: android.widget.ImageView
+2026-03-26 18:20:17.259 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  源节点文本: null
+2026-03-26 18:20:17.260 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  源节点内容描述: close
+2026-03-26 18:20:17.260 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  源节点ID: cn.wps.moffice_eng:id/component_btn_close
+2026-03-26 18:20:17.260 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否是确认按钮: false
+2026-03-26 18:20:17.260 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  点击的不是确认按钮
+2026-03-26 18:20:17.265 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.view.View
+2026-03-26 18:20:17.265 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.view.View
+2026-03-26 18:20:17.275 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:17.275 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:17.278 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:17.278 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:17.282 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:17.321 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520417321
+2026-03-26 18:20:17.321 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520417321
+2026-03-26 18:20:17.321 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:17.321 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:17.321 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:17.321 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:17.321 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:17.422 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
+2026-03-26 18:20:17.422 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
+2026-03-26 18:20:18.875 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  确认按钮识别成功: 类名=android.widget.TextView, 文本=立即导入, 内容描述=, ID=cn.wps.moffice_eng:id/guide_page_confirm_text
+2026-03-26 18:20:18.875 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:18.875 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:18.906 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:18.906 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:18.939 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:19.178 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520419178
+2026-03-26 18:20:19.178 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520419178
+2026-03-26 18:20:19.178 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:19.178 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:19.178 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:19.178 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:19.178 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:19.179 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 32, 包名: cn.wps.moffice_eng, 类名: cn.wps.moffice.main.local.HomeRootActivity
+2026-03-26 18:20:19.179 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口状态改变: cn.wps.moffice.main.local.HomeRootActivity
+2026-03-26 18:20:19.553 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  确认按钮识别成功: 类名=android.widget.TextView, 文本=立即导入, 内容描述=, ID=cn.wps.moffice_eng:id/guide_page_confirm_text
+2026-03-26 18:20:19.553 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:19.553 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:19.576 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:19.576 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:19.599 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:19.770 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520419770
+2026-03-26 18:20:19.770 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520419770
+2026-03-26 18:20:19.770 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:19.770 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:19.770 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:19.770 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:19.770 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:19.770 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  当前窗口类名: cn.wps.moffice.main.local.HomeRootActivity
+2026-03-26 18:20:19.770 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到回退到文件列表页，尝试写入密码
+2026-03-26 18:20:19.770 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  准备写入密码到: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:19.771 10508-10508 MemoryPasswordStorage   com.wpspasswordmanager               D  从内存中获取密码: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:19.771 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从currentFileUri获取密码: 15
+2026-03-26 18:20:19.771 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从内存中获取到密码，长度: 2
+2026-03-26 18:20:19.771 10508-10508 WpsAccessibilityService com.wpspasswordmanager               W  跳过Content URI写入，使用本地文件副本
+2026-03-26 18:20:19.777 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.RelativeLayout
+2026-03-26 18:20:19.777 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.RelativeLayout
+2026-03-26 18:20:20.230 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  确认按钮识别成功: 类名=android.widget.TextView, 文本=立即导入, 内容描述=, ID=cn.wps.moffice_eng:id/guide_page_confirm_text
+2026-03-26 18:20:20.230 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:20.230 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:20.253 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:20.253 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:20.275 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:20.453 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520420453
+2026-03-26 18:20:20.453 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520420453
+2026-03-26 18:20:20.453 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:20.453 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:20.453 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:20.453 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:20.453 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:20.458 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.view.ViewGroup
+2026-03-26 18:20:20.458 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.view.ViewGroup
+2026-03-26 18:20:20.756 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  确认按钮识别成功: 类名=android.widget.TextView, 文本=立即导入, 内容描述=, ID=cn.wps.moffice_eng:id/guide_page_confirm_text
+2026-03-26 18:20:20.756 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:20.756 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:20.778 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:20.778 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:20.800 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:21.046 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520421046
+2026-03-26 18:20:21.046 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520421046
+2026-03-26 18:20:21.046 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:21.046 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:21.046 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:21.046 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:21.046 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:21.047 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 4096, 包名: cn.wps.moffice_eng, 类名: androidx.recyclerview.widget.RecyclerView
+2026-03-26 18:20:21.047 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
+2026-03-26 18:20:21.047 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
+2026-03-26 18:20:21.370 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  确认按钮识别成功: 类名=android.widget.TextView, 文本=立即导入, 内容描述=, ID=cn.wps.moffice_eng:id/guide_page_confirm_text
+2026-03-26 18:20:21.370 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:21.370 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:21.392 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:21.392 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:21.415 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:21.597 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520421597
+2026-03-26 18:20:21.597 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520421597
+2026-03-26 18:20:21.597 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:21.597 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:21.597 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:21.597 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:21.597 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:21.597 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 32, 包名: cn.wps.moffice_eng, 类名: cn.wps.moffice.main.local.HomeRootActivity
+2026-03-26 18:20:21.597 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口状态改变: cn.wps.moffice.main.local.HomeRootActivity
+2026-03-26 18:20:21.926 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:21.926 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:22.008 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:22.008 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:22.069 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:22.724 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520422724
+2026-03-26 18:20:22.724 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520422724
+2026-03-26 18:20:22.724 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:22.725 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:22.725 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:22.725 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:22.725 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:22.725 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  当前窗口类名: cn.wps.moffice.main.local.HomeRootActivity
+2026-03-26 18:20:22.725 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到回退到文件列表页，尝试写入密码
+2026-03-26 18:20:22.725 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  准备写入密码到: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:22.725 10508-10508 MemoryPasswordStorage   com.wpspasswordmanager               D  从内存中获取密码: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:22.725 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从currentFileUri获取密码: 15
+2026-03-26 18:20:22.726 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从内存中获取到密码，长度: 2
+2026-03-26 18:20:22.726 10508-10508 WpsAccessibilityService com.wpspasswordmanager               W  跳过Content URI写入，使用本地文件副本
+2026-03-26 18:20:22.727 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: androidx.recyclerview.widget.RecyclerView
+2026-03-26 18:20:22.727 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: androidx.recyclerview.widget.RecyclerView
+2026-03-26 18:20:22.749 10508-10508 SurfaceControl          com.wpspasswordmanager               I  nativeRelease 0xb400007a983bb470 count: 4 name: com.wpspasswordmanager/com.wpspasswordmanager.ui.MainActivity#23600
+2026-03-26 18:20:22.762 10508-10508 DecorView[]             com.wpspasswordmanager               I  set decor visibility 4
+2026-03-26 18:20:22.769 10508-10538 BufferQueueProducer     com.wpspasswordmanager               I  [VRI[MainActivity]#1(BLAST Consumer)1](id:290c00000001,api:1,p:10508,c:10508) disconnect: api 1
+2026-03-26 18:20:22.771 10508-10538 BufferQueueConsumer     com.wpspasswordmanager               I  [VRI[MainActivity]#1(BLAST Consumer)1](id:290c00000001,api:0,p:-1,c:10508) disconnect
+2026-03-26 18:20:22.787 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: androidx.recyclerview.widget.RecyclerView
+2026-03-26 18:20:22.787 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: androidx.recyclerview.widget.RecyclerView
+2026-03-26 18:20:22.793 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.RelativeLayout
+2026-03-26 18:20:22.793 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.RelativeLayout
+2026-03-26 18:20:22.798 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.RelativeLayout
+2026-03-26 18:20:22.798 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.RelativeLayout
+2026-03-26 18:20:22.848 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
+2026-03-26 18:20:22.849 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
+2026-03-26 18:20:23.858 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.view.ViewGroup
+2026-03-26 18:20:23.858 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.view.ViewGroup
+2026-03-26 18:20:23.862 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
+2026-03-26 18:20:23.862 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
+2026-03-26 18:20:28.939 10508-10522 IoPerfPtePrereadJni     com.wpspasswordmanager               D  do pte preread content 1 10263 10508 com.wpspasswordmanager.ui.ProxyActivity /data/system/iaware/fmps/com.wpspasswordmanager/com.wpspasswordmanager.ui.ProxyActivity
+2026-03-26 18:20:29.152 10508-10527 ZrHung.AppEyeUiProbe    com.wpspasswordmanager               D  restart watching
+2026-03-26 18:20:29.152 10508-10508 ActivityThread          com.wpspasswordmanager               V  Handling launch of ActivityRecord{7572819 token=android.os.BinderProxy@bba6b60 {com.wpspasswordmanager/com.wpspasswordmanager.ui.ProxyActivity}}
+2026-03-26 18:20:29.158 10508-11951 libMEOW                 com.wpspasswordmanager               D  meow new tls: 0xb400007bcc41c0d0
+2026-03-26 18:20:29.158 10508-11951 libMEOW                 com.wpspasswordmanager               D  applied 1 plugins for [com.wpspasswordmanager]:
+2026-03-26 18:20:29.158 10508-11951 libMEOW                 com.wpspasswordmanager               D    plugin 1: [libMEOW_gift.so]: 0xb400007b94374840
+2026-03-26 18:20:29.158 10508-11951 libMEOW                 com.wpspasswordmanager               D  rebuild call chain: 0xb400007bcc48c140
+2026-03-26 18:20:29.158 10508-11951 libMEOW                 com.wpspasswordmanager               D  meow delete tls: 0xb400007bcc41c0d0
+2026-03-26 18:20:29.180 10508-10508 ActivityThread          com.wpspasswordmanager               V  callActivityOnCreate
+2026-03-26 18:20:29.204 10508-10508 ProxyActivity           com.wpspasswordmanager               D  文件名: 
+2026-03-26 18:20:29.204 10508-10508 ProxyActivity           com.wpspasswordmanager               D  文件 URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:29.204 10508-10508 ProxyActivity           com.wpspasswordmanager               D  文件标识: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:29.204 10508-10508 ProxyActivity           com.wpspasswordmanager               D  传入的文件名: ''
+2026-03-26 18:20:29.204 10508-10508 ProxyActivity           com.wpspasswordmanager               D  文件名长度: 0
+2026-03-26 18:20:29.204 10508-10508 ProxyActivity           com.wpspasswordmanager               D  尝试直接从原始URI读取密码
+2026-03-26 18:20:29.204 10508-10508 PasswordStorage         com.wpspasswordmanager               D  开始读取密码，文件路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:29.204 10508-10508 PasswordStorage         com.wpspasswordmanager               D  尝试从Content URI读取密码: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:29.207 10508-10508 PasswordStorage         com.wpspasswordmanager               D  尝试从输入流读取密码
+2026-03-26 18:20:29.207 10508-10508 ZipExtraFieldManager    com.wpspasswordmanager               D  尝试从输入流读取密码
+2026-03-26 18:20:29.208 10508-10508 ZipExtraFieldManager    com.wpspasswordmanager               D  找到WPPM签名，位置: 13329
+2026-03-26 18:20:29.208 10508-10508 ZipExtraFieldManager    com.wpspasswordmanager               D  元数据类型: 2, 版本: 1
+2026-03-26 18:20:29.211 10508-10508 ZipExtraFieldManager    com.wpspasswordmanager               D  WPPM后的内容: 32, 00, 00, 00, 31, 37, 37, 34, 34, 39, 33, 34, 35, 39, 30, 35, 39, 5f, 66, 33, 31, 66, 32, 39, 65, 66, 2d, 34, 63, 35, 61, 2d, 34, 62, 62, 35, 2d, 39, 64, 39, 66, 2d, 34, 39, 63, 34, 65, 35, 64, 63
+2026-03-26 18:20:29.211 10508-10508 ZipExtraFieldManager    com.wpspasswordmanager               W  跳过非密码类型的元数据: 2
+2026-03-26 18:20:29.211 10508-10508 ZipExtraFieldManager    com.wpspasswordmanager               D  找到WPPM签名，位置: 13312
+2026-03-26 18:20:29.212 10508-10508 ZipExtraFieldManager    com.wpspasswordmanager               D  元数据类型: 1, 版本: 1
+2026-03-26 18:20:29.214 10508-10508 ZipExtraFieldManager    com.wpspasswordmanager               D  WPPM后的内容: 02, 00, 00, 00, 31, 35, -2, 01, 26, 38, 57, 50, 50, 4d, 01, 00, 02, 32, 00, 00, 00, 31, 37, 37, 34, 34, 39, 33, 34, 35, 39, 30, 35, 39, 5f, 66, 33, 31, 66, 32, 39, 65, 66, 2d, 34, 63, 35, 61, 2d, 34
+2026-03-26 18:20:29.215 10508-10508 ZipExtraFieldManager    com.wpspasswordmanager               D  Data Length: 2
+2026-03-26 18:20:29.215 10508-10508 ZipExtraFieldManager    com.wpspasswordmanager               D  成功读取密码: 15
+2026-03-26 18:20:29.215 10508-10508 PasswordStorage         com.wpspasswordmanager               D  从ZIP Extra Field读取密码成功
+2026-03-26 18:20:29.215 10508-10508 ProxyActivity           com.wpspasswordmanager               D  从原始URI读取到密码: 15
+2026-03-26 18:20:29.216 10508-10508 PasswordHolder          com.wpspasswordmanager               D  密码已存储: 15, 文件名: 
+2026-03-26 18:20:29.216 10508-10508 MemoryPasswordStorage   com.wpspasswordmanager               D  密码已存储到内存: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:29.219 10508-10508 ProxyActivity           com.wpspasswordmanager               D  保存文件URI到SharedPreferences: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:29.219 10508-10508 ProxyActivity           com.wpspasswordmanager               D  本地文件不存在，尝试使用原始URI
+2026-03-26 18:20:29.249 10508-10508 ProxyActivity           com.wpspasswordmanager               D  使用原始URI启动WPS成功
+2026-03-26 18:20:29.272 10508-10508 ActivityThread          com.wpspasswordmanager               I  add activity client record, r= ActivityRecord{7572819 token=android.os.BinderProxy@bba6b60 {com.wpspasswordmanager/com.wpspasswordmanager.ui.ProxyActivity}} token= android.os.BinderProxy@bba6b60
+2026-03-26 18:20:29.279 10508-10508 ActivityThread          com.wpspasswordmanager               D  Won't deliver top position change in state=1
+2026-03-26 18:20:29.280 10508-10508 ActivityThread          com.wpspasswordmanager               I  Performing restart of ActivityRecord{efe5493 token=android.os.BinderProxy@6acf582 {com.wpspasswordmanager/com.wpspasswordmanager.ui.MainActivity}} start=false callers:android.app.servertransaction.TransactionExecutor.performLifecycleSequence:264 android.app.servertransaction.TransactionExecutor.cycleToPath:219 android.app.servertransaction.TransactionExecutor.executeLifecycleState:191 android.app.servertransaction.TransactionExecutor.execute:106 android.app.ActivityThread$H.handleMessage:3085 android.os.Handler.dispatchMessage:117 android.os.Looper.loopOnce:210 android.os.Looper.loop:302 android.app.ActivityThread.main:9702 java.lang.reflect.Method.invoke:-2 
+2026-03-26 18:20:29.284 10508-10508 DecorView[]             com.wpspasswordmanager               I  set decor visibility 0
+2026-03-26 18:20:29.284 10508-10508 RmeSchedManager         com.wpspasswordmanager               I  init Rme, version is: v1.0
+2026-03-26 18:20:29.284 10508-10508 RtgSched                com.wpspasswordmanager               D  resetRtgSchedHandle failed enable:1
+2026-03-26 18:20:29.284 10508-10508 ActivityThread          com.wpspasswordmanager               D  Won't deliver top position change in state=1
+2026-03-26 18:20:29.303 10508-10508 SurfaceControl          com.wpspasswordmanager               I  SurfaceControl 0xb400007a983b3ad0 com.wpspasswordmanager/com.wpspasswordmanager.ui.MainActivity#23703
+2026-03-26 18:20:29.306 10508-10508 BufferQueueConsumer     com.wpspasswordmanager               I  [](id:290c00000002,api:0,p:-1,c:10508) connect: controlledByApp=false
+2026-03-26 18:20:29.309 10508-10538 BufferQueueProducer     com.wpspasswordmanager               I  [VRI[MainActivity]#2(BLAST Consumer)2](id:290c00000002,api:0,p:-1,c:10508) connect: api=1 producerControlledByApp=true
+2026-03-26 18:20:29.309 10508-10538 OpenGLRenderer          com.wpspasswordmanager               E  Unable to match the desired swap behavior.
+2026-03-26 18:20:29.367 10508-10508 HwViewRootImpl          com.wpspasswordmanager               I  removeInvalidNode all the node in jank list is out of time
+2026-03-26 18:20:29.369 10508-10508 RmeSchedManager         com.wpspasswordmanager               I  init Rme, version is: v1.0
+2026-03-26 18:20:29.370 10508-10508 RtgSched                com.wpspasswordmanager               D  resetRtgSchedHandle failed enable:0
+2026-03-26 18:20:29.377 10508-10523 SurfaceControl          com.wpspasswordmanager               I  ~SurfaceControl 0xb400007a983bb470 com.wpspasswordmanager/com.wpspasswordmanager.ui.MainActivity#23600
+2026-03-26 18:20:29.890 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 32, 包名: cn.wps.moffice_eng, 类名: cn.wps.moffice.documentmanager.PreStartActivity2
+2026-03-26 18:20:29.891 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口状态改变: cn.wps.moffice.documentmanager.PreStartActivity2
+2026-03-26 18:20:29.917 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:29.917 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:29.917 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:29.917 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:29.918 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:29.933 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520429931
+2026-03-26 18:20:29.933 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520429931
+2026-03-26 18:20:29.933 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:29.934 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:29.934 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:29.934 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:29.935 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:29.935 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  当前窗口类名: cn.wps.moffice.documentmanager.PreStartActivity2
+2026-03-26 18:20:29.951 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
+2026-03-26 18:20:29.952 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
+2026-03-26 18:20:29.964 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:29.964 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:29.965 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:29.965 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:29.965 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:29.971 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520429971
+2026-03-26 18:20:29.971 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520429971
+2026-03-26 18:20:29.971 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:29.971 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:29.972 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:29.972 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:29.972 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:30.051 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.LinearLayout
+2026-03-26 18:20:30.051 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.LinearLayout
+2026-03-26 18:20:30.070 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:30.070 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:30.071 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:30.071 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:30.072 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:30.085 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520430085
+2026-03-26 18:20:30.085 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520430085
+2026-03-26 18:20:30.085 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:30.085 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:30.085 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:30.085 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:30.085 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:30.153 10508-10527 ZrHung.AppEyeUiProbe    com.wpspasswordmanager               D  not watching, wait.
+2026-03-26 18:20:30.397 10508-10527 ZrHung.AppEyeUiProbe    com.wpspasswordmanager               D  restart watching
+2026-03-26 18:20:30.410 10508-10508 ActivityThread          com.wpspasswordmanager               I  Remove activity client record, r= ActivityRecord{7572819 token=android.os.BinderProxy@bba6b60 {com.wpspasswordmanager/com.wpspasswordmanager.ui.ProxyActivity}} token= android.os.BinderProxy@bba6b60
+2026-03-26 18:20:30.546 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 32, 包名: cn.wps.moffice_eng, 类名: cn.wps.moffice.common.encrypt.OpenEditDecryptDialog
+2026-03-26 18:20:30.546 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口状态改变: cn.wps.moffice.common.encrypt.OpenEditDecryptDialog
+2026-03-26 18:20:30.591 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  确认按钮识别成功: 类名=android.widget.Button, 文本=确定, 内容描述=, ID=cn.wps.moffice_eng:id/dialog_button_positive
+2026-03-26 18:20:30.591 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  找到密码输入框: 1，找到确认按钮: true，判断为密码弹框
+2026-03-26 18:20:30.591 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  已经点击过【显示密码】选项，不再重复点击
+2026-03-26 18:20:30.609 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  确认按钮识别成功: 类名=android.widget.Button, 文本=确定, 内容描述=, ID=cn.wps.moffice_eng:id/dialog_button_positive
+2026-03-26 18:20:30.628 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  启动悬浮按钮服务
+2026-03-26 18:20:30.704 10508-10508 InputEventReceiver      com.wpspasswordmanager               D  dispatchInputInterval 1000000
+2026-03-26 18:20:30.710 10508-10508 HwForceDarkManager      com.wpspasswordmanager               I  isSystemInDarkMode isResUiModeYes: false, isDarkMode: false
+2026-03-26 18:20:30.710 10508-10508 FloatingButtonService   com.wpspasswordmanager               D  悬浮按钮添加成功
+2026-03-26 18:20:30.710 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:30.713 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:30.727 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  尝试从PasswordHolder读取密码
+2026-03-26 18:20:30.727 10508-10508 WpsAccessibilityService com.wpspasswordmanager               I  从PasswordHolder读取密码成功
+2026-03-26 18:20:30.727 10508-10508 WpsAccessibilityService com.wpspasswordmanager               I  开始自动填充密码
+2026-03-26 18:20:30.734 10508-10508 WpsAccessibilityService com.wpspasswordmanager               I  密码填充成功
+2026-03-26 18:20:30.734 10508-10508 WpsAccessibilityService com.wpspasswordmanager               I  是否自动提交: true, 场景类型: 首次打开
+2026-03-26 18:20:30.734 10508-10508 WpsAccessibilityService com.wpspasswordmanager               I  尝试自动点击确认按钮
+2026-03-26 18:20:30.737 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  确认按钮识别成功: 类名=android.widget.Button, 文本=确定, 内容描述=, ID=cn.wps.moffice_eng:id/dialog_button_positive
+2026-03-26 18:20:30.737 10508-10508 WpsAccessibilityService com.wpspasswordmanager               I  找到确认按钮，尝试点击
+2026-03-26 18:20:30.752 10508-10508 WpsAccessibilityService com.wpspasswordmanager               I  成功点击确认按钮
+2026-03-26 18:20:30.752 10508-10508 PasswordHolder          com.wpspasswordmanager               D  密码缓存已清除
+2026-03-26 18:20:30.754 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:30.754 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:30.755 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:30.770 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520430770
+2026-03-26 18:20:30.771 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520430770
+2026-03-26 18:20:30.771 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:30.771 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:30.771 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:30.771 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:30.771 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:30.771 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  当前窗口类名: cn.wps.moffice.common.encrypt.OpenEditDecryptDialog
+2026-03-26 18:20:30.801 10508-10508 SurfaceControl          com.wpspasswordmanager               I  SurfaceControl 0xb400007a983ba4b0 #23730
+2026-03-26 18:20:30.806 10508-10508 BufferQueueConsumer     com.wpspasswordmanager               I  [](id:290c00000003,api:0,p:-1,c:10508) connect: controlledByApp=false
+2026-03-26 18:20:30.826 10508-10508 HwForceDarkManager      com.wpspasswordmanager               I  isSystemInDarkMode isResUiModeYes: false, isDarkMode: false
+2026-03-26 18:20:30.827 10508-10538 BufferQueueProducer     com.wpspasswordmanager               I  [VRI[]#3(BLAST Consumer)3](id:290c00000003,api:0,p:-1,c:10508) connect: api=1 producerControlledByApp=true
+2026-03-26 18:20:30.828 10508-10538 OpenGLRenderer          com.wpspasswordmanager               E  Unable to match the desired swap behavior.
+2026-03-26 18:20:30.836 10508-10508 HwForceDarkManager      com.wpspasswordmanager               I  setAllowedHwForceDark:false package:com.wpspasswordmanager mCurrProcessState:0 mIsPackageNameChange:false hwForceDarkState:0 isViewAllowedForceDark:true isLastHonorForceDark:false
+2026-03-26 18:20:30.885 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 8, 包名: cn.wps.moffice_eng, 类名: android.widget.EditText
+2026-03-26 18:20:30.885 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  视图获得焦点: android.widget.EditText
+2026-03-26 18:20:31.050 10508-10538 BufferQueueProducer     com.wpspasswordmanager               I  [VRI[]#3(BLAST Consumer)3](id:290c00000003,api:1,p:10508,c:10508) disconnect: api 1
+2026-03-26 18:20:31.053 10508-10508 FloatingButtonService   com.wpspasswordmanager               D  悬浮按钮移除成功
+2026-03-26 18:20:31.066 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  停止悬浮按钮服务
+2026-03-26 18:20:31.066 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:31.072 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:31.072 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:31.078 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:31.103 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520431103
+2026-03-26 18:20:31.103 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520431103
+2026-03-26 18:20:31.103 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:31.103 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:31.103 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:31.103 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:31.103 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:31.113 10508-10508 FloatingButtonService   com.wpspasswordmanager               D  悬浮按钮服务创建
+2026-03-26 18:20:31.113 10508-10508 Accessibil...iceManager com.wpspasswordmanager               D  悬浮按钮服务已设置
+2026-03-26 18:20:31.114 10508-10508 FloatingButtonService   com.wpspasswordmanager               D  悬浮按钮服务启动
+2026-03-26 18:20:31.120 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.Button
+2026-03-26 18:20:31.120 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.Button
+2026-03-26 18:20:31.185 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:31.185 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:31.192 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:31.192 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:31.198 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:31.230 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520431230
+2026-03-26 18:20:31.230 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520431230
+2026-03-26 18:20:31.230 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:31.230 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:31.230 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:31.230 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:31.230 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:31.233 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.RelativeLayout
+2026-03-26 18:20:31.233 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.RelativeLayout
+2026-03-26 18:20:31.257 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:31.257 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:31.263 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:31.263 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:31.269 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:31.308 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520431307
+2026-03-26 18:20:31.308 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520431307
+2026-03-26 18:20:31.308 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:31.308 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:31.308 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:31.308 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:31.308 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:31.313 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 8192, 包名: cn.wps.moffice_eng, 类名: android.widget.EditText
+2026-03-26 18:20:31.313 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
+2026-03-26 18:20:31.313 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
+2026-03-26 18:20:31.399 10508-10527 ZrHung.AppEyeUiProbe    com.wpspasswordmanager               D  not watching, wait.
+2026-03-26 18:20:31.408 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:31.408 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:31.412 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:31.412 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:31.417 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:31.451 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520431451
+2026-03-26 18:20:31.451 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520431451
+2026-03-26 18:20:31.451 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:31.452 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:31.452 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:31.452 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:31.452 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:31.452 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 1, 包名: cn.wps.moffice_eng, 类名: android.widget.Button
+2026-03-26 18:20:31.453 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到点击事件: null, 文本: null
+2026-03-26 18:20:31.453 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  点击事件的源节点为null
+2026-03-26 18:20:31.456 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.view.View
+2026-03-26 18:20:31.458 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.view.View
+2026-03-26 18:20:31.503 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:31.503 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:31.507 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:31.507 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:31.510 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:31.539 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520431539
+2026-03-26 18:20:31.539 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520431539
+2026-03-26 18:20:31.539 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:31.539 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:31.539 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:31.539 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:31.539 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:31.539 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.view.View
+2026-03-26 18:20:31.539 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.view.View
+2026-03-26 18:20:31.572 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:31.572 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:31.575 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:31.575 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:31.579 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:31.616 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520431615
+2026-03-26 18:20:31.616 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520431615
+2026-03-26 18:20:31.616 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:31.616 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:31.616 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:31.616 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:31.616 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:31.617 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
+2026-03-26 18:20:31.617 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
+2026-03-26 18:20:31.682 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:31.682 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:31.687 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:31.687 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:31.691 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:31.712 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520431712
+2026-03-26 18:20:31.713 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520431712
+2026-03-26 18:20:31.713 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:31.713 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:31.713 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:31.713 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:31.713 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:31.713 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 16384, 包名: cn.wps.moffice_eng, 类名: android.view.View
+2026-03-26 18:20:31.714 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
+2026-03-26 18:20:31.714 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
+2026-03-26 18:20:31.779 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:31.779 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:31.784 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:31.784 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:31.788 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:31.812 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520431811
+2026-03-26 18:20:31.812 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520431811
+2026-03-26 18:20:31.812 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:31.812 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:31.812 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:31.812 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:31.812 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:31.812 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 32, 包名: cn.wps.moffice_eng, 类名: cn.wps.moffice.writer.multiactivity.Writer1
+2026-03-26 18:20:31.812 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  窗口状态改变: cn.wps.moffice.writer.multiactivity.Writer1
+2026-03-26 18:20:31.865 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:31.865 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:31.869 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:31.869 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:31.872 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:31.894 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520431894
+2026-03-26 18:20:31.894 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520431894
+2026-03-26 18:20:31.894 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:31.894 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:31.894 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:31.894 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:31.894 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:31.894 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  当前窗口类名: cn.wps.moffice.writer.multiactivity.Writer1
+2026-03-26 18:20:31.894 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 8, 包名: cn.wps.moffice_eng, 类名: android.view.View
+2026-03-26 18:20:31.894 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  视图获得焦点: android.view.View
+2026-03-26 18:20:31.917 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务未启动，无需停止
+2026-03-26 18:20:31.917 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
+2026-03-26 18:20:31.920 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始检测文档路径
+2026-03-26 18:20:31.920 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  开始从标题栏获取文件路径
+2026-03-26 18:20:31.923 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从标题栏未找到文件路径
+2026-03-26 18:20:31.945 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  从类名推断文档路径: wps_-2096886772_1774520431945
+2026-03-26 18:20:31.945 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  检测到的文档路径: wps_-2096886772_1774520431945
+2026-03-26 18:20:31.945 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  是否为真实文件路径: false
+2026-03-26 18:20:31.945 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:31.945 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:20:31.945 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  调试：Content URI 权限处理将在需要时进行
+2026-03-26 18:20:31.945 10508-10508 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-03-26 18:20:31.946 10508-10508 WindowOnBackDispatcher  com.wpspasswordmanager               W  sendCancelIfRunning: isInProgress=falsecallback=android.view.ViewRootImpl$$ExternalSyntheticLambda20@a10d3aa
+2026-03-26 18:20:31.949 10508-10508 VRI[]                   com.wpspasswordmanager               I  dispatchDetachedFromWindow in doDie
+2026-03-26 18:20:31.953 10508-10508 SurfaceControl          com.wpspasswordmanager               I  nativeRelease 0xb400007a983ba4b0 count: 3 name: #23730
+2026-03-26 18:20:31.953 10508-10508 BufferQueueConsumer     com.wpspasswordmanager               I  [VRI[]#3(BLAST Consumer)3](id:290c00000003,api:0,p:-1,c:10508) disconnect
+2026-03-26 18:20:31.960 10508-10508 FloatingButtonService   com.wpspasswordmanager               D  悬浮按钮服务销毁
+2026-03-26 18:20:31.962 10508-10508 BlockMonitor            com.wpspasswordmanager               I  dispatchingThrewException In MainThread msg = { when=-886ms what=134 arg1=1 obj=com.android.internal.os.SomeArgs@1442749 target=android.app.ActivityThread$H }
+2026-03-26 18:20:31.963 10508-10508 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewExceptionLooper (main, tid 1) {973284e}
+2026-03-26 18:20:31.963 10508-10508 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  Message 0: { when=-849ms callback=android.accessibilityservice.AccessibilityService$IAccessibilityServiceClientWrapper$$ExternalSyntheticLambda8 target=android.app.ActivityThread$H }
+2026-03-26 18:20:31.963 10508-10508 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  Message 1: { when=-804ms callback=android.accessibilityservice.AccessibilityService$IAccessibilityServiceClientWrapper$$ExternalSyntheticLambda8 target=android.app.ActivityThread$H }
+2026-03-26 18:20:31.963 10508-10508 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  Message 2: { when=-779ms callback=android.accessibilityservice.AccessibilityService$IAccessibilityServiceClientWrapper$$ExternalSyntheticLambda8 target=android.app.ActivityThread$H }
+2026-03-26 18:20:31.963 10508-10508 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  Message 3: { when=-774ms callback=android.accessibilityservice.AccessibilityService$IAccessibilityServiceClientWrapper$$ExternalSyntheticLambda8 target=android.app.ActivityThread$H }
+2026-03-26 18:20:31.963 10508-10508 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  Message 4: { when=-683ms callback=android.accessibilityservice.AccessibilityService$IAccessibilityServiceClientWrapper$$ExternalSyntheticLambda8 target=android.app.ActivityThread$H }
+2026-03-26 18:20:31.964 10508-10508 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  Message 5: { when=-612ms callback=android.accessibilityservice.AccessibilityService$IAccessibilityServiceClientWrapper$$ExternalSyntheticLambda8 target=android.app.ActivityThread$H }
+2026-03-26 18:20:31.964 10508-10508 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  Message 6: { when=-579ms callback=android.accessibilityservice.AccessibilityService$IAccessibilityServiceClientWrapper$$ExternalSyntheticLambda8 target=android.app.ActivityThread$H }
+2026-03-26 18:20:31.964 10508-10508 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  Message 7: { when=-466ms callback=android.accessibilityservice.AccessibilityService$IAccessibilityServiceClientWrapper$$ExternalSyntheticLambda8 target=android.app.ActivityThread$H }
+2026-03-26 18:20:31.964 10508-10508 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  Message 8: { when=-15ms callback=android.window.WindowOnBackInvokedDispatcher$$ExternalSyntheticLambda0 target=android.os.Handler }
+2026-03-26 18:20:31.964 10508-10508 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  Message 9: { when=-3ms what=119 obj=android.app.ActivityThread$ContextCleanupInfo@6a41d6f target=android.app.ActivityThread$H }
+2026-03-26 18:20:31.964 10508-10508 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  (Total messages: 10, polling=false, quitting=false)
+2026-03-26 18:20:31.966 10508-10508 AndroidRuntime          com.wpspasswordmanager               D  Shutting down VM
+2026-03-26 18:20:31.977 10508-10508 AndroidRuntime          com.wpspasswordmanager               E  FATAL EXCEPTION: main
+                                                                                                    Process: com.wpspasswordmanager, PID: 10508
+                                                                                                    android.app.RemoteServiceException$ForegroundServiceDidNotStartInTimeException: Context.startForegroundService() did not then call Service.startForeground(): ServiceRecord{3d3e5fd u0 com.wpspasswordmanager/.ui.FloatingButtonService}
                                                                                                     	at android.app.ActivityThread.generateForegroundServiceDidNotStartInTimeException(ActivityThread.java:2712)
                                                                                                     	at android.app.ActivityThread.throwRemoteServiceException(ActivityThread.java:2683)
                                                                                                     	at android.app.ActivityThread.-$$Nest$mthrowRemoteServiceException(Unknown Source:0)
@@ -281,7 +929,103 @@
                                                                                                     	at java.lang.reflect.Method.invoke(Native Method)
                                                                                                     	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:601)
                                                                                                     	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:1062)
-2026-03-26 18:15:02.996 30347-30347 HiView                  com.wpspasswordmanager               I  Begin report 1002
-2026-03-26 18:15:02.997 30347-30347 HiEvent                 com.wpspasswordmanager               I  Flatten done: 1002
-2026-03-26 18:15:02.997 30347-30347 Process                 com.wpspasswordmanager               I  Sending signal. PID: 30347 SIG: 9
----------------------------- PROCESS ENDED (30347) for package com.wpspasswordmanager ----------------------------
+2026-03-26 18:20:32.009 10508-10508 HiView                  com.wpspasswordmanager               I  Begin report 1002
+2026-03-26 18:20:32.015 10508-10508 HiEvent                 com.wpspasswordmanager               I  Flatten done: 1002
+2026-03-26 18:20:32.016 10508-10508 Process                 com.wpspasswordmanager               I  Sending signal. PID: 10508 SIG: 9
+---------------------------- PROCESS ENDED (10508) for package com.wpspasswordmanager ----------------------------
+---------------------------- PROCESS STARTED (12936) for package com.wpspasswordmanager ----------------------------
+2026-03-26 18:21:25.918 12936-12936 Typeface                com.wpspasswordmanager               I  setSystemFontMap SharedMemory
+2026-03-26 18:21:25.922 12936-12936 Typeface                com.wpspasswordmanager               I  setSystemFontMap Typaface
+2026-03-26 18:21:25.939 12936-12936 ResourcesManager        com.wpspasswordmanager               I  applyConfigurationToResources: smallestScreenWidthDp = 369mMaxBounds = Rect(0, 0 - 1200, 2652)
+2026-03-26 18:21:25.957 12936-12936 ziparchive              com.wpspasswordmanager               W  Unable to open '/data/data/com.wpspasswordmanager/code_cache/.overlay/base.apk/classes4.dm': No such file or directory
+2026-03-26 18:21:25.957 12936-12936 ziparchive              com.wpspasswordmanager               W  Unable to open '/data/app/~~5p0GneDw0DwftXZdLPIDXw==/com.wpspasswordmanager-GKVZKTa9-VGLGykH4xS0Sw==/base.dm': No such file or directory
+2026-03-26 18:21:25.957 12936-12936 ziparchive              com.wpspasswordmanager               W  Unable to open '/data/app/~~5p0GneDw0DwftXZdLPIDXw==/com.wpspasswordmanager-GKVZKTa9-VGLGykH4xS0Sw==/base.dm': No such file or directory
+2026-03-26 18:21:26.229 12936-12936 nativeloader            com.wpspasswordmanager               D  Configuring clns-4 for other apk /data/app/~~5p0GneDw0DwftXZdLPIDXw==/com.wpspasswordmanager-GKVZKTa9-VGLGykH4xS0Sw==/base.apk. target_sdk_version=34, uses_libraries=, library_path=/data/app/~~5p0GneDw0DwftXZdLPIDXw==/com.wpspasswordmanager-GKVZKTa9-VGLGykH4xS0Sw==/lib/arm64, permitted_path=/data:/mnt/expand:/data/user/0/com.wpspasswordmanager
+2026-03-26 18:21:26.243 12936-12951 HwCust                  com.wpspasswordmanager               W  CUST VERSION = false, use class = class android.app.HwCustApplicationPackageManagerImpl
+2026-03-26 18:21:26.246 12936-12951 HwApiCacheMangerEx      com.wpspasswordmanager               I  apicache path=/storage/emulated/0 state=mounted key=com.wpspasswordmanager#0#256
+2026-03-26 18:21:26.246 12936-12951 HwApiCacheMangerEx      com.wpspasswordmanager               I  need clear apicache,because volumes changed,oldCnt=0 newCnt=1
+2026-03-26 18:21:26.248 12936-12951 HwApiCacheMangerEx      com.wpspasswordmanager               I  apicache path=/storage/emulated/0 state=mounted key=com.wpspasswordmanager#0#0
+2026-03-26 18:21:26.248 12936-12951 HwApiCacheMangerEx      com.wpspasswordmanager               I  need clear apicache,because volumes changed,oldCnt=1 newCnt=1
+2026-03-26 18:21:26.251 12936-12936 GraphicsEnvironment     com.wpspasswordmanager               V  Currently set values for:
+2026-03-26 18:21:26.251 12936-12936 GraphicsEnvironment     com.wpspasswordmanager               V    angle_gl_driver_selection_pkgs=[]
+2026-03-26 18:21:26.251 12936-12936 GraphicsEnvironment     com.wpspasswordmanager               V    angle_gl_driver_selection_values=[]
+2026-03-26 18:21:26.252 12936-12936 GraphicsEnvironment     com.wpspasswordmanager               V  ANGLE GameManagerService for com.wpspasswordmanager: false
+2026-03-26 18:21:26.252 12936-12936 GraphicsEnvironment     com.wpspasswordmanager               V  com.wpspasswordmanager is not listed in per-application setting
+2026-03-26 18:21:26.252 12936-12936 GraphicsEnvironment     com.wpspasswordmanager               V  App is not on the allowlist for updatable production driver.
+2026-03-26 18:21:26.254 12936-12936 [Smart Gc]              com.wpspasswordmanager               I  process: com.wpspasswordmanager enalbed: 1
+2026-03-26 18:21:26.264 12936-12950 FlutterAnimationAdvance com.wpspasswordmanager               W  FlutterAnimationAdvance getInstance()
+2026-03-26 18:21:26.265 12936-12951 AwareBitmapCacher       com.wpspasswordmanager               I  init processName:com.wpspasswordmanager pid=12936 uid=10263
+2026-03-26 18:21:26.268 12936-12936 [FASProxy:]             com.wpspasswordmanager               E  failed to open /proc/fas/ioctl, errno=2, No such file or directory
+2026-03-26 18:21:26.269 12936-12970 AwareLog                com.wpspasswordmanager               E  AtomicFileUtils: readFileLines file not exist: AtomicFile[/data/user/0/com.wpspasswordmanager/files/hw_cached_resid.list]
+2026-03-26 18:21:26.290 12936-12936 SystemFonts             com.wpspasswordmanager               I  loadHwSystemFonts, isNightMode false, fontWeightScale is 100
+2026-03-26 18:21:26.294 12936-12936 HwTypeface              com.wpspasswordmanager               I  update default font
+2026-03-26 18:21:26.296 12936-12936 ActivityThread          com.wpspasswordmanager               I  finishPreloaded preloadStatus 0
+2026-03-26 18:21:26.300 12936-12936 ActivityThread          com.wpspasswordmanager               V  Handling launch of ActivityRecord{efe5493 token=android.os.BinderProxy@6acf582 {com.wpspasswordmanager/com.wpspasswordmanager.ui.ProxyActivity}}
+2026-03-26 18:21:26.301 12936-12936 OpenGLRenderer          com.wpspasswordmanager               I  RenderCache taget:com.wpspasswordmanager, enableRenderCache: 0
+2026-03-26 18:21:26.301 12936-12936 OpenGLRenderer          com.wpspasswordmanager               I  No RenderCache config, try to find property.
+2026-03-26 18:21:26.302 12936-12936 OpenGLRenderer          com.wpspasswordmanager               D  disableOutlineDraw is true
+2026-03-26 18:21:26.305 12936-12979 GamesAware              com.wpspasswordmanager               E  IsInSupportList 'com.wpspasswordmanager' is not a game.
+2026-03-26 18:21:26.306 12936-12979 iGraphicsLoader         com.wpspasswordmanager               I  [~]A_pPipchG_giv{W$pipch$g_giv{$71232240MF~]
+2026-03-26 18:21:26.306 12936-12979 iGraphicsLoader         com.wpspasswordmanager               I  [~]44644<4eW$tj>$eig*qtutcuuqiv`gcjca_v($t>$36;52~]
+2026-03-26 18:21:26.306 12936-12979 passwordmanager         com.wpspasswordmanager               I  HwCustType is 0
+2026-03-26 18:21:26.306 12936-12979 passwordmanager         com.wpspasswordmanager               E  open file error
+2026-03-26 18:21:26.307 12936-12979 passwordmanager         com.wpspasswordmanager               I  no cota live update cust policy found
+2026-03-26 18:21:26.307 12936-12979 passwordmanager         com.wpspasswordmanager               I  GetCfgDirRealPolicyValue: custPolicyDirs: /system/magic/base:/system/magic/china:/system/magic/china_honor:/vendor/etc:/odm/etc:/odm/hn_odm/SDY-AN00:/product_h/etc:/product_h/region_comm/china:/preas/china:/product_h/hn_oem/SDY-AN00:/preload/SDY-AN00/all/cn:/cust/global:/cust/def/cn:/version/cust/all/cn:/version/special_cust/SDY-AN00/all/cn:/cust/cotalite:/cust/ecota
+2026-03-26 18:21:26.311 12936-12936 Resources               com.wpspasswordmanager               I  updateConfiguration, style is 0
+2026-03-26 18:21:26.314 12936-12979 iGraphicsLoader         com.wpspasswordmanager               I  [~]44544<4eW$ji$utp$ctt>$eig*qtutcuuqiv`gcjca_v~]
+2026-03-26 18:21:26.314 12936-12979 libMEOW                 com.wpspasswordmanager               D  meow new tls: 0xb400007bcc3dc090
+2026-03-26 18:21:26.314 12936-12979 libMEOW                 com.wpspasswordmanager               D  meow reload base cfg path: na
+2026-03-26 18:21:26.314 12936-12979 libMEOW                 com.wpspasswordmanager               D  meow reload overlay cfg path: na
+2026-03-26 18:21:26.314 12936-12979 QT                      com.wpspasswordmanager               W  qt_process_init() called
+2026-03-26 18:21:26.315 12936-12979 QT                      com.wpspasswordmanager               E  [QT]file does not exist
+2026-03-26 18:21:26.315 12936-12979 QT                      com.wpspasswordmanager               W  Support!!
+2026-03-26 18:21:26.317 12936-12979 QT                      com.wpspasswordmanager               E  [QT]file does not exist
+2026-03-26 18:21:26.317 12936-12979 libMEOW                 com.wpspasswordmanager               D  applied 1 plugins for [com.wpspasswordmanager]:
+2026-03-26 18:21:26.317 12936-12979 libMEOW                 com.wpspasswordmanager               D    plugin 1: [libMEOW_gift.so]: 0xb400007b94374840
+2026-03-26 18:21:26.317 12936-12979 libMEOW                 com.wpspasswordmanager               D  rebuild call chain: 0xb400007bcc40c0c0
+2026-03-26 18:21:26.317 12936-12979 libMEOW                 com.wpspasswordmanager               D  meow delete tls: 0xb400007bcc3dc090
+2026-03-26 18:21:26.335 12936-12936 AppCompatDelegate       com.wpspasswordmanager               D  Checking for metadata for AppLocalesMetadataHolderService : Service not found
+2026-03-26 18:21:26.346 12936-12936 ActivityThread          com.wpspasswordmanager               V  callActivityOnCreate
+2026-03-26 18:21:26.366 12936-12936 HwFramewor...rtsFactory com.wpspasswordmanager               D  HwFrameworkSecurityPartsFactory in.
+2026-03-26 18:21:26.366 12936-12936 HwFramewor...rtsFactory com.wpspasswordmanager               I  add HwFrameworkSecurityPartsFactory to memory.
+2026-03-26 18:21:26.377 12936-12936 ProxyActivity           com.wpspasswordmanager               D  文件名: 
+2026-03-26 18:21:26.377 12936-12936 ProxyActivity           com.wpspasswordmanager               D  文件 URI: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:21:26.377 12936-12936 ProxyActivity           com.wpspasswordmanager               D  文件标识: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:21:26.377 12936-12936 ProxyActivity           com.wpspasswordmanager               D  传入的文件名: ''
+2026-03-26 18:21:26.377 12936-12936 ProxyActivity           com.wpspasswordmanager               D  文件名长度: 0
+2026-03-26 18:21:26.377 12936-12936 ProxyActivity           com.wpspasswordmanager               D  尝试直接从原始URI读取密码
+2026-03-26 18:21:26.378 12936-12936 PasswordStorage         com.wpspasswordmanager               D  开始读取密码，文件路径: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:21:26.380 12936-12936 PasswordStorage         com.wpspasswordmanager               D  尝试从Content URI读取密码: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:21:26.384 12936-12936 PasswordStorage         com.wpspasswordmanager               D  尝试从输入流读取密码
+2026-03-26 18:21:26.385 12936-12936 ZipExtraFieldManager    com.wpspasswordmanager               D  尝试从输入流读取密码
+2026-03-26 18:21:26.387 12936-12936 ZipExtraFieldManager    com.wpspasswordmanager               D  找到WPPM签名，位置: 13329
+2026-03-26 18:21:26.387 12936-12936 ZipExtraFieldManager    com.wpspasswordmanager               D  元数据类型: 2, 版本: 1
+2026-03-26 18:21:26.412 12936-12936 ZipExtraFieldManager    com.wpspasswordmanager               D  WPPM后的内容: 32, 00, 00, 00, 31, 37, 37, 34, 34, 39, 33, 34, 35, 39, 30, 35, 39, 5f, 66, 33, 31, 66, 32, 39, 65, 66, 2d, 34, 63, 35, 61, 2d, 34, 62, 62, 35, 2d, 39, 64, 39, 66, 2d, 34, 39, 63, 34, 65, 35, 64, 63
+2026-03-26 18:21:26.412 12936-12936 ZipExtraFieldManager    com.wpspasswordmanager               W  跳过非密码类型的元数据: 2
+2026-03-26 18:21:26.412 12936-12936 ZipExtraFieldManager    com.wpspasswordmanager               D  找到WPPM签名，位置: 13312
+2026-03-26 18:21:26.412 12936-12936 ZipExtraFieldManager    com.wpspasswordmanager               D  元数据类型: 1, 版本: 1
+2026-03-26 18:21:26.416 12936-12936 ZipExtraFieldManager    com.wpspasswordmanager               D  WPPM后的内容: 02, 00, 00, 00, 31, 35, -2, 01, 26, 38, 57, 50, 50, 4d, 01, 00, 02, 32, 00, 00, 00, 31, 37, 37, 34, 34, 39, 33, 34, 35, 39, 30, 35, 39, 5f, 66, 33, 31, 66, 32, 39, 65, 66, 2d, 34, 63, 35, 61, 2d, 34
+2026-03-26 18:21:26.416 12936-12936 ZipExtraFieldManager    com.wpspasswordmanager               D  Data Length: 2
+2026-03-26 18:21:26.418 12936-12936 ZipExtraFieldManager    com.wpspasswordmanager               D  成功读取密码: 15
+2026-03-26 18:21:26.418 12936-12936 PasswordStorage         com.wpspasswordmanager               D  从ZIP Extra Field读取密码成功
+2026-03-26 18:21:26.418 12936-12936 ProxyActivity           com.wpspasswordmanager               D  从原始URI读取到密码: 15
+2026-03-26 18:21:26.418 12936-12936 PasswordHolder          com.wpspasswordmanager               D  密码已存储: 15, 文件名: 
+2026-03-26 18:21:26.419 12936-12936 MemoryPasswordStorage   com.wpspasswordmanager               D  密码已存储到内存: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:21:26.424 12936-12936 ProxyActivity           com.wpspasswordmanager               D  保存文件URI到SharedPreferences: content://com.tencent.mm.external.fileprovider/attachment/test1.docx
+2026-03-26 18:21:26.424 12936-12936 ProxyActivity           com.wpspasswordmanager               D  本地文件不存在，尝试使用原始URI
+2026-03-26 18:21:26.429 12936-12936 FactoryLoader           com.wpspasswordmanager               I  loadFactory() ClassNotFoundException !
+2026-03-26 18:21:26.446 12936-12936 ProxyActivity           com.wpspasswordmanager               D  使用原始URI启动WPS成功
+2026-03-26 18:21:26.504 12936-12936 ActivityThread          com.wpspasswordmanager               I  add activity client record, r= ActivityRecord{efe5493 token=android.os.BinderProxy@6acf582 {com.wpspasswordmanager/com.wpspasswordmanager.ui.ProxyActivity}} token= android.os.BinderProxy@6acf582
+2026-03-26 18:21:26.509 12936-12936 ActivityThread          com.wpspasswordmanager               D  Won't deliver top position change in state=1
+2026-03-26 18:21:26.510 12936-12936 RtgSchedIpcFile         com.wpspasswordmanager               E  RtgSchedIpcFile xxx success to open /proc/12936/rtg
+2026-03-26 18:21:26.510 12936-12936 RmeSchedManager         com.wpspasswordmanager               I  init Rme, version is: v1.0
+2026-03-26 18:21:26.510 12936-12936 RmeSchedManager         com.wpspasswordmanager               I  init Rme, version is: v1.0
+2026-03-26 18:21:26.511 12936-12936 RtgSched                com.wpspasswordmanager               D  resetRtgSchedHandle failed enable:1
+2026-03-26 18:21:26.512 12936-12936 ActivityThread          com.wpspasswordmanager               D  Won't deliver top position change in state=1
+2026-03-26 18:21:26.547 12936-12936 RmeSchedManager         com.wpspasswordmanager               I  init Rme, version is: v1.0
+2026-03-26 18:21:26.547 12936-12936 RtgSched                com.wpspasswordmanager               D  resetRtgSchedHandle failed enable:0
+2026-03-26 18:21:27.113 12936-12936 ActivityThread          com.wpspasswordmanager               I  Remove activity client record, r= ActivityRecord{efe5493 token=android.os.BinderProxy@6acf582 {com.wpspasswordmanager/com.wpspasswordmanager.ui.ProxyActivity}} token= android.os.BinderProxy@6acf582
+2026-03-26 18:21:27.327 12936-12965 ZrHung.AppEyeUiProbe    com.wpspasswordmanager               D  not watching, wait.
+2026-03-26 18:21:31.274 12936-12936 AwareBitmapCacher       com.wpspasswordmanager               I  init lrucache size: 4194304 pid=12936
+2026-03-26 18:21:31.278 12936-12936 Resource                com.wpspasswordmanager               V  printErrorResource, maybe not an error because module has entative action to load resource.
+2026-03-26 18:21:32.205 12936-13108 ProfileInstaller        com.wpspasswordmanager               D  Installing profile for com.wpspasswordmanager
