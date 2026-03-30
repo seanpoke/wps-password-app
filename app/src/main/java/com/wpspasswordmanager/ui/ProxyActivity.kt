@@ -66,7 +66,8 @@ class ProxyActivity : AppCompatActivity() {
             val cursor = contentResolver.query(uri, null, null, null, null)
             cursor?.use {
                 if (it.moveToFirst()) {
-                    val nameIndex = it.getColumnIndex("display_name")
+                    // 使用标准的OpenableColumns.DISPLAY_NAME列名
+                    val nameIndex = it.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
                     if (nameIndex != -1) {
                         fileName = it.getString(nameIndex)
                     }
@@ -75,7 +76,27 @@ class ProxyActivity : AppCompatActivity() {
         } catch (e: Exception) {
             Log.e(TAG, "获取文件名失败", e)
         }
+        
+        // 如果ContentResolver无法获取文件名，尝试从URI路径中解析
+        if (fileName.isEmpty()) {
+            fileName = getFileNameFromUri(uri)
+        }
+        
         return fileName
+    }
+    
+    /**
+     * 从URI路径中解析文件名
+     */
+    private fun getFileNameFromUri(uri: Uri): String {
+        val path = uri.path
+        if (!path.isNullOrEmpty()) {
+            val lastSlash = path.lastIndexOf('/')
+            if (lastSlash != -1 && lastSlash < path.length - 1) {
+                return path.substring(lastSlash + 1)
+            }
+        }
+        return ""
     }
 
     private fun isEncryptedFile(fileName: String): Boolean {

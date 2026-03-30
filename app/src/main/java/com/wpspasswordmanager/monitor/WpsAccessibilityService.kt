@@ -26,6 +26,7 @@ class WpsAccessibilityService : AccessibilityService() {
         private var hasClickedShowPassword = false // 防止重复点击显示密码选项的标志
         private var hasClickedGeneratePassword = false // 标记是否点击了生成密码按钮
         private var isFloatingButtonServiceStarted = false // 标记悬浮按钮服务是否已启动
+        private var isDocumentOpened = false // 标记文档是否已经成功打开
         private const val PREFS_NAME = "WpsPasswordManagerPrefs"
         private const val KEY_CURRENT_FILE_URI = "current_file_uri"
     }
@@ -367,6 +368,10 @@ class WpsAccessibilityService : AccessibilityService() {
         
         if (isFileListScreen) {
             Log.d(TAG, "检测到回退到文件列表页，尝试写入密码")
+            // 重置状态
+            isDocumentOpened = false
+            hasClickedShowPassword = false
+            
             // 尝试写入密码
             try {
                 var targetPath: String? = null
@@ -603,6 +608,12 @@ class WpsAccessibilityService : AccessibilityService() {
     
     private fun autoFillPassword(rootNode: AccessibilityNodeInfo) {
         try {
+            // 如果文档已经打开，不再尝试填充
+            if (isDocumentOpened) {
+                Log.d(TAG, "文档已经打开，跳过自动填充")
+                return
+            }
+            
             // 防止无限循环填充
             if (isFillingPassword) {
                 Log.d(TAG, "正在填充密码中，跳过自动填充")
@@ -677,6 +688,7 @@ class WpsAccessibilityService : AccessibilityService() {
                                             val clickSuccess = confirmButton.performAction(AccessibilityNodeInfo.ACTION_CLICK)
                                             if (clickSuccess) {
                                                 Log.i(TAG, "成功点击确认按钮")
+                                                isDocumentOpened = true // 标记文档已打开
                                             } else {
                                                 Log.e(TAG, "点击确认按钮失败")
                                             }
