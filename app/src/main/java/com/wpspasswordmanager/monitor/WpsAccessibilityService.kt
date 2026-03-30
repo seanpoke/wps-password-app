@@ -27,8 +27,6 @@ class WpsAccessibilityService : AccessibilityService() {
         private var hasClickedGeneratePassword = false // 标记是否点击了生成密码按钮
         private var isFloatingButtonServiceStarted = false // 标记悬浮按钮服务是否已启动
         private var isDocumentOpened = false // 标记文档是否已经成功打开
-        private const val PREFS_NAME = "WpsPasswordManagerPrefs"
-        private const val KEY_CURRENT_FILE_URI = "current_file_uri"
     }
 
     override fun onServiceConnected() {
@@ -37,9 +35,6 @@ class WpsAccessibilityService : AccessibilityService() {
 
         // 初始化 MemoryPasswordStorage
         MemoryPasswordStorage.init(this)
-
-        // 从SharedPreferences获取当前文件URI
-        loadCurrentFileUri()
 
         // 注册服务到管理器
         AccessibilityServiceManager.getInstance().setService(this)
@@ -58,38 +53,14 @@ class WpsAccessibilityService : AccessibilityService() {
     }
 
     /**
-     * 从SharedPreferences加载当前文件路径
-     */
-    private fun loadCurrentFileUri() {
-        try {
-            val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            currentFileUri = prefs.getString(KEY_CURRENT_FILE_URI, null)
-            if (currentFileUri != null) {
-                Log.d(TAG, "从SharedPreferences加载文件路径: $currentFileUri")
-                // 检查是否是本地文件路径
-                if (!currentFileUri!!.startsWith("content://")) {
-                    Log.d(TAG, "使用本地文件路径作为文档路径")
-                }
-                // 使用文件路径作为稳定文档路径
-                stableDocumentPath = currentFileUri
-                currentDocumentPath = currentFileUri
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "加载文件路径失败", e)
-        }
-    }
-
-    /**
-     * 保存当前文件URI到SharedPreferences
+     * 保存当前文件URI
      */
     fun saveCurrentFileUri(uri: String) {
         try {
-            val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            prefs.edit().putString(KEY_CURRENT_FILE_URI, uri).apply()
             currentFileUri = uri
             stableDocumentPath = uri
             currentDocumentPath = uri
-            Log.d(TAG, "保存文件URI到SharedPreferences: $uri")
+            Log.d(TAG, "保存文件URI: $uri")
         } catch (e: Exception) {
             Log.e(TAG, "保存文件URI失败", e)
         }
@@ -100,8 +71,6 @@ class WpsAccessibilityService : AccessibilityService() {
      */
     fun clearCurrentFileUri() {
         try {
-            val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            prefs.edit().remove(KEY_CURRENT_FILE_URI).apply()
             currentFileUri = null
             Log.d(TAG, "已清除文件URI")
         } catch (e: Exception) {
@@ -255,7 +224,8 @@ class WpsAccessibilityService : AccessibilityService() {
                     Log.i(TAG, "从内存中获取到密码，长度: ${password.length}")
                     showOperationNotification("操作处理", "密码已成功缓存到内存")
                     
-                    // 尝试写入密码到文件
+                    // 尝试写入密码到文件 - 已注释，由FileObserver处理
+                    /*
                     try {
                         var targetPath: String? = null
                         if (currentFileUri != null) {
@@ -274,6 +244,21 @@ class WpsAccessibilityService : AccessibilityService() {
                                     if (success) {
                                         Log.i(TAG, "密码写入成功")
                                         showOperationNotification("操作成功", "密码已成功写入文件")
+                                        
+                                        // 密码写入成功后，清理相关缓存
+                                        clearCurrentFileUri()
+                                        stableDocumentPath = null
+                                        currentDocumentPath = null
+                                        // 清理内存中的密码
+                                        if (currentFileUri != null) {
+                                            MemoryPasswordStorage.getInstance().removePasswordFromMemory(currentFileUri!!)
+                                        }
+                                        if (stableDocumentPath != null) {
+                                            MemoryPasswordStorage.getInstance().removePasswordFromMemory(stableDocumentPath!!)
+                                        }
+                                        // 清理临时存储的密码
+                                        MemoryPasswordStorage.getInstance().removePasswordFromMemory("temp")
+                                        Log.d(TAG, "已清理密码相关缓存")
                                     } else {
                                         Log.e(TAG, "密码写入失败")
                                         showOperationNotification("操作失败", "密码写入失败，请稍后重试")
@@ -293,6 +278,7 @@ class WpsAccessibilityService : AccessibilityService() {
                         Log.e(TAG, "写入密码时发生异常", e)
                         showOperationNotification("操作失败", "写入密码时发生异常")
                     }
+                    */
                 } else {
                     Log.e(TAG, "内存中未找到密码")
                     showOperationNotification("操作失败", "未找到密码，请重新输入")
@@ -372,8 +358,9 @@ class WpsAccessibilityService : AccessibilityService() {
             isDocumentOpened = false
             hasClickedShowPassword = false
             
-            // 尝试写入密码
-            try {
+            // 尝试写入密码 - 已注释，由FileObserver处理
+            /*
+try {
                 var targetPath: String? = null
                 if (currentFileUri != null) {
                     targetPath = currentFileUri
@@ -410,6 +397,21 @@ class WpsAccessibilityService : AccessibilityService() {
                                 if (success) {
                                     Log.i(TAG, "密码写入成功")
                                     showOperationNotification("操作成功", "密码已成功写入文件")
+                                    
+                                    // 密码写入成功后，清理相关缓存
+                                    clearCurrentFileUri()
+                                    stableDocumentPath = null
+                                    currentDocumentPath = null
+                                    // 清理内存中的密码
+                                    if (currentFileUri != null) {
+                                        MemoryPasswordStorage.getInstance().removePasswordFromMemory(currentFileUri!!)
+                                    }
+                                    if (stableDocumentPath != null) {
+                                        MemoryPasswordStorage.getInstance().removePasswordFromMemory(stableDocumentPath!!)
+                                    }
+                                    // 清理临时存储的密码
+                                    MemoryPasswordStorage.getInstance().removePasswordFromMemory("temp")
+                                    Log.d(TAG, "已清理密码相关缓存")
                                 } else {
                                     Log.e(TAG, "密码写入失败")
                                     showOperationNotification("操作失败", "密码写入失败，请稍后重试")
@@ -434,6 +436,7 @@ class WpsAccessibilityService : AccessibilityService() {
                 Log.e(TAG, "写入密码时发生异常", e)
                 showOperationNotification("操作失败", "写入密码时发生异常")
             }
+*/
         }
     }
 
@@ -1454,42 +1457,13 @@ class WpsAccessibilityService : AccessibilityService() {
     }
 
     private fun startFloatingButtonService() {
-        try {
-            // 检查是否真的需要启动服务
-            // 只有在检测到密码弹框且服务未启动时才启动
-            val rootNode = rootInActiveWindow ?: return
-            val passwordInputNodes = findPasswordInputNodes(rootNode)
-            val confirmButton = findConfirmButton(rootNode)
-            val isPasswordDialog = passwordInputNodes.isNotEmpty() && confirmButton != null
-            
-            if (isPasswordDialog && !isFloatingButtonServiceStarted) {
-                val intent = Intent(this, com.wpspasswordmanager.ui.FloatingButtonService::class.java)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    startForegroundService(intent)
-                } else {
-                    startService(intent)
-                }
-                isFloatingButtonServiceStarted = true
-                Log.d(TAG, "启动悬浮按钮服务")
-            } else if (isPasswordDialog) {
-                Log.d(TAG, "悬浮按钮服务已启动，无需重复启动")
-            } else {
-                Log.d(TAG, "不是密码弹框，不启动悬浮按钮服务")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "启动悬浮按钮服务失败", e)
-        }
+        // 移除悬浮按钮服务启动，避免崩溃
+        Log.d(TAG, "悬浮按钮服务已禁用")
     }
 
     private fun stopFloatingButtonService() {
-        if (isFloatingButtonServiceStarted) {
-            val intent = Intent(this, com.wpspasswordmanager.ui.FloatingButtonService::class.java)
-            stopService(intent)
-            isFloatingButtonServiceStarted = false
-            Log.d(TAG, "停止悬浮按钮服务")
-        } else {
-            Log.d(TAG, "悬浮按钮服务未启动，无需停止")
-        }
+        // 移除悬浮按钮服务停止，避免崩溃
+        Log.d(TAG, "悬浮按钮服务已禁用")
     }
 
     /**

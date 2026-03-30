@@ -45,8 +45,8 @@ class FloatingButtonService : Service() {
     }
     
     private fun startForegroundService() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            try {
+        try {
+            val notificationBuilder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 val notificationManager = getSystemService(NOTIFICATION_SERVICE) as android.app.NotificationManager
                 val channel = android.app.NotificationChannel(
                     "floating_button_channel",
@@ -56,19 +56,23 @@ class FloatingButtonService : Service() {
                 channel.description = "提供WPS文档密码管理的悬浮按钮功能"
                 notificationManager.createNotificationChannel(channel)
                 
-                val notification = androidx.core.app.NotificationCompat.Builder(this, "floating_button_channel")
-                    .setContentTitle("WPS密码管理器")
-                    .setContentText("悬浮按钮服务正在运行")
-                    .setSmallIcon(R.mipmap.ic_launcher)
-                    .setPriority(androidx.core.app.NotificationCompat.PRIORITY_LOW)
-                    .build()
-                
-                startForeground(1, notification)
-                Log.d(TAG, "前台服务启动成功")
-            } catch (e: Exception) {
-                Log.e(TAG, "启动前台服务失败", e)
-                // 即使失败也要继续运行服务
+                androidx.core.app.NotificationCompat.Builder(this, "floating_button_channel")
+            } else {
+                androidx.core.app.NotificationCompat.Builder(this)
             }
+            
+            val notification = notificationBuilder
+                .setContentTitle("WPS密码管理器")
+                .setContentText("悬浮按钮服务正在运行")
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setPriority(androidx.core.app.NotificationCompat.PRIORITY_LOW)
+                .build()
+            
+            startForeground(1, notification)
+            Log.d(TAG, "前台服务启动成功")
+        } catch (e: Exception) {
+            Log.e(TAG, "启动前台服务失败", e)
+            // 即使失败也要继续运行服务
         }
     }
 
@@ -76,30 +80,7 @@ class FloatingButtonService : Service() {
         Log.d(TAG, "悬浮按钮服务启动")
         
         // 确保前台服务已启动
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            try {
-                val notificationManager = getSystemService(NOTIFICATION_SERVICE) as android.app.NotificationManager
-                val channel = android.app.NotificationChannel(
-                    "floating_button_channel",
-                    "悬浮按钮服务",
-                    android.app.NotificationManager.IMPORTANCE_LOW
-                )
-                channel.description = "提供WPS文档密码管理的悬浮按钮功能"
-                notificationManager.createNotificationChannel(channel)
-                
-                val notification = androidx.core.app.NotificationCompat.Builder(this, "floating_button_channel")
-                    .setContentTitle("WPS密码管理器")
-                    .setContentText("悬浮按钮服务正在运行")
-                    .setSmallIcon(R.mipmap.ic_launcher)
-                    .setPriority(androidx.core.app.NotificationCompat.PRIORITY_LOW)
-                    .build()
-                
-                startForeground(1, notification)
-                Log.d(TAG, "前台服务启动成功 (onStartCommand)")
-            } catch (e: Exception) {
-                Log.e(TAG, "启动前台服务失败 (onStartCommand)", e)
-            }
-        }
+        startForegroundService()
         
         // 不自动初始化悬浮按钮，只在需要时通过showFloatingButton方法显示
         

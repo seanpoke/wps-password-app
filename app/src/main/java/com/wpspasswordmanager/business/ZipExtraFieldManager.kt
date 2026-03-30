@@ -76,6 +76,14 @@ class ZipExtraFieldManager private constructor() {
         Log.e(TAG, "达到最大重试次数，写入失败")
         return false
     }
+    
+    /**
+     * 写入密码到ZIP文件的Extra Field（接受Context参数）
+     */
+    fun writePassword(context: android.content.Context, filePath: String, password: String): Boolean {
+        val file = File(filePath)
+        return writePassword(file, password)
+    }
 
     /**
      * 使用ParcelFileDescriptor直接操作写入密码（方案5）
@@ -218,14 +226,11 @@ class ZipExtraFieldManager private constructor() {
                         }
                     }
                     if (match) {
-                        Log.d(TAG, "找到WPPM签名，位置: ${startPosition + i}")
-                        
                         // 计算实际数据位置
                         val dataPosition = startPosition + i
                         
                         // 检查剩余文件长度是否足够
                         if (fileLength - dataPosition < 15) { // Magic(4) + Version(2) + Type(1) + DataLength(4) + Checksum(4) = 15
-                            Log.w(TAG, "文件尾部数据不足，无法解析")
                             continue
                         }
                         
@@ -239,17 +244,9 @@ class ZipExtraFieldManager private constructor() {
                         // 读取Version（2字节）
                         val versionBytes = ByteArray(2)
                         raf.readFully(versionBytes)
-                        val version = byteArrayToShort(versionBytes)
                         
                         // 读取Type（1字节）
                         val type = raf.readByte()
-                        Log.d(TAG, "元数据类型: $type, 版本: $version")
-                        
-                        // 打印WPPM后的内容，方便排查问题
-                        raf.seek(dataPosition)
-                        val metadataBuffer = ByteArray(50) // 读取足够的字节来查看内容
-                        val bytesRead = raf.read(metadataBuffer)
-                        Log.d(TAG, "WPPM后的内容: ${metadataBuffer.sliceArray(0 until bytesRead).joinToString(", ") { it.toString(16).padStart(2, '0') }}")
                         
                         // 重置位置
                         raf.seek(dataPosition)
@@ -258,11 +255,10 @@ class ZipExtraFieldManager private constructor() {
                             // 找到密码类型，解析数据
                             val password = parseExtraFieldData(raf)
                             if (password != null) {
+                                Log.d(TAG, "找到WPPM签名，位置: ${startPosition + i}")
                                 Log.d(TAG, "成功读取密码: $password")
                                 return password
                             }
-                        } else {
-                            Log.w(TAG, "跳过非密码类型的元数据: $type")
                         }
                     }
                 }
@@ -399,21 +395,25 @@ class ZipExtraFieldManager private constructor() {
 
     /**
      * 构建Extra Field数据
+     * 按照读数据.md文档格式：Magic(4) + Version(2) + Type(1) + DataLength(4) + Data(N) + Checksum(4)
      */
     private fun buildExtraFieldData(password: String): ByteArray {
         try {
-            // 加密密码
-            val encryptedPassword = encryptPassword(password)
+            // 直接使用明文密码，按照文档要求Data部分是明文UTF-8
+            val passwordBytes = password.toByteArray(Charsets.UTF_8)
             
             // 构建数据结构
             val signature = WPS_PASSWORD_SIGNATURE.toByteArray()
-            val version = byteArrayOf(WPS_PASSWORD_VERSION.toByte())
-            val passwordLength = intToByteArray(encryptedPassword.size)
-            val checksum = calculateChecksum(encryptedPassword)
+            val version = byteArrayOf(0, WPS_PASSWORD_VERSION.toByte()) // 2字节版本号
+            val type = byteArrayOf(METADATA_TYPE_PASSWORD.toByte()) // 1字节类型
+            val dataLength = intToByteArray(passwordBytes.size) // 4字节数据长度
+            
+            // 计算CRC32校验和（计算范围：Magic到Data部分）
+            val checksum = calculateCRC32Checksum(signature, version, type, dataLength, passwordBytes)
             
             // 组合所有数据
-            val totalLength = signature.size + version.size + passwordLength.size + 
-                             encryptedPassword.size + checksum.size
+            val totalLength = signature.size + version.size + type.size + 
+                             dataLength.size + passwordBytes.size + checksum.size
             val result = ByteArray(totalLength)
             
             var offset = 0
@@ -423,11 +423,14 @@ class ZipExtraFieldManager private constructor() {
             System.arraycopy(version, 0, result, offset, version.size)
             offset += version.size
             
-            System.arraycopy(passwordLength, 0, result, offset, passwordLength.size)
-            offset += passwordLength.size
+            System.arraycopy(type, 0, result, offset, type.size)
+            offset += type.size
             
-            System.arraycopy(encryptedPassword, 0, result, offset, encryptedPassword.size)
-            offset += encryptedPassword.size
+            System.arraycopy(dataLength, 0, result, offset, dataLength.size)
+            offset += dataLength.size
+            
+            System.arraycopy(passwordBytes, 0, result, offset, passwordBytes.size)
+            offset += passwordBytes.size
             
             System.arraycopy(checksum, 0, result, offset, checksum.size)
             
