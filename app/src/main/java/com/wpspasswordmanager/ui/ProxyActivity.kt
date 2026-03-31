@@ -38,7 +38,7 @@ class ProxyActivity : AppCompatActivity() {
     }
 
     /**
-     * 初始化文件观察者，监听 WpsManagement 目录及其所有子目录
+     * 初始化文件观察者，只监听 WpsManagement 目录
      */
     private fun initFileObserver() {
         val documentsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOCUMENTS)
@@ -67,37 +67,17 @@ class ProxyActivity : AppCompatActivity() {
             Log.e(TAG, "WpsManagement 目录不存在或不可访问: ${wpsManagementDir.absolutePath}")
         }
         
-        // 使用递归文件观察者，监控目录及其所有子目录
-        fileObserver = RecursiveFileObserver(wpsManagementDir.absolutePath)
+        // 使用简单文件观察者，只监控WpsManagement目录
+        fileObserver = SimpleFileObserver(wpsManagementDir.absolutePath)
         fileObserver?.startWatching()
-        Log.d(TAG, "文件观察者已启动，监听目录: ${wpsManagementDir.absolutePath} 及其所有子目录")
+        Log.d(TAG, "文件观察者已启动，监听目录: ${wpsManagementDir.absolutePath}")
     }
 
     /**
-     * 递归文件观察者，监控目录及其所有子目录
+     * 简单文件观察者，只监控指定目录
      */
-    private inner class RecursiveFileObserver(path: String) : FileObserver(path, ALL_EVENTS) {
-        private val observers = mutableListOf<RecursiveFileObserver>()
+    private inner class SimpleFileObserver(path: String) : FileObserver(path, ALL_EVENTS) {
         private val rootPath = path
-        
-        override fun startWatching() {
-            super.startWatching()
-            // 递归监控子目录
-            val rootDir = File(rootPath)
-            val subDirs = rootDir.listFiles { file -> file.isDirectory }
-            subDirs?.forEach { dir ->
-                val observer = RecursiveFileObserver(dir.absolutePath)
-                observer.startWatching()
-                observers.add(observer)
-            }
-        }
-        
-        override fun stopWatching() {
-            super.stopWatching()
-            // 停止所有子目录的观察者
-            observers.forEach { it.stopWatching() }
-            observers.clear()
-        }
         
         override fun onEvent(event: Int, path: String?) {
             if (path == null) return
@@ -105,16 +85,6 @@ class ProxyActivity : AppCompatActivity() {
             val fullPath = File(rootPath, path).absolutePath
             
             when (event and ALL_EVENTS) {
-                CREATE -> {
-                    // 处理创建事件，如果是目录，添加监控
-                    val file = File(fullPath)
-                    if (file.isDirectory) {
-                        val observer = RecursiveFileObserver(fullPath)
-                        observer.startWatching()
-                        observers.add(observer)
-                        Log.d(TAG, "添加对新目录的监控: $fullPath")
-                    }
-                }
                 CLOSE_WRITE -> {
                     // 处理文件写入完成事件
                     handleFileCloseWrite(fullPath)
@@ -358,16 +328,18 @@ class ProxyActivity : AppCompatActivity() {
      */
     private fun processExternalContentUri(uri: Uri, originalFileName: String): File? {
         try {
-            // 1. 路径解析与目录创建
-            val pathComponents = parseContentUriPath(uri)
-            val targetDir = createTargetDirectory(pathComponents)
-            if (targetDir == null) {
-                Log.e(TAG, "创建目标目录失败")
-                return null
+            // 1. 获取WpsManagement目录
+            val documentsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOCUMENTS)
+            val wpsManagementDir = File(documentsDir, "WpsManagement")
+            
+            // 确保WpsManagement目录存在
+            if (!wpsManagementDir.exists()) {
+                wpsManagementDir.mkdirs()
+                Log.d(TAG, "创建 WpsManagement 目录: ${wpsManagementDir.absolutePath}")
             }
             
             // 2. 文件存在性检查与拷贝
-            val targetFile = File(targetDir, originalFileName)
+            val targetFile = File(wpsManagementDir, originalFileName)
             if (targetFile.exists() && targetFile.length() > 0) {
                 Log.d(TAG, "文件已存在，直接使用本地副本: ${targetFile.absolutePath}")
                 // 立即读取密码并存储
@@ -426,61 +398,7 @@ class ProxyActivity : AppCompatActivity() {
         }
     }
     
-    /**
-     * 解析ContentURI的路径结构，提取路径组件
-     */
-    private fun parseContentUriPath(uri: Uri): List<String> {
-        val components = mutableListOf<String>()
-        
-        // 首先添加authority作为第一级目录
-        val authority = uri.authority ?: ""
-        if (authority.isNotEmpty()) {
-            components.add(authority)
-        }
-        
-        // 然后添加路径中的组件
-        val path = uri.path ?: ""
-        val parts = path.split("/").filter { it.isNotEmpty() }
-        // 排除最后一个文件名部分
-        for (i in 0 until parts.size - 1) {
-            components.add(parts[i])
-        }
-        
-        Log.d(TAG, "解析出的路径组件: $components")
-        return components
-    }
-    
-    /**
-     * 在Documents/WpsManagement/目录下创建相应的嵌套目录结构
-     */
-    private fun createTargetDirectory(pathComponents: List<String>): File? {
-        // 获取公共Documents目录
-        val documentsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOCUMENTS)
-        if (documentsDir == null) {
-            Log.e(TAG, "无法获取Documents目录")
-            return null
-        }
-        
-        // 创建WpsManagement主目录
-        val wpsManagementDir = File(documentsDir, "WpsManagement")
-        if (!wpsManagementDir.exists() && !wpsManagementDir.mkdirs()) {
-            Log.e(TAG, "创建WpsManagement目录失败")
-            return null
-        }
-        
-        // 递归创建子目录
-        var currentDir = wpsManagementDir
-        for (component in pathComponents) {
-            currentDir = File(currentDir, component)
-            if (!currentDir.exists() && !currentDir.mkdirs()) {
-                Log.e(TAG, "创建子目录失败: ${currentDir.absolutePath}")
-                return null
-            }
-        }
-        
-        Log.d(TAG, "创建目标目录成功: ${currentDir.absolutePath}")
-        return currentDir
-    }
+
     
     /**
      * 从ContentURI拷贝文件到目标路径，实现校验机制确保文件完整性
@@ -577,6 +495,7 @@ class ProxyActivity : AppCompatActivity() {
             if (localFile != null) {
                 // 使用FileProvider获取可共享的URI
                 val shareUri = getShareableUriFromFile(this, localFile)
+                Log.d(TAG, "插件转换后唤起WPS的ContentURI: $shareUri")
                 val wpsIntent = Intent(Intent.ACTION_VIEW)
                 wpsIntent.setDataAndType(shareUri, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
                 
@@ -622,6 +541,7 @@ class ProxyActivity : AppCompatActivity() {
             } else {
                 // 如果本地文件不存在，尝试直接使用原始URI
                 Log.d(TAG, "本地文件不存在，尝试使用原始URI")
+                Log.d(TAG, "插件转换后唤起WPS的ContentURI: $originalUri")
                 val wpsIntent = Intent(Intent.ACTION_VIEW)
                 wpsIntent.data = originalUri
                 wpsIntent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK
