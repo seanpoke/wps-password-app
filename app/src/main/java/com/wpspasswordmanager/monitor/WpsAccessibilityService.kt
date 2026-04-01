@@ -20,6 +20,7 @@ class WpsAccessibilityService : AccessibilityService() {
         private const val TAG = "WpsAccessibilityService"
         private val WPS_PACKAGES = arrayOf("cn.wps.moffice_eng", "cn.wps.moffice")
         private var lastPassword: String? = null
+        private var tempPassword: String? = null // 临时存储密码，用户确认前不写入MemoryPasswordStorage
         var currentDocumentPath: String? = null
         var stableDocumentPath: String? = null // 稳定的文档路径
         var currentFileUri: String? = null // 当前文件的URI
@@ -105,6 +106,10 @@ class WpsAccessibilityService : AccessibilityService() {
                         Log.d(TAG, "收到文本变化事件: ${event.source?.className}, 文本: ${event.text}")
                         handleViewTextChanged(event)
                     }
+                    AccessibilityEvent.TYPE_VIEW_LONG_CLICKED -> {
+                        Log.d(TAG, "收到长按事件: ${event.source?.className}, 文本: ${event.source?.text}")
+                        handleViewClicked(event)
+                    }
                     AccessibilityEvent.TYPE_VIEW_SELECTED -> {
                         Log.d(TAG, "收到视图选择事件: ${event.source?.className}")
                     }
@@ -154,33 +159,9 @@ class WpsAccessibilityService : AccessibilityService() {
             
             if (password.isNotEmpty()) {
                 Log.d(TAG, "密码输入框文本变化: '$password'，长度: ${password.length}")
-                // 存储密码到内存
-                if (currentFileUri != null) {
-                    Log.d(TAG, "使用文件URI: $currentFileUri")
-                    val stored = MemoryPasswordStorage.getInstance().storePasswordInMemory(currentFileUri!!, password, currentFileUri)
-                    if (stored) {
-                        Log.i(TAG, "已成功存储用户输入的密码到内存: $currentFileUri")
-                    } else {
-                        Log.e(TAG, "存储用户输入的密码到内存失败: $currentFileUri")
-                    }
-                } else if (stableDocumentPath != null) {
-                    Log.d(TAG, "使用稳定文档路径: $stableDocumentPath")
-                    val stored = MemoryPasswordStorage.getInstance().storePasswordInMemory(stableDocumentPath!!, password)
-                    if (stored) {
-                        Log.i(TAG, "已成功存储用户输入的密码到内存: $stableDocumentPath")
-                    } else {
-                        Log.e(TAG, "存储用户输入的密码到内存失败: $stableDocumentPath")
-                    }
-                } else {
-                    // 即使稳定文档路径为空，也先存储密码到内存，等文档路径确定后再处理
-                    Log.e(TAG, "稳定文档路径为空，先存储密码到临时存储")
-                    val stored = MemoryPasswordStorage.getInstance().storePasswordInMemory("temp", password)
-                    if (stored) {
-                        Log.i(TAG, "已成功存储用户输入的密码到临时内存")
-                    } else {
-                        Log.e(TAG, "存储用户输入的密码到临时内存失败")
-                    }
-                }
+                // 临时存储密码，用户确认前不写入MemoryPasswordStorage
+                tempPassword = password
+                Log.i(TAG, "已将用户输入的密码临时存储，等待用户确认: '$password'")
             }
         }
     }
@@ -211,27 +192,45 @@ class WpsAccessibilityService : AccessibilityService() {
                 Log.i(TAG, "用户点击确认按钮，时间: ${System.currentTimeMillis()}")
                 showOperationNotification("操作处理", "正在处理确认操作...")
                 
-                // 尝试获取密码，先从文件URI，再从稳定文档路径，最后从临时存储
-                var password: String? = null
-                if (currentFileUri != null) {
-                    password = MemoryPasswordStorage.getInstance().getPasswordFromMemory(currentFileUri!!)
-                }
-                if (password == null && stableDocumentPath != null) {
-                    password = MemoryPasswordStorage.getInstance().getPasswordFromMemory(stableDocumentPath!!)
-                }
-                if (password == null) {
-                    // 尝试从临时存储获取密码
-                    password = MemoryPasswordStorage.getInstance().getPasswordFromMemory("temp")
-                }
+                // 优先使用临时存储的密码
+                var password: String? = tempPassword
                 
                 if (password != null && password.isNotEmpty()) {
-                    Log.i(TAG, "从内存中获取到密码，长度: ${password.length}")
+                    Log.i(TAG, "从临时存储中获取到密码，长度: ${password.length}")
+                    
+                    // 将密码写入MemoryPasswordStorage进行持久化
+                    if (currentFileUri != null) {
+                        val stored = MemoryPasswordStorage.getInstance().storePasswordInMemory(currentFileUri!!, password, currentFileUri)
+                        if (stored) {
+                            Log.i(TAG, "已将密码持久化存储到内存: $currentFileUri")
+                        } else {
+                            Log.e(TAG, "存储密码到内存失败: $currentFileUri")
+                        }
+                    } else if (stableDocumentPath != null) {
+                        val stored = MemoryPasswordStorage.getInstance().storePasswordInMemory(stableDocumentPath!!, password)
+                        if (stored) {
+                            Log.i(TAG, "已将密码持久化存储到内存: $stableDocumentPath")
+                        } else {
+                            Log.e(TAG, "存储密码到内存失败: $stableDocumentPath")
+                        }
+                    } else {
+                        val stored = MemoryPasswordStorage.getInstance().storePasswordInMemory("temp", password)
+                        if (stored) {
+                            Log.i(TAG, "已将密码持久化存储到临时内存")
+                        } else {
+                            Log.e(TAG, "存储密码到临时内存失败")
+                        }
+                    }
+                    
                     showOperationNotification("操作处理", "密码已成功缓存到内存")
                     
                     // 启动文件系统事件监听器，由FileObserver处理密码写入
                     startFileSystemEventListener(password)
+                    
+                    // 清除临时密码
+                    tempPassword = null
                 } else {
-                    Log.e(TAG, "内存中未找到密码")
+                    Log.e(TAG, "临时存储中未找到密码")
                     showOperationNotification("操作失败", "未找到密码，请重新输入")
                 }
             } else {
@@ -293,9 +292,51 @@ class WpsAccessibilityService : AccessibilityService() {
         detectPasswordDialog(rootNode)
         detectDocumentPath(rootNode)
         
-        // 检测是否回退到文件列表页
+        // 检测是否从密码弹框切换到文档编辑界面
         val className = event.className?.toString() ?: ""
         Log.d(TAG, "当前窗口类名: $className")
+        
+        // 检查是否切换到文档编辑界面
+        val isDocumentEditor = className.contains("Writer") || className.contains("writer") ||
+                               className.contains("Spreadsheets") || className.contains("spreadsheets") ||
+                               className.contains("Presentation") || className.contains("presentation")
+        
+        if (isDocumentEditor) {
+            // 检查是否有临时密码未处理
+            if (tempPassword != null && tempPassword!!.isNotEmpty()) {
+                Log.i(TAG, "检测到从密码弹框切换到文档编辑界面，处理未确认的临时密码")
+                
+                // 将临时密码写入MemoryPasswordStorage
+                if (currentFileUri != null) {
+                    val stored = MemoryPasswordStorage.getInstance().storePasswordInMemory(currentFileUri!!, tempPassword!!, currentFileUri)
+                    if (stored) {
+                        Log.i(TAG, "已将临时密码持久化存储到内存: $currentFileUri")
+                    } else {
+                        Log.e(TAG, "存储密码到内存失败: $currentFileUri")
+                    }
+                } else if (stableDocumentPath != null) {
+                    val stored = MemoryPasswordStorage.getInstance().storePasswordInMemory(stableDocumentPath!!, tempPassword!!)
+                    if (stored) {
+                        Log.i(TAG, "已将临时密码持久化存储到内存: $stableDocumentPath")
+                    } else {
+                        Log.e(TAG, "存储密码到内存失败: $stableDocumentPath")
+                    }
+                } else {
+                    val stored = MemoryPasswordStorage.getInstance().storePasswordInMemory("temp", tempPassword!!)
+                    if (stored) {
+                        Log.i(TAG, "已将临时密码持久化存储到临时内存")
+                    } else {
+                        Log.e(TAG, "存储密码到临时内存失败")
+                    }
+                }
+                
+                // 启动文件系统事件监听器
+                startFileSystemEventListener(tempPassword!!)
+                
+                // 清除临时密码
+                tempPassword = null
+            }
+        }
         
         // 增强检测：多种可能的文件列表页类名
         val isFileListScreen = className.contains("HomeRootActivity") || 
@@ -318,6 +359,8 @@ class WpsAccessibilityService : AccessibilityService() {
             clearCurrentFileUri()
             stableDocumentPath = null
             currentDocumentPath = null
+            // 清理临时存储的密码
+            tempPassword = null
             // 清理内存中的密码
             MemoryPasswordStorage.getInstance().removePasswordFromMemory("temp")
             Log.d(TAG, "已清理密码相关缓存")
@@ -1562,21 +1605,10 @@ class WpsAccessibilityService : AccessibilityService() {
                     
                     if (fillSuccess) {
                         showOperationNotification("密码填充", "密码填充成功，弹窗保持打开状态")
-                        // 存储密码到内存
+                        // 临时存储密码，用户确认前不写入MemoryPasswordStorage
+                        tempPassword = password
                         lastPassword = password
-                        if (stableDocumentPath != null) {
-                            val stored = MemoryPasswordStorage.getInstance().storePasswordInMemory(stableDocumentPath!!, password)
-                            if (stored) {
-                                Log.i(TAG, "已存储密码到内存: $stableDocumentPath")
-                                Log.i(TAG, "存储的明文密码: '$password'")
-                            } else {
-                                Log.e(TAG, "存储密码到内存失败: $stableDocumentPath")
-                                showOperationNotification("密码存储", "密码已填充但未保存到内存，请手动确认")
-                            }
-                        } else {
-                            Log.e(TAG, "稳定文档路径为空，无法存储密码到内存")
-                            showOperationNotification("密码存储", "密码已填充但未保存到内存，请手动确认")
-                        }
+                        Log.i(TAG, "已将密码临时存储，等待用户确认: '$password'")
                     } else {
                         Log.e(TAG, "所有密码输入框填充失败")
                         showOperationNotification("密码填充", "密码填充失败，请重试")
