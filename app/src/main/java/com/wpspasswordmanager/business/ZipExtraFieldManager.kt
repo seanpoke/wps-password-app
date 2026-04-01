@@ -52,6 +52,11 @@ class ZipExtraFieldManager private constructor() {
                     continue
                 }
 
+                // 先删除旧的WPPM标记
+                if (removeOldWppmMarkers(file)) {
+                    Log.d(TAG, "成功删除旧的WPPM标记")
+                }
+
                 // 构建Extra Field数据
                 val extraFieldData = buildExtraFieldData(password)
                 
@@ -75,6 +80,119 @@ class ZipExtraFieldManager private constructor() {
 
         Log.e(TAG, "达到最大重试次数，写入失败")
         return false
+    }
+    
+    /**
+     * 删除文件中旧的WPPM标记
+     */
+    private fun removeOldWppmMarkers(file: File): Boolean {
+        try {
+            Log.d(TAG, "尝试删除旧的WPPM标记")
+            
+            RandomAccessFile(file, "rw").use { raf ->
+                val fileLength = raf.length()
+                if (fileLength < 20) {
+                    Log.d(TAG, "文件太小，无需删除WPPM标记")
+                    return true
+                }
+                
+                // 从文件尾部读取1KB数据来查找WPPM标记
+                val bufferSize = 1024
+                val startPosition = maxOf(0, fileLength - bufferSize)
+                val readSize = (fileLength - startPosition).toInt()
+                val buffer = ByteArray(bufferSize)
+                
+                raf.seek(startPosition)
+                raf.readFully(buffer, 0, readSize)
+                
+                // 查找所有WPPM标记
+                val signatureBytes = WPS_PASSWORD_SIGNATURE.toByteArray()
+                val signatureLength = signatureBytes.size
+                val markers = mutableListOf<Long>()
+                
+                // 从后向前搜索所有WPPM标记
+                for (i in readSize - signatureLength downTo 0) {
+                    var match = true
+                    for (j in 0 until signatureLength) {
+                        if (buffer[i + j] != signatureBytes[j]) {
+                            match = false
+                            break
+                        }
+                    }
+                    if (match) {
+                        val markerPosition = startPosition + i
+                        markers.add(markerPosition)
+                        Log.d(TAG, "找到WPPM标记，位置: $markerPosition")
+                    }
+                }
+                
+                if (markers.isEmpty()) {
+                    Log.d(TAG, "未找到WPPM标记")
+                    return true
+                }
+                
+                // 如果只有一个标记且是密码类型，保留它
+                if (markers.size == 1) {
+                    raf.seek(markers[0] + 6) // 跳过Magic(4)和Version(2)
+                    val type = raf.readByte()
+                    if (type == METADATA_TYPE_PASSWORD.toByte()) {
+                        Log.d(TAG, "只找到一个密码类型的WPPM标记，保留它")
+                        return true
+                    }
+                }
+                
+                // 删除所有WPPM标记：创建新文件，复制除WPPM标记外的所有内容
+                val tempFile = File.createTempFile("temp", ".tmp")
+                tempFile.deleteOnExit()
+                
+                RandomAccessFile(tempFile, "rw").use { tempRaf ->
+                    // 复制文件内容，跳过WPPM标记
+                    raf.seek(0)
+                    var currentPosition: Long = 0
+                    
+                    while (currentPosition < fileLength) {
+                        // 检查当前位置是否是WPPM标记
+                        val isMarker = markers.any { it == currentPosition }
+                        if (isMarker) {
+                            // 跳过WPPM标记及其后续数据
+                            // 读取标记类型
+                            raf.seek(currentPosition + 6) // 跳过Magic(4)和Version(2)
+                            val type = raf.readByte()
+                            
+                            // 读取数据长度
+                            val dataLengthBytes = ByteArray(4)
+                            raf.readFully(dataLengthBytes)
+                            val dataLength = byteArrayToInt(dataLengthBytes)
+                            
+                            // 计算标记总长度：Magic(4) + Version(2) + Type(1) + DataLength(4) + Data(dataLength) + Checksum(4)
+                            val markerTotalLength = 4 + 2 + 1 + 4 + dataLength + 4
+                            
+                            // 跳过整个标记
+                            currentPosition += markerTotalLength
+                            raf.seek(currentPosition)
+                            Log.d(TAG, "跳过WPPM标记，长度: $markerTotalLength")
+                        } else {
+                            // 复制一个字节
+                            val byte = raf.readByte()
+                            tempRaf.writeByte(byte.toInt())
+                            currentPosition++
+                        }
+                    }
+                }
+                
+                // 用临时文件替换原文件
+                if (file.delete() && tempFile.renameTo(file)) {
+                    Log.d(TAG, "成功删除旧的WPPM标记并替换文件")
+                    return true
+                } else {
+                    Log.e(TAG, "替换文件失败")
+                    return false
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "删除旧WPPM标记失败", e)
+            return false
+        }
     }
     
     /**
@@ -404,9 +522,11 @@ class ZipExtraFieldManager private constructor() {
             
             // 构建数据结构
             val signature = WPS_PASSWORD_SIGNATURE.toByteArray()
-            val version = byteArrayOf(0, WPS_PASSWORD_VERSION.toByte()) // 2字节版本号
+            // 2字节版本号（小端序）
+            val version = byteArrayOf(WPS_PASSWORD_VERSION.toByte(), 0)
             val type = byteArrayOf(METADATA_TYPE_PASSWORD.toByte()) // 1字节类型
-            val dataLength = intToByteArray(passwordBytes.size) // 4字节数据长度
+            // 4字节数据长度（小端序）
+            val dataLength = intToByteArrayLittleEndian(passwordBytes.size)
             
             // 计算CRC32校验和（计算范围：Magic到Data部分）
             val checksum = calculateCRC32Checksum(signature, version, type, dataLength, passwordBytes)
@@ -698,7 +818,7 @@ class ZipExtraFieldManager private constructor() {
     }
 
     /**
-     * Int转ByteArray
+     * Int转ByteArray（大端序）
      */
     private fun intToByteArray(value: Int): ByteArray {
         return byteArrayOf(
@@ -706,6 +826,18 @@ class ZipExtraFieldManager private constructor() {
             (value shr 16).toByte(),
             (value shr 8).toByte(),
             value.toByte()
+        )
+    }
+    
+    /**
+     * Int转ByteArray（小端序）
+     */
+    private fun intToByteArrayLittleEndian(value: Int): ByteArray {
+        return byteArrayOf(
+            value.toByte(),
+            (value shr 8).toByte(),
+            (value shr 16).toByte(),
+            (value shr 24).toByte()
         )
     }
 

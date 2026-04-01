@@ -12,6 +12,7 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import com.wpspasswordmanager.business.MemoryPasswordStorage
 import com.wpspasswordmanager.business.PasswordStorage
+import com.wpspasswordmanager.monitor.FileSystemEventListener
 
 class WpsAccessibilityService : AccessibilityService() {
 
@@ -28,6 +29,9 @@ class WpsAccessibilityService : AccessibilityService() {
         private var isFloatingButtonServiceStarted = false // 标记悬浮按钮服务是否已启动
         private var isDocumentOpened = false // 标记文档是否已经成功打开
     }
+    
+    // 文件系统事件监听器实例
+    private var fileSystemEventListener: FileSystemEventListener? = null
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -224,61 +228,8 @@ class WpsAccessibilityService : AccessibilityService() {
                     Log.i(TAG, "从内存中获取到密码，长度: ${password.length}")
                     showOperationNotification("操作处理", "密码已成功缓存到内存")
                     
-                    // 尝试写入密码到文件 - 已注释，由FileObserver处理
-                    /*
-                    try {
-                        var targetPath: String? = null
-                        if (currentFileUri != null) {
-                            targetPath = currentFileUri
-                        } else if (stableDocumentPath != null) {
-                            targetPath = stableDocumentPath
-                        }
-                        
-                        if (targetPath != null) {
-                            Log.d(TAG, "尝试写入密码到: $targetPath")
-                            // 检查是否是本地文件路径（不是Content URI）
-                            if (!targetPath.startsWith("content://")) {
-                                val file = java.io.File(targetPath)
-                                if (file.exists() && file.canWrite()) {
-                                    val success = PasswordStorage.getInstance().writePassword(this, targetPath, password)
-                                    if (success) {
-                                        Log.i(TAG, "密码写入成功")
-                                        showOperationNotification("操作成功", "密码已成功写入文件")
-                                        
-                                        // 密码写入成功后，清理相关缓存
-                                        clearCurrentFileUri()
-                                        stableDocumentPath = null
-                                        currentDocumentPath = null
-                                        // 清理内存中的密码
-                                        if (currentFileUri != null) {
-                                            MemoryPasswordStorage.getInstance().removePasswordFromMemory(currentFileUri!!)
-                                        }
-                                        if (stableDocumentPath != null) {
-                                            MemoryPasswordStorage.getInstance().removePasswordFromMemory(stableDocumentPath!!)
-                                        }
-                                        // 清理临时存储的密码
-                                        MemoryPasswordStorage.getInstance().removePasswordFromMemory("temp")
-                                        Log.d(TAG, "已清理密码相关缓存")
-                                    } else {
-                                        Log.e(TAG, "密码写入失败")
-                                        showOperationNotification("操作失败", "密码写入失败，请稍后重试")
-                                    }
-                                } else {
-                                    Log.e(TAG, "本地文件不存在或不可写: $targetPath")
-                                    showOperationNotification("操作失败", "文件不可写")
-                                }
-                            } else {
-                                Log.w(TAG, "跳过Content URI写入，使用本地文件副本")
-                                // 这里可以添加逻辑来查找对应的本地文件副本
-                            }
-                        } else {
-                            Log.e(TAG, "没有可用的文件路径")
-                        }
-                    } catch (e: Exception) {
-                        Log.e(TAG, "写入密码时发生异常", e)
-                        showOperationNotification("操作失败", "写入密码时发生异常")
-                    }
-                    */
+                    // 启动文件系统事件监听器，由FileObserver处理密码写入
+                    startFileSystemEventListener(password)
                 } else {
                     Log.e(TAG, "内存中未找到密码")
                     showOperationNotification("操作失败", "未找到密码，请重新输入")
@@ -358,85 +309,18 @@ class WpsAccessibilityService : AccessibilityService() {
             isDocumentOpened = false
             hasClickedShowPassword = false
             
-            // 尝试写入密码 - 已注释，由FileObserver处理
-            /*
-try {
-                var targetPath: String? = null
-                if (currentFileUri != null) {
-                    targetPath = currentFileUri
-                } else if (stableDocumentPath != null) {
-                    targetPath = stableDocumentPath
-                }
-                
-                if (targetPath != null) {
-                    Log.d(TAG, "准备写入密码到: $targetPath")
-                    // 从内存中获取密码
-                    var password: String? = null
-                    if (currentFileUri != null) {
-                        password = MemoryPasswordStorage.getInstance().getPasswordFromMemory(currentFileUri!!)
-                        Log.d(TAG, "从currentFileUri获取密码: $password")
-                    }
-                    if (password == null && stableDocumentPath != null) {
-                        password = MemoryPasswordStorage.getInstance().getPasswordFromMemory(stableDocumentPath!!)
-                        Log.d(TAG, "从stableDocumentPath获取密码: $password")
-                    }
-                    if (password == null) {
-                        // 尝试从临时存储获取密码
-                        password = MemoryPasswordStorage.getInstance().getPasswordFromMemory("temp")
-                        Log.d(TAG, "从临时存储获取密码: $password")
-                    }
-                    
-                    if (password != null && password.isNotEmpty()) {
-                        Log.d(TAG, "从内存中获取到密码，长度: ${password.length}")
-                        // 检查是否是本地文件路径（不是Content URI）
-                        if (!targetPath.startsWith("content://")) {
-                            val file = java.io.File(targetPath)
-                            Log.d(TAG, "检查本地文件: ${file.absolutePath}, 存在: ${file.exists()}, 可写: ${file.canWrite()}")
-                            if (file.exists() && file.canWrite()) {
-                                val success = PasswordStorage.getInstance().writePassword(this, targetPath, password)
-                                if (success) {
-                                    Log.i(TAG, "密码写入成功")
-                                    showOperationNotification("操作成功", "密码已成功写入文件")
-                                    
-                                    // 密码写入成功后，清理相关缓存
-                                    clearCurrentFileUri()
-                                    stableDocumentPath = null
-                                    currentDocumentPath = null
-                                    // 清理内存中的密码
-                                    if (currentFileUri != null) {
-                                        MemoryPasswordStorage.getInstance().removePasswordFromMemory(currentFileUri!!)
-                                    }
-                                    if (stableDocumentPath != null) {
-                                        MemoryPasswordStorage.getInstance().removePasswordFromMemory(stableDocumentPath!!)
-                                    }
-                                    // 清理临时存储的密码
-                                    MemoryPasswordStorage.getInstance().removePasswordFromMemory("temp")
-                                    Log.d(TAG, "已清理密码相关缓存")
-                                } else {
-                                    Log.e(TAG, "密码写入失败")
-                                    showOperationNotification("操作失败", "密码写入失败，请稍后重试")
-                                }
-                            } else {
-                                Log.e(TAG, "本地文件不存在或不可写: $targetPath")
-                                showOperationNotification("操作失败", "文件不可写")
-                            }
-                        } else {
-                            Log.w(TAG, "跳过Content URI写入，使用本地文件副本")
-                            // 这里可以添加逻辑来查找对应的本地文件副本
-                        }
-                    } else {
-                        Log.e(TAG, "内存中未找到密码")
-                        showOperationNotification("操作失败", "未找到密码")
-                    }
-                } else {
-                    Log.e(TAG, "没有可用的文件路径")
-                    showOperationNotification("操作失败", "没有可用的文件路径")
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "写入密码时发生异常", e)
-                showOperationNotification("操作失败", "写入密码时发生异常")
-            }
-*/
+            // 停止文件系统事件监听器
+            Log.d(TAG, "停止文件系统事件监听器")
+            fileSystemEventListener?.stopListening()
+            fileSystemEventListener = null
+            
+            // 清理相关缓存
+            clearCurrentFileUri()
+            stableDocumentPath = null
+            currentDocumentPath = null
+            // 清理内存中的密码
+            MemoryPasswordStorage.getInstance().removePasswordFromMemory("temp")
+            Log.d(TAG, "已清理密码相关缓存")
         }
     }
 
@@ -692,6 +576,9 @@ try {
                                             if (clickSuccess) {
                                                 Log.i(TAG, "成功点击确认按钮")
                                                 isDocumentOpened = true // 标记文档已打开
+                                                
+                                                // 启动文件系统事件监听器
+                                                startFileSystemEventListener(password)
                                             } else {
                                                 Log.e(TAG, "点击确认按钮失败")
                                             }
@@ -1464,6 +1351,36 @@ try {
     private fun stopFloatingButtonService() {
         // 移除悬浮按钮服务停止，避免崩溃
         Log.d(TAG, "悬浮按钮服务已禁用")
+    }
+    
+    /**
+     * 启动文件系统事件监听器
+     */
+    private fun startFileSystemEventListener(password: String) {
+        try {
+            var targetPath: String? = null
+            if (currentFileUri != null) {
+                targetPath = currentFileUri
+            } else if (stableDocumentPath != null) {
+                targetPath = stableDocumentPath
+            }
+            
+            if (targetPath != null) {
+                Log.d(TAG, "启动文件系统事件监听器: $targetPath")
+                // 先停止之前可能存在的监听器
+                fileSystemEventListener?.stopListening()
+                // 创建并启动新的文件系统事件监听器
+                fileSystemEventListener = FileSystemEventListener(targetPath, password, this)
+                fileSystemEventListener?.startListening()
+                showOperationNotification("操作成功", "已启动文件监听，将在文件保存后自动写入密码")
+            } else {
+                Log.e(TAG, "没有可用的文件路径")
+                showOperationNotification("操作失败", "没有可用的文件路径")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "启动文件系统事件监听器失败", e)
+            showOperationNotification("操作失败", "启动文件监听失败")
+        }
     }
 
     /**

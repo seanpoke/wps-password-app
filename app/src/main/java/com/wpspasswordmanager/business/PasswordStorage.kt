@@ -67,6 +67,13 @@ class PasswordStorage private constructor() {
             Log.d(TAG, "开始写入密码，文件路径: $key")
             Log.d(TAG, "密码长度: ${password.length}")
             
+            // 检查密码是否变化
+            val currentPassword = getPassword(context, key)
+            if (currentPassword == password) {
+                Log.d(TAG, "密码未变化，跳过写入操作: $key")
+                return true
+            }
+            
             // 检查是否是content URI
             if (key.startsWith("content://")) {
                 val uri = Uri.parse(key)
