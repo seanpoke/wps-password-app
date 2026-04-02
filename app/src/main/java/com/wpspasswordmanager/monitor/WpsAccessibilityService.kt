@@ -29,6 +29,15 @@ class WpsAccessibilityService : AccessibilityService() {
         private var hasClickedGeneratePassword = false // 标记是否点击了生成密码按钮
         private var isFloatingButtonServiceStarted = false // 标记悬浮按钮服务是否已启动
         private var isDocumentOpened = false // 标记文档是否已经成功打开
+        private var currentDialogType: DialogType = DialogType.UNKNOWN // 当前对话框类型
+        
+        // 对话框类型
+        enum class DialogType {
+            UNKNOWN,
+            OPEN_ENCRYPTED_DOCUMENT, // 打开加密文档
+            ADD_PASSWORD, // 添加密码
+            MODIFY_PASSWORD // 修改密码
+        }
     }
     
     // 文件系统事件监听器实例
@@ -368,6 +377,11 @@ class WpsAccessibilityService : AccessibilityService() {
     }
 
     private fun handleWindowContentChanged(event: AccessibilityEvent) {
+        // 防止在密码填充过程中处理窗口内容改变事件，避免循环调用
+        if (isFillingPassword) {
+            Log.d(TAG, "正在填充密码中，跳过窗口内容改变事件处理")
+            return
+        }
         Log.d(TAG, "窗口内容改变: ${event.className}")
         val rootNode = rootInActiveWindow ?: return
         detectPasswordDialog(rootNode)
@@ -375,6 +389,11 @@ class WpsAccessibilityService : AccessibilityService() {
     }
 
     private fun handleViewFocused(event: AccessibilityEvent) {
+        // 防止在密码填充过程中处理视图获得焦点事件，避免循环调用
+        if (isFillingPassword) {
+            Log.d(TAG, "正在填充密码中，跳过视图获得焦点事件处理")
+            return
+        }
         Log.d(TAG, "视图获得焦点: ${event.className}")
         val rootNode = rootInActiveWindow ?: return
         detectPasswordDialog(rootNode)
@@ -387,19 +406,29 @@ class WpsAccessibilityService : AccessibilityService() {
         // 查找确认按钮
         val confirmButton = findConfirmButton(rootNode)
         
-        // 只有当同时找到密码输入框和确认按钮时，才认为是添加密码或修改密码的弹框
+        // 只有当同时找到密码输入框和确认按钮时，才认为是密码弹框
         val isPasswordDialog = passwordInputNodes.isNotEmpty() && confirmButton != null
         
         if (isPasswordDialog) {
             Log.d(TAG, "找到密码输入框: ${passwordInputNodes.size}，找到确认按钮: ${confirmButton != null}，判断为密码弹框")
             
+            // 检测对话框类型
+            detectDialogType(rootNode)
+            
             // 尝试找到并点击【显示密码】选项
             findAndClickShowPasswordOption(rootNode)
             
-            // 启动悬浮按钮服务
-            startFloatingButtonService()
-            // 显示悬浮按钮
-            AccessibilityServiceManager.getInstance().showFloatingButton()
+            // 只有在【添加密码】或【修改密码】窗口时显示悬浮按钮
+            if (currentDialogType == DialogType.ADD_PASSWORD || currentDialogType == DialogType.MODIFY_PASSWORD) {
+                // 启动悬浮按钮服务
+                startFloatingButtonService()
+                // 显示悬浮按钮
+                AccessibilityServiceManager.getInstance().showFloatingButton()
+            } else {
+                // 其他密码弹框（如打开加密文档）不显示悬浮按钮
+                AccessibilityServiceManager.getInstance().hideFloatingButton()
+                stopFloatingButtonService()
+            }
             
             // 尝试自动填充密码
             autoFillPassword(rootNode)
@@ -407,10 +436,19 @@ class WpsAccessibilityService : AccessibilityService() {
             // 隐藏悬浮按钮
             AccessibilityServiceManager.getInstance().hideFloatingButton()
             stopFloatingButtonService()
+            // 重置对话框类型
+            currentDialogType = DialogType.UNKNOWN
+            // 重置显示密码标志，确保下次打开弹窗时重新勾选
+            hasClickedShowPassword = false
+            // 重置其他标志
+            isDocumentOpened = false
+            hasClickedGeneratePassword = false
+            // 清除临时密码，避免下次打开弹窗时使用旧密码
+            tempPassword = null
             // 当没有找到密码输入框时，不立即认为文档进程完全关闭
             // 只有在确定文档进程真正关闭时才清除密码和重置文档路径
             // 避免在打开【密码加密】等其他窗口时误判
-            Log.d(TAG, "未检测到密码输入框，保持当前状态")
+            Log.d(TAG, "未检测到密码输入框，重置相关状态")
         }
 
         // 查找保存按钮
@@ -421,17 +459,72 @@ class WpsAccessibilityService : AccessibilityService() {
     }
     
     /**
+     * 检测对话框类型
+     */
+    private fun detectDialogType(rootNode: AccessibilityNodeInfo) {
+        try {
+            val queue = mutableListOf(rootNode)
+            
+            while (queue.isNotEmpty()) {
+                val node = queue.removeAt(0)
+                val text = node.text?.toString() ?: ""
+                val contentDescription = node.contentDescription?.toString() ?: ""
+                
+                // 检测对话框标题或文本
+                if (text.contains("文档已加密") || text.contains("Document is encrypted")) {
+                    currentDialogType = DialogType.OPEN_ENCRYPTED_DOCUMENT
+                    Log.d(TAG, "检测到对话框类型: 打开加密文档")
+                    return
+                } else if (text.contains("添加密码") || text.contains("Add Password") || text.contains("add password")) {
+                    currentDialogType = DialogType.ADD_PASSWORD
+                    Log.d(TAG, "检测到对话框类型: 添加密码")
+                    return
+                } else if (text.contains("修改密码") || text.contains("Modify Password") || text.contains("modify password")) {
+                    currentDialogType = DialogType.MODIFY_PASSWORD
+                    Log.d(TAG, "检测到对话框类型: 修改密码")
+                    return
+                }
+                
+                // 检查内容描述
+                if (contentDescription.contains("文档已加密") || contentDescription.contains("Document is encrypted")) {
+                    currentDialogType = DialogType.OPEN_ENCRYPTED_DOCUMENT
+                    Log.d(TAG, "检测到对话框类型: 打开加密文档")
+                    return
+                } else if (contentDescription.contains("添加密码") || contentDescription.contains("Add Password") || contentDescription.contains("add password")) {
+                    currentDialogType = DialogType.ADD_PASSWORD
+                    Log.d(TAG, "检测到对话框类型: 添加密码")
+                    return
+                } else if (contentDescription.contains("修改密码") || contentDescription.contains("Modify Password") || contentDescription.contains("modify password")) {
+                    currentDialogType = DialogType.MODIFY_PASSWORD
+                    Log.d(TAG, "检测到对话框类型: 修改密码")
+                    return
+                }
+                
+                // 遍历子节点
+                for (i in 0 until node.childCount) {
+                    val child = node.getChild(i)
+                    if (child != null) {
+                        queue.add(child)
+                    }
+                }
+            }
+            
+            // 默认类型
+            currentDialogType = DialogType.UNKNOWN
+            Log.d(TAG, "检测到对话框类型: 未知")
+        } catch (e: Exception) {
+            Log.e(TAG, "检测对话框类型失败", e)
+            currentDialogType = DialogType.UNKNOWN
+        }
+    }
+    
+    /**
      * 查找并点击【显示密码】选项
      */
     private fun findAndClickShowPasswordOption(rootNode: AccessibilityNodeInfo) {
-        // 如果已经点击过【显示密码】选项，不再重复点击
-        if (hasClickedShowPassword) {
-            Log.d(TAG, "已经点击过【显示密码】选项，不再重复点击")
-            return
-        }
-        
         try {
             val queue = mutableListOf(rootNode)
+            var foundShowPasswordOption = false
             
             while (queue.isNotEmpty()) {
                 val node = queue.removeAt(0)
@@ -450,33 +543,49 @@ class WpsAccessibilityService : AccessibilityService() {
                                         node.className?.toString()?.contains("Toggle") ?: false
                 
                 if (hasShowPasswordText || isCheckboxOrSwitch) {
+                    foundShowPasswordOption = true
                     Log.d(TAG, "找到可能的【显示密码】选项: $text")
                     Log.d(TAG, "选项类名: ${node.className}")
                     Log.d(TAG, "是否可点击: ${node.isClickable}")
                     Log.d(TAG, "是否可聚焦: ${node.isFocusable}")
+                    Log.d(TAG, "当前对话框类型: $currentDialogType")
+                    Log.d(TAG, "是否已经点击过: $hasClickedShowPassword")
                     
-                    // 尝试直接点击
-                    if (node.isClickable) {
-                        val success = node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-                        if (success) {
-                            Log.i(TAG, "成功点击【显示密码】选项")
-                            hasClickedShowPassword = true
-                            return
-                        } else {
-                            Log.e(TAG, "直接点击【显示密码】选项失败")
+                    // 对于修改密码对话框，需要实时监测可交互状态
+                    if (currentDialogType == DialogType.MODIFY_PASSWORD) {
+                        // 当检测到勾选框处于可勾选状态时，自动将其勾选
+                        if (node.isClickable) {
+                            Log.d(TAG, "修改密码对话框中【显示密码】选项可点击，尝试点击")
+                            val success = node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                            if (success) {
+                                Log.i(TAG, "成功点击【显示密码】选项")
+                                hasClickedShowPassword = true
+                            } else {
+                                Log.e(TAG, "直接点击【显示密码】选项失败")
+                            }
+                        }
+                    } else {
+                        // 对于其他对话框类型，只在未点击过时点击
+                        if (!hasClickedShowPassword && node.isClickable) {
+                            val success = node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                            if (success) {
+                                Log.i(TAG, "成功点击【显示密码】选项")
+                                hasClickedShowPassword = true
+                            } else {
+                                Log.e(TAG, "直接点击【显示密码】选项失败")
+                            }
                         }
                     }
                     
                     // 尝试点击子节点
                     for (i in 0 until node.childCount) {
                         val child = node.getChild(i)
-                        if (child != null && child.isClickable) {
+                        if (child != null && child.isClickable && !hasClickedShowPassword) {
                             Log.d(TAG, "尝试点击子节点: ${child.className}")
                             val success = child.performAction(AccessibilityNodeInfo.ACTION_CLICK)
                             if (success) {
                                 Log.i(TAG, "成功点击【显示密码】选项的子节点")
                                 hasClickedShowPassword = true
-                                return
                             } else {
                                 Log.e(TAG, "点击【显示密码】选项的子节点失败")
                             }
@@ -485,16 +594,20 @@ class WpsAccessibilityService : AccessibilityService() {
                     
                     // 尝试点击父节点
                     val parent = node.parent
-                    if (parent != null && parent.isClickable) {
+                    if (parent != null && parent.isClickable && !hasClickedShowPassword) {
                         Log.d(TAG, "尝试点击父节点: ${parent.className}")
                         val success = parent.performAction(AccessibilityNodeInfo.ACTION_CLICK)
                         if (success) {
                             Log.i(TAG, "成功点击【显示密码】选项的父节点")
                             hasClickedShowPassword = true
-                            return
                         } else {
                             Log.e(TAG, "点击【显示密码】选项的父节点失败")
                         }
+                    }
+                    
+                    // 找到【显示密码】选项后，不再继续搜索
+                    if (hasClickedShowPassword) {
+                        break
                     }
                 }
                 
@@ -507,7 +620,9 @@ class WpsAccessibilityService : AccessibilityService() {
                 }
             }
             
-            Log.d(TAG, "未找到【显示密码】选项")
+            if (!foundShowPasswordOption) {
+                Log.d(TAG, "未找到【显示密码】选项")
+            }
         } catch (e: Exception) {
             Log.e(TAG, "查找并点击【显示密码】选项失败", e)
         }
@@ -547,6 +662,12 @@ class WpsAccessibilityService : AccessibilityService() {
             // 防止无限循环填充
             if (isFillingPassword) {
                 Log.d(TAG, "正在填充密码中，跳过自动填充")
+                return
+            }
+            
+            // 【添加密码】弹窗不需要自动填充密码，只需要实现【显示密码】选项的自动勾选功能
+            if (currentDialogType == DialogType.ADD_PASSWORD) {
+                Log.d(TAG, "添加密码弹窗，跳过自动填充")
                 return
             }
             
@@ -593,6 +714,7 @@ class WpsAccessibilityService : AccessibilityService() {
                 if (passwordInputNodes.isNotEmpty()) {
                     isFillingPassword = true
                     try {
+                        // 对于其他窗口，填充所有密码输入框
                         for (node in passwordInputNodes) {
                             try {
                                 // 填充密码
@@ -604,10 +726,9 @@ class WpsAccessibilityService : AccessibilityService() {
                                     
                                     // 检查是否需要自动点击确认按钮
                                     // 只有在首次打开加密文件的场景中才自动提交
-                                    // 【添加密码】窗口不允许自动关闭，必须由用户手动操作
-                                    val shouldAutoSubmit = !hasClickedGeneratePassword
+                                    val shouldAutoSubmit = !hasClickedGeneratePassword && (currentDialogType == DialogType.OPEN_ENCRYPTED_DOCUMENT)
                                     
-                                    Log.i(TAG, "是否自动提交: $shouldAutoSubmit, 场景类型: ${if (hasClickedGeneratePassword) "生成密码" else "首次打开"}")
+                                    Log.i(TAG, "是否自动提交: $shouldAutoSubmit, 场景类型: ${if (hasClickedGeneratePassword) "生成密码" else if (currentDialogType == DialogType.OPEN_ENCRYPTED_DOCUMENT) "首次打开" else "修改密码"}")
                                     
                                     if (shouldAutoSubmit) {
                                         // 场景1：首次打开加密文件，自动点击确认按钮
@@ -1387,13 +1508,40 @@ class WpsAccessibilityService : AccessibilityService() {
     }
 
     private fun startFloatingButtonService() {
-        // 移除悬浮按钮服务启动，避免崩溃
-        Log.d(TAG, "悬浮按钮服务已禁用")
+        try {
+            if (!isFloatingButtonServiceStarted) {
+                val intent = Intent(this, com.wpspasswordmanager.ui.FloatingButtonService::class.java)
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    startForegroundService(intent)
+                } else {
+                    startService(intent)
+                }
+                isFloatingButtonServiceStarted = true
+                Log.d(TAG, "悬浮按钮服务启动成功")
+            } else {
+                Log.d(TAG, "悬浮按钮服务已经启动")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "启动悬浮按钮服务失败", e)
+        }
     }
 
     private fun stopFloatingButtonService() {
-        // 移除悬浮按钮服务停止，避免崩溃
-        Log.d(TAG, "悬浮按钮服务已禁用")
+        try {
+            // 先隐藏悬浮按钮
+            AccessibilityServiceManager.getInstance().hideFloatingButton()
+            
+            if (isFloatingButtonServiceStarted) {
+                val intent = Intent(this, com.wpspasswordmanager.ui.FloatingButtonService::class.java)
+                stopService(intent)
+                isFloatingButtonServiceStarted = false
+                Log.d(TAG, "悬浮按钮服务停止成功")
+            } else {
+                Log.d(TAG, "悬浮按钮服务已经停止")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "停止悬浮按钮服务失败", e)
+        }
     }
     
     /**
@@ -1579,13 +1727,24 @@ class WpsAccessibilityService : AccessibilityService() {
 
             Log.i(TAG, "开始执行密码填充操作，时间: ${System.currentTimeMillis()}")
             Log.i(TAG, "填充的明文密码: '$password'")
+            Log.i(TAG, "当前对话框类型: $currentDialogType")
             showOperationNotification("密码填充", "正在填充密码...")
             
             if (passwordInputNodes.isNotEmpty()) {
                 var fillSuccess = false
                 isFillingPassword = true
                 try {
-                    for (node in passwordInputNodes) {
+                    // 根据对话框类型决定填充策略
+                    val nodesToFill = if (currentDialogType == DialogType.ADD_PASSWORD) {
+                        // 对于添加密码窗口，只填充前两个输入框（假设是【打开权限】部分）
+                        Log.i(TAG, "添加密码窗口，只填充前两个密码输入框")
+                        passwordInputNodes.take(2)
+                    } else {
+                        // 对于其他窗口，填充所有密码输入框
+                        passwordInputNodes
+                    }
+                    
+                    for (node in nodesToFill) {
                         try {
                             // 填充密码
                             val arguments = android.os.Bundle()

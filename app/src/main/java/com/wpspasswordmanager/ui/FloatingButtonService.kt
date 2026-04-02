@@ -46,22 +46,8 @@ class FloatingButtonService : Service() {
     
     private fun startForegroundService() {
         try {
-            val notificationBuilder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val notificationManager = getSystemService(NOTIFICATION_SERVICE) as android.app.NotificationManager
-                val channel = android.app.NotificationChannel(
-                    "floating_button_channel",
-                    "悬浮按钮服务",
-                    android.app.NotificationManager.IMPORTANCE_LOW
-                )
-                channel.description = "提供WPS文档密码管理的悬浮按钮功能"
-                notificationManager.createNotificationChannel(channel)
-                
-                androidx.core.app.NotificationCompat.Builder(this, "floating_button_channel")
-            } else {
-                androidx.core.app.NotificationCompat.Builder(this)
-            }
-            
-            val notification = notificationBuilder
+            // 使用AppNotificationManager中已创建的通知频道
+            val notification = androidx.core.app.NotificationCompat.Builder(this, "operation_channel")
                 .setContentTitle("WPS密码管理器")
                 .setContentText("悬浮按钮服务正在运行")
                 .setSmallIcon(R.mipmap.ic_launcher)
@@ -90,7 +76,34 @@ class FloatingButtonService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         Log.d(TAG, "悬浮按钮服务销毁")
-        removeFloatingButton()
+        // 强制移除悬浮按钮，无论isFloatingButtonVisible的状态如何
+        try {
+            if (::windowManager.isInitialized && ::floatingView.isInitialized) {
+                // 尝试移除视图，即使可能已经被移除
+                try {
+                    windowManager.removeView(floatingView)
+                    isFloatingButtonVisible = false
+                    Log.d(TAG, "悬浮按钮移除成功")
+                } catch (e: IllegalArgumentException) {
+                    // 视图可能已经被移除，这是正常的
+                    Log.d(TAG, "悬浮按钮视图已不存在，无需移除")
+                    isFloatingButtonVisible = false
+                } catch (e: Exception) {
+                    Log.e(TAG, "移除悬浮按钮失败", e)
+                    isFloatingButtonVisible = false
+                }
+            } else {
+                Log.d(TAG, "悬浮按钮未初始化，无需移除")
+                isFloatingButtonVisible = false
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "移除悬浮按钮时发生异常", e)
+            isFloatingButtonVisible = false
+        } finally {
+            // 清除AccessibilityServiceManager中的引用，确保下次启动服务时能够正确初始化
+            AccessibilityServiceManager.getInstance().setFloatingButtonService(null)
+            Log.d(TAG, "已清除AccessibilityServiceManager中的悬浮按钮服务引用")
+        }
     }
 
     private fun initFloatingButton() {
@@ -115,7 +128,10 @@ class FloatingButtonService : Service() {
             } else {
                 WindowManager.LayoutParams.TYPE_PHONE
             },
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+            WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
+            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         )
 
@@ -142,9 +158,13 @@ class FloatingButtonService : Service() {
                 }
                 MotionEvent.ACTION_MOVE -> {
                     // 更新位置
-                    params.x = event.rawX.toInt() - floatingView.width / 2
-                    params.y = event.rawY.toInt() - floatingView.height / 2
-                    windowManager.updateViewLayout(floatingView, params)
+                    try {
+                        params.x = event.rawX.toInt() - floatingView.width / 2
+                        params.y = event.rawY.toInt() - floatingView.height / 2
+                        windowManager.updateViewLayout(floatingView, params)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "更新悬浮按钮位置失败", e)
+                    }
                 }
                 MotionEvent.ACTION_UP -> {
                     // 结束拖动
@@ -163,14 +183,27 @@ class FloatingButtonService : Service() {
     }
 
     private fun removeFloatingButton() {
-        if (isFloatingButtonVisible) {
-            try {
-                windowManager.removeView(floatingView)
+        // 无论isFloatingButtonVisible的状态如何，都尝试移除悬浮按钮
+        try {
+            if (::windowManager.isInitialized && ::floatingView.isInitialized) {
+                // 尝试移除视图，即使可能已经被移除
+                try {
+                    windowManager.removeView(floatingView)
+                    Log.d(TAG, "悬浮按钮移除成功")
+                } catch (e: IllegalArgumentException) {
+                    // 视图可能已经被移除，这是正常的
+                    Log.d(TAG, "悬浮按钮视图已不存在，无需移除")
+                } catch (e: Exception) {
+                    Log.e(TAG, "移除悬浮按钮失败", e)
+                }
                 isFloatingButtonVisible = false
-                Log.d(TAG, "悬浮按钮移除成功")
-            } catch (e: Exception) {
-                Log.e(TAG, "移除悬浮按钮失败", e)
+            } else {
+                Log.d(TAG, "悬浮按钮未初始化，无需移除")
+                isFloatingButtonVisible = false
             }
+        } catch (e: Exception) {
+            Log.e(TAG, "移除悬浮按钮时发生异常", e)
+            isFloatingButtonVisible = false
         }
     }
 
@@ -196,10 +229,12 @@ class FloatingButtonService : Service() {
         // 从文件扩展属性读取密码
         val password = PasswordStorage.getInstance().getPassword(this, documentPath)
         if (password != null && password.isNotEmpty()) {
+            // 将密码复制到剪贴板
+            copyToClipboard(password)
             // 显示密码通知
-            showOperationNotification("查看密码", "密码: $password")
+            showOperationNotification("查看密码", "密码已复制到剪贴板")
             // 显示Toast提示
-            Toast.makeText(this, "密码: $password", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "密码已复制到剪贴板", Toast.LENGTH_LONG).show()
             Log.d(TAG, "从文件扩展属性读取密码成功: $password")
         } else {
             showOperationNotification("查看密码", "未找到存储的密码")
@@ -207,22 +242,74 @@ class FloatingButtonService : Service() {
             Log.e(TAG, "未找到存储的密码，文件路径: $documentPath")
         }
     }
+    
+    /**
+     * 将文本复制到剪贴板
+     */
+    private fun copyToClipboard(text: String) {
+        try {
+            val clipboard = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+            val clip = android.content.ClipData.newPlainText("密码", text)
+            clipboard.setPrimaryClip(clip)
+            Log.d(TAG, "密码已成功复制到剪贴板")
+        } catch (e: Exception) {
+            Log.e(TAG, "复制到剪贴板失败", e)
+            Toast.makeText(this, "复制到剪贴板失败", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     fun showFloatingButton() {
-        if (!isFloatingButtonVisible) {
+        try {
             // 再次检查权限
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 if (!Settings.canDrawOverlays(this)) {
                     Log.e(TAG, "没有显示在其他应用之上的权限，无法显示悬浮按钮")
+                    showPermissionNotification()
                     return
                 }
             }
-            initFloatingButton()
+            
+            if (!isFloatingButtonVisible) {
+                Log.d(TAG, "开始初始化悬浮按钮")
+                initFloatingButton()
+            } else {
+                Log.d(TAG, "悬浮按钮已经可见，无需重复显示")
+                // 确保按钮仍然存在
+                try {
+                    if (::windowManager.isInitialized && ::floatingView.isInitialized) {
+                        Log.d(TAG, "悬浮按钮已确认显示")
+                    } else {
+                        Log.d(TAG, "悬浮按钮引用丢失，重新初始化")
+                        isFloatingButtonVisible = false
+                        initFloatingButton()
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "检查悬浮按钮状态失败", e)
+                    isFloatingButtonVisible = false
+                    initFloatingButton()
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "显示悬浮按钮时发生异常", e)
+            isFloatingButtonVisible = false
+            // 尝试重新初始化
+            try {
+                initFloatingButton()
+            } catch (retryEx: Exception) {
+                Log.e(TAG, "重新初始化悬浮按钮失败", retryEx)
+            }
         }
     }
 
     fun hideFloatingButton() {
-        removeFloatingButton()
+        try {
+            // 无论isFloatingButtonVisible的状态如何，都尝试移除悬浮按钮
+            // 确保即使状态标志不正确，也能实际隐藏按钮
+            removeFloatingButton()
+        } catch (e: Exception) {
+            Log.e(TAG, "隐藏悬浮按钮时发生异常", e)
+            isFloatingButtonVisible = false
+        }
     }
 
     private fun showPermissionNotification() {

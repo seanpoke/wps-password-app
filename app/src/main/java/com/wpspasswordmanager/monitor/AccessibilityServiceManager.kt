@@ -27,9 +27,13 @@ class AccessibilityServiceManager private constructor() {
         Log.d(TAG, "无障碍服务已设置")
     }
 
-    fun setFloatingButtonService(service: com.wpspasswordmanager.ui.FloatingButtonService) {
+    fun setFloatingButtonService(service: com.wpspasswordmanager.ui.FloatingButtonService?) {
         this.floatingButtonService = service
-        Log.d(TAG, "悬浮按钮服务已设置")
+        if (service != null) {
+            Log.d(TAG, "悬浮按钮服务已设置")
+        } else {
+            Log.d(TAG, "悬浮按钮服务引用已清除")
+        }
     }
 
     fun getService(): WpsAccessibilityService? {
@@ -55,10 +59,18 @@ class AccessibilityServiceManager private constructor() {
     }
 
     fun showFloatingButton() {
-        floatingButtonService?.showFloatingButton()
+        if (floatingButtonService != null) {
+            floatingButtonService?.showFloatingButton()
+        } else {
+            Log.d(TAG, "悬浮按钮服务未初始化，无法显示")
+        }
     }
 
     fun hideFloatingButton() {
-        floatingButtonService?.hideFloatingButton()
+        if (floatingButtonService != null) {
+            floatingButtonService?.hideFloatingButton()
+        } else {
+            Log.d(TAG, "悬浮按钮服务未初始化，无需隐藏")
+        }
     }
 }
