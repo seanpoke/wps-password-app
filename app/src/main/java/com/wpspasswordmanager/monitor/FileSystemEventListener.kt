@@ -65,11 +65,11 @@ class FileSystemEventListener(private val filePath: String, private val password
      */
     private fun handleFileEvent(event: Int, path: String?) {
         try {
-            Log.d(TAG, "文件系统事件: $event, 路径: $path")
+            Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 文件系统事件: $event, 路径: $path")
             
             // 当文件关闭写入时触发密码写入
             if (event and FileObserver.CLOSE_WRITE != 0) {
-                Log.d(TAG, "文件关闭写入，触发密码写入")
+                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 文件关闭写入，触发密码写入")
                 
                 // 防抖处理：取消之前的任务，只处理最后一次事件
                 debounceRunnable?.let { handler?.removeCallbacks(it) }
@@ -82,38 +82,42 @@ class FileSystemEventListener(private val filePath: String, private val password
                     try {
                         // 检查是否已经处理过此事件
                         if (isHandlingEvent) {
-                            Log.d(TAG, "事件已在处理中，跳过")
+                            Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 事件已在处理中，跳过")
                             return@Runnable
                         }
                         
                         isHandlingEvent = true
+                        Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 开始处理文件系统事件，准备写入密码: '$password' 到文件: $filePath")
                         
                         // 写入密码
                         val success = PasswordStorage.getInstance().writePassword(context, filePath, password)
                         if (success) {
-                            Log.d(TAG, "密码写入成功")
+                            Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 密码写入成功")
                             // 打印文件zip尾部最后1KB的内容
                             logFileTail()
                         } else {
-                            Log.e(TAG, "密码写入失败")
+                            Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 密码写入失败")
                         }
                         
                         // 密码写入完成后，停止监听
                         stopListening()
+                        Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 停止文件系统事件监听器")
                     } catch (e: Exception) {
-                        Log.e(TAG, "处理文件系统事件失败", e)
+                        Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 处理文件系统事件失败", e)
                     } finally {
                         isHandlingEvent = false
+                        Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 文件系统事件处理完成")
                     }
                 }
                 
                 debounceRunnable = runnable
                 
                 // 延迟执行，确保只处理最后一次事件
+                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 延迟 ${DEBOUNCE_DELAY}ms 执行密码写入")
                 handler?.postDelayed(runnable, DEBOUNCE_DELAY)
             }
         } catch (e: Exception) {
-            Log.e(TAG, "处理文件系统事件失败", e)
+            Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 处理文件系统事件失败", e)
         }
     }
     

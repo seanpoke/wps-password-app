@@ -31,6 +31,11 @@ class WpsAccessibilityService : AccessibilityService() {
         private var isDocumentOpened = false // 标记文档是否已经成功打开
         private var currentDialogType: DialogType = DialogType.UNKNOWN // 当前对话框类型
         
+        // 显示密码监测相关变量
+        private var isMonitoringShowPassword = false // 是否正在监测显示密码勾选框
+        private var showPasswordChecked = false // 显示密码是否已勾选
+        private var showPasswordMonitorThread: Thread? = null // 监测线程
+        
         // 对话框类型
         enum class DialogType {
             UNKNOWN,
@@ -52,6 +57,22 @@ class WpsAccessibilityService : AccessibilityService() {
 
         // 注册服务到管理器
         AccessibilityServiceManager.getInstance().setService(this)
+
+        // 初始化所有状态变量
+        currentDialogType = DialogType.UNKNOWN
+        hasClickedShowPassword = false
+        showPasswordChecked = false
+        isMonitoringShowPassword = false
+        showPasswordMonitorThread = null
+        isFillingPassword = false
+        hasClickedGeneratePassword = false
+        isFloatingButtonServiceStarted = false
+        isDocumentOpened = false
+        tempPassword = null
+        currentFileUri = null
+        stableDocumentPath = null
+        currentDocumentPath = null
+        fileSystemEventListener = null
 
         val info = AccessibilityServiceInfo().apply {
             eventTypes = AccessibilityEvent.TYPES_ALL_MASK
@@ -167,10 +188,12 @@ class WpsAccessibilityService : AccessibilityService() {
             }
             
             if (password.isNotEmpty()) {
-                Log.d(TAG, "密码输入框文本变化: '$password'，长度: ${password.length}")
+                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 密码输入框文本变化: '$password'，长度: ${password.length}")
+                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 变化前的tempPassword: '${tempPassword ?: "null"}'")
                 // 临时存储密码，用户确认前不写入MemoryPasswordStorage
                 tempPassword = password
-                Log.i(TAG, "已将用户输入的密码临时存储，等待用户确认: '$password'")
+                Log.i(TAG, "[时间戳: ${System.currentTimeMillis()}] 已将用户输入的密码临时存储，等待用户确认: '$password'")
+                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 变化后的tempPassword: '${tempPassword ?: "null"}'")
             }
         }
     }
@@ -205,41 +228,55 @@ class WpsAccessibilityService : AccessibilityService() {
                 var password: String? = tempPassword
                 
                 if (password != null && password.isNotEmpty()) {
-                    Log.i(TAG, "从临时存储中获取到密码，长度: ${password.length}")
+                    Log.i(TAG, "[时间戳: ${System.currentTimeMillis()}] 从临时存储中获取到密码: '$password'，长度: ${password.length}")
                     
                     // 将密码写入MemoryPasswordStorage进行持久化
                     if (currentFileUri != null) {
+                        Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 准备将密码存储到内存，键: $currentFileUri")
                         val stored = MemoryPasswordStorage.getInstance().storePasswordInMemory(currentFileUri!!, password, currentFileUri)
                         if (stored) {
-                            Log.i(TAG, "已将密码持久化存储到内存: $currentFileUri")
+                            Log.i(TAG, "[时间戳: ${System.currentTimeMillis()}] 已将密码持久化存储到内存: $currentFileUri")
+                            // 验证缓存状态
+                            val cachedPassword = MemoryPasswordStorage.getInstance().getPasswordFromMemory(currentFileUri!!)
+                            Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 缓存验证 - 键: $currentFileUri, 密码: '$cachedPassword'")
                         } else {
-                            Log.e(TAG, "存储密码到内存失败: $currentFileUri")
+                            Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 存储密码到内存失败: $currentFileUri")
                         }
                     } else if (stableDocumentPath != null) {
+                        Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 准备将密码存储到内存，键: $stableDocumentPath")
                         val stored = MemoryPasswordStorage.getInstance().storePasswordInMemory(stableDocumentPath!!, password)
                         if (stored) {
-                            Log.i(TAG, "已将密码持久化存储到内存: $stableDocumentPath")
+                            Log.i(TAG, "[时间戳: ${System.currentTimeMillis()}] 已将密码持久化存储到内存: $stableDocumentPath")
+                            // 验证缓存状态
+                            val cachedPassword = MemoryPasswordStorage.getInstance().getPasswordFromMemory(stableDocumentPath!!)
+                            Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 缓存验证 - 键: $stableDocumentPath, 密码: '$cachedPassword'")
                         } else {
-                            Log.e(TAG, "存储密码到内存失败: $stableDocumentPath")
+                            Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 存储密码到内存失败: $stableDocumentPath")
                         }
                     } else {
+                        Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 准备将密码存储到内存，键: temp")
                         val stored = MemoryPasswordStorage.getInstance().storePasswordInMemory("temp", password)
                         if (stored) {
-                            Log.i(TAG, "已将密码持久化存储到临时内存")
+                            Log.i(TAG, "[时间戳: ${System.currentTimeMillis()}] 已将密码持久化存储到临时内存")
+                            // 验证缓存状态
+                            val cachedPassword = MemoryPasswordStorage.getInstance().getPasswordFromMemory("temp")
+                            Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 缓存验证 - 键: temp, 密码: '$cachedPassword'")
                         } else {
-                            Log.e(TAG, "存储密码到临时内存失败")
+                            Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 存储密码到临时内存失败")
                         }
                     }
                     
                     showOperationNotification("操作处理", "密码已成功缓存到内存")
                     
                     // 启动文件系统事件监听器，由FileObserver处理密码写入
+                    Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 启动文件系统事件监听器，密码: '$password'")
                     startFileSystemEventListener(password)
                     
                     // 清除临时密码
                     tempPassword = null
+                    Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 已清除临时密码")
                 } else {
-                    Log.e(TAG, "临时存储中未找到密码")
+                    Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 临时存储中未找到密码")
                     showOperationNotification("操作失败", "未找到密码，请重新输入")
                 }
             } else {
@@ -280,6 +317,32 @@ class WpsAccessibilityService : AccessibilityService() {
 
     override fun onInterrupt() {
         Log.d(TAG, "无障碍服务被中断")
+        // 停止显示密码监测
+        stopShowPasswordMonitoring()
+    }
+    
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.d(TAG, "无障碍服务被销毁")
+        // 停止显示密码监测
+        stopShowPasswordMonitoring()
+        // 停止文件系统事件监听器
+        fileSystemEventListener?.stopListening()
+        fileSystemEventListener = null
+        // 清理其他状态
+        currentDialogType = DialogType.UNKNOWN
+        hasClickedShowPassword = false
+        showPasswordChecked = false
+        isFillingPassword = false
+        hasClickedGeneratePassword = false
+        isFloatingButtonServiceStarted = false
+        isDocumentOpened = false
+        // 清理临时密码
+        tempPassword = null
+        // 清理文档路径
+        currentFileUri = null
+        stableDocumentPath = null
+        currentDocumentPath = null
     }
     
     /**
@@ -313,37 +376,51 @@ class WpsAccessibilityService : AccessibilityService() {
         if (isDocumentEditor) {
             // 检查是否有临时密码未处理
             if (tempPassword != null && tempPassword!!.isNotEmpty()) {
-                Log.i(TAG, "检测到从密码弹框切换到文档编辑界面，处理未确认的临时密码")
+                Log.i(TAG, "[时间戳: ${System.currentTimeMillis()}] 检测到从密码弹框切换到文档编辑界面，处理未确认的临时密码: '$tempPassword'")
                 
                 // 将临时密码写入MemoryPasswordStorage
                 if (currentFileUri != null) {
+                    Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 准备将临时密码存储到内存，键: $currentFileUri")
                     val stored = MemoryPasswordStorage.getInstance().storePasswordInMemory(currentFileUri!!, tempPassword!!, currentFileUri)
                     if (stored) {
-                        Log.i(TAG, "已将临时密码持久化存储到内存: $currentFileUri")
+                        Log.i(TAG, "[时间戳: ${System.currentTimeMillis()}] 已将临时密码持久化存储到内存: $currentFileUri")
+                        // 验证缓存状态
+                        val cachedPassword = MemoryPasswordStorage.getInstance().getPasswordFromMemory(currentFileUri!!)
+                        Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 缓存验证 - 键: $currentFileUri, 密码: '$cachedPassword'")
                     } else {
-                        Log.e(TAG, "存储密码到内存失败: $currentFileUri")
+                        Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 存储密码到内存失败: $currentFileUri")
                     }
                 } else if (stableDocumentPath != null) {
+                    Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 准备将临时密码存储到内存，键: $stableDocumentPath")
                     val stored = MemoryPasswordStorage.getInstance().storePasswordInMemory(stableDocumentPath!!, tempPassword!!)
                     if (stored) {
-                        Log.i(TAG, "已将临时密码持久化存储到内存: $stableDocumentPath")
+                        Log.i(TAG, "[时间戳: ${System.currentTimeMillis()}] 已将临时密码持久化存储到内存: $stableDocumentPath")
+                        // 验证缓存状态
+                        val cachedPassword = MemoryPasswordStorage.getInstance().getPasswordFromMemory(stableDocumentPath!!)
+                        Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 缓存验证 - 键: $stableDocumentPath, 密码: '$cachedPassword'")
                     } else {
-                        Log.e(TAG, "存储密码到内存失败: $stableDocumentPath")
+                        Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 存储密码到内存失败: $stableDocumentPath")
                     }
                 } else {
+                    Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 准备将临时密码存储到内存，键: temp")
                     val stored = MemoryPasswordStorage.getInstance().storePasswordInMemory("temp", tempPassword!!)
                     if (stored) {
-                        Log.i(TAG, "已将临时密码持久化存储到临时内存")
+                        Log.i(TAG, "[时间戳: ${System.currentTimeMillis()}] 已将临时密码持久化存储到临时内存")
+                        // 验证缓存状态
+                        val cachedPassword = MemoryPasswordStorage.getInstance().getPasswordFromMemory("temp")
+                        Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 缓存验证 - 键: temp, 密码: '$cachedPassword'")
                     } else {
-                        Log.e(TAG, "存储密码到临时内存失败")
+                        Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 存储密码到临时内存失败")
                     }
                 }
                 
                 // 启动文件系统事件监听器
+                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 启动文件系统事件监听器，密码: '$tempPassword'")
                 startFileSystemEventListener(tempPassword!!)
                 
                 // 清除临时密码
                 tempPassword = null
+                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 已清除临时密码")
             }
         }
         
@@ -418,6 +495,14 @@ class WpsAccessibilityService : AccessibilityService() {
             // 尝试找到并点击【显示密码】选项
             findAndClickShowPasswordOption(rootNode)
             
+            // 对于修改密码对话框，启动显示密码监测
+            if (currentDialogType == DialogType.MODIFY_PASSWORD) {
+                startShowPasswordMonitoring()
+            } else {
+                // 对于其他对话框类型，停止监测
+                stopShowPasswordMonitoring()
+            }
+            
             // 只有在【添加密码】或【修改密码】窗口时显示悬浮按钮
             if (currentDialogType == DialogType.ADD_PASSWORD || currentDialogType == DialogType.MODIFY_PASSWORD) {
                 // 启动悬浮按钮服务
@@ -436,10 +521,59 @@ class WpsAccessibilityService : AccessibilityService() {
             // 隐藏悬浮按钮
             AccessibilityServiceManager.getInstance().hideFloatingButton()
             stopFloatingButtonService()
+            // 停止显示密码监测
+            stopShowPasswordMonitoring()
+            
+            // 处理未确认的临时密码
+            if (tempPassword != null && tempPassword!!.isNotEmpty()) {
+                Log.i(TAG, "[时间戳: ${System.currentTimeMillis()}] 检测到密码弹框关闭，处理未确认的临时密码: '$tempPassword'")
+                
+                // 将临时密码写入MemoryPasswordStorage
+                if (currentFileUri != null) {
+                    Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 准备将临时密码存储到内存，键: $currentFileUri")
+                    val stored = MemoryPasswordStorage.getInstance().storePasswordInMemory(currentFileUri!!, tempPassword!!, currentFileUri)
+                    if (stored) {
+                        Log.i(TAG, "[时间戳: ${System.currentTimeMillis()}] 已将临时密码持久化存储到内存: $currentFileUri")
+                        // 验证缓存状态
+                        val cachedPassword = MemoryPasswordStorage.getInstance().getPasswordFromMemory(currentFileUri!!)
+                        Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 缓存验证 - 键: $currentFileUri, 密码: '$cachedPassword'")
+                    } else {
+                        Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 存储密码到内存失败: $currentFileUri")
+                    }
+                } else if (stableDocumentPath != null) {
+                    Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 准备将临时密码存储到内存，键: $stableDocumentPath")
+                    val stored = MemoryPasswordStorage.getInstance().storePasswordInMemory(stableDocumentPath!!, tempPassword!!)
+                    if (stored) {
+                        Log.i(TAG, "[时间戳: ${System.currentTimeMillis()}] 已将临时密码持久化存储到内存: $stableDocumentPath")
+                        // 验证缓存状态
+                        val cachedPassword = MemoryPasswordStorage.getInstance().getPasswordFromMemory(stableDocumentPath!!)
+                        Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 缓存验证 - 键: $stableDocumentPath, 密码: '$cachedPassword'")
+                    } else {
+                        Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 存储密码到内存失败: $stableDocumentPath")
+                    }
+                } else {
+                    Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 准备将临时密码存储到内存，键: temp")
+                    val stored = MemoryPasswordStorage.getInstance().storePasswordInMemory("temp", tempPassword!!)
+                    if (stored) {
+                        Log.i(TAG, "[时间戳: ${System.currentTimeMillis()}] 已将临时密码持久化存储到临时内存")
+                        // 验证缓存状态
+                        val cachedPassword = MemoryPasswordStorage.getInstance().getPasswordFromMemory("temp")
+                        Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 缓存验证 - 键: temp, 密码: '$cachedPassword'")
+                    } else {
+                        Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 存储密码到临时内存失败")
+                    }
+                }
+                
+                // 启动文件系统事件监听器
+                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 启动文件系统事件监听器，密码: '$tempPassword'")
+                startFileSystemEventListener(tempPassword!!)
+            }
+            
             // 重置对话框类型
             currentDialogType = DialogType.UNKNOWN
             // 重置显示密码标志，确保下次打开弹窗时重新勾选
             hasClickedShowPassword = false
+            showPasswordChecked = false
             // 重置其他标志
             isDocumentOpened = false
             hasClickedGeneratePassword = false
@@ -559,7 +693,7 @@ class WpsAccessibilityService : AccessibilityService() {
                             val success = node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
                             if (success) {
                                 Log.i(TAG, "成功点击【显示密码】选项")
-                                hasClickedShowPassword = true
+                                showPasswordChecked = true
                             } else {
                                 Log.e(TAG, "直接点击【显示密码】选项失败")
                             }
@@ -580,33 +714,65 @@ class WpsAccessibilityService : AccessibilityService() {
                     // 尝试点击子节点
                     for (i in 0 until node.childCount) {
                         val child = node.getChild(i)
-                        if (child != null && child.isClickable && !hasClickedShowPassword) {
-                            Log.d(TAG, "尝试点击子节点: ${child.className}")
-                            val success = child.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-                            if (success) {
-                                Log.i(TAG, "成功点击【显示密码】选项的子节点")
-                                hasClickedShowPassword = true
+                        if (child != null && child.isClickable) {
+                            if (currentDialogType == DialogType.MODIFY_PASSWORD) {
+                                if (!showPasswordChecked) {
+                                    Log.d(TAG, "尝试点击子节点: ${child.className}")
+                                    val success = child.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                                    if (success) {
+                                        Log.i(TAG, "成功点击【显示密码】选项的子节点")
+                                        showPasswordChecked = true
+                                    } else {
+                                        Log.e(TAG, "点击【显示密码】选项的子节点失败")
+                                    }
+                                }
                             } else {
-                                Log.e(TAG, "点击【显示密码】选项的子节点失败")
+                                if (!hasClickedShowPassword) {
+                                    Log.d(TAG, "尝试点击子节点: ${child.className}")
+                                    val success = child.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                                    if (success) {
+                                        Log.i(TAG, "成功点击【显示密码】选项的子节点")
+                                        hasClickedShowPassword = true
+                                    } else {
+                                        Log.e(TAG, "点击【显示密码】选项的子节点失败")
+                                    }
+                                }
                             }
                         }
                     }
                     
                     // 尝试点击父节点
                     val parent = node.parent
-                    if (parent != null && parent.isClickable && !hasClickedShowPassword) {
-                        Log.d(TAG, "尝试点击父节点: ${parent.className}")
-                        val success = parent.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-                        if (success) {
-                            Log.i(TAG, "成功点击【显示密码】选项的父节点")
-                            hasClickedShowPassword = true
+                    if (parent != null && parent.isClickable) {
+                        if (currentDialogType == DialogType.MODIFY_PASSWORD) {
+                            if (!showPasswordChecked) {
+                                Log.d(TAG, "尝试点击父节点: ${parent.className}")
+                                val success = parent.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                                if (success) {
+                                    Log.i(TAG, "成功点击【显示密码】选项的父节点")
+                                    showPasswordChecked = true
+                                } else {
+                                    Log.e(TAG, "点击【显示密码】选项的父节点失败")
+                                }
+                            }
                         } else {
-                            Log.e(TAG, "点击【显示密码】选项的父节点失败")
+                            if (!hasClickedShowPassword) {
+                                Log.d(TAG, "尝试点击父节点: ${parent.className}")
+                                val success = parent.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                                if (success) {
+                                    Log.i(TAG, "成功点击【显示密码】选项的父节点")
+                                    hasClickedShowPassword = true
+                                } else {
+                                    Log.e(TAG, "点击【显示密码】选项的父节点失败")
+                                }
+                            }
                         }
                     }
                     
                     // 找到【显示密码】选项后，不再继续搜索
-                    if (hasClickedShowPassword) {
+                    if (currentDialogType == DialogType.MODIFY_PASSWORD && showPasswordChecked) {
+                        break
+                    } else if (hasClickedShowPassword) {
                         break
                     }
                 }
@@ -625,6 +791,72 @@ class WpsAccessibilityService : AccessibilityService() {
             }
         } catch (e: Exception) {
             Log.e(TAG, "查找并点击【显示密码】选项失败", e)
+        }
+    }
+    
+    /**
+     * 启动显示密码监测
+     */
+    private fun startShowPasswordMonitoring() {
+        try {
+            if (!isMonitoringShowPassword && currentDialogType == DialogType.MODIFY_PASSWORD) {
+                Log.d(TAG, "开始监测显示密码勾选框")
+                isMonitoringShowPassword = true
+                showPasswordChecked = false
+                
+                // 创建并启动监测线程
+                showPasswordMonitorThread = Thread {
+                    try {
+                        while (isMonitoringShowPassword && currentDialogType == DialogType.MODIFY_PASSWORD) {
+                            Thread.sleep(200) // 每200ms检查一次
+                            
+                            val rootNode = rootInActiveWindow
+                            if (rootNode != null) {
+                                // 重新检测对话框类型，确保仍然是修改密码弹窗
+                                detectDialogType(rootNode)
+                                
+                                if (currentDialogType == DialogType.MODIFY_PASSWORD && !showPasswordChecked) {
+                                    Log.d(TAG, "监测到显示密码未勾选，尝试勾选")
+                                    findAndClickShowPasswordOption(rootNode)
+                                }
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "监测线程异常", e)
+                    } finally {
+                        isMonitoringShowPassword = false
+                        showPasswordChecked = false
+                        Log.d(TAG, "显示密码监测线程结束")
+                    }
+                }
+                
+                showPasswordMonitorThread?.start()
+                Log.d(TAG, "显示密码监测线程已启动")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "启动显示密码监测失败", e)
+            isMonitoringShowPassword = false
+        }
+    }
+    
+    /**
+     * 停止显示密码监测
+     */
+    private fun stopShowPasswordMonitoring() {
+        try {
+            if (isMonitoringShowPassword) {
+                Log.d(TAG, "停止显示密码监测")
+                isMonitoringShowPassword = false
+                
+                // 等待监测线程结束
+                showPasswordMonitorThread?.join(1000) // 最多等待1秒
+                showPasswordMonitorThread = null
+                
+                showPasswordChecked = false
+                Log.d(TAG, "显示密码监测已停止")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "停止显示密码监测失败", e)
         }
     }
     
@@ -1557,19 +1789,22 @@ class WpsAccessibilityService : AccessibilityService() {
             }
             
             if (targetPath != null) {
-                Log.d(TAG, "启动文件系统事件监听器: $targetPath")
+                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 启动文件系统事件监听器: $targetPath, 密码: '$password'")
                 // 先停止之前可能存在的监听器
                 fileSystemEventListener?.stopListening()
                 // 创建并启动新的文件系统事件监听器
+                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 创建文件系统事件监听器，目标路径: $targetPath, 密码: '$password'")
                 fileSystemEventListener = FileSystemEventListener(targetPath, password, this)
+                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 启动文件系统事件监听器")
                 fileSystemEventListener?.startListening()
                 showOperationNotification("操作成功", "已启动文件监听，将在文件保存后自动写入密码")
+                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 文件系统事件监听器启动完成")
             } else {
-                Log.e(TAG, "没有可用的文件路径")
+                Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 没有可用的文件路径")
                 showOperationNotification("操作失败", "没有可用的文件路径")
             }
         } catch (e: Exception) {
-            Log.e(TAG, "启动文件系统事件监听器失败", e)
+            Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 启动文件系统事件监听器失败", e)
             showOperationNotification("操作失败", "启动文件监听失败")
         }
     }

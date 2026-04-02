@@ -1,178 +1,89 @@
-2026-04-01 10:24:22.741 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.view.View
-2026-04-01 10:24:22.741 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.view.View
-2026-04-01 10:24:22.946 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务已禁用
-2026-04-01 10:24:22.946 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
-2026-04-01 10:24:22.955 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  优先使用已存储的本地文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:22.955 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:22.955 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：本地文件存在: true
-2026-04-01 10:24:22.955 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:22.960 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: true
-2026-04-01 10:24:22.961 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: true
-2026-04-01 10:24:22.961 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
-2026-04-01 10:24:22.963 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
-2026-04-01 10:24:22.964 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
-2026-04-01 10:24:23.041 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务已禁用
-2026-04-01 10:24:23.041 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
-2026-04-01 10:24:23.046 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  优先使用已存储的本地文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:23.046 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:23.046 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：本地文件存在: true
-2026-04-01 10:24:23.046 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:23.055 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: true
-2026-04-01 10:24:23.060 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: true
-2026-04-01 10:24:23.060 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
-2026-04-01 10:24:23.063 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 1, 包名: cn.wps.moffice_eng, 类名: android.widget.LinearLayout
-2026-04-01 10:24:23.063 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  收到点击事件: android.widget.LinearLayout, 文本: null
-2026-04-01 10:24:23.063 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  检测到点击事件，源节点类型: android.widget.LinearLayout
-2026-04-01 10:24:23.063 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  源节点文本: null
-2026-04-01 10:24:23.064 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  源节点内容描述: null
-2026-04-01 10:24:23.064 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  源节点ID: cn.wps.moffice_eng:id/component_btn_real_save
-2026-04-01 10:24:23.064 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  是否是确认按钮: false
-2026-04-01 10:24:23.064 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  点击的不是确认按钮
-2026-04-01 10:24:23.065 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
-2026-04-01 10:24:23.065 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
-2026-04-01 10:24:23.216 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务已禁用
-2026-04-01 10:24:23.216 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
-2026-04-01 10:24:23.224 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  优先使用已存储的本地文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:23.224 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:23.224 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：本地文件存在: true
-2026-04-01 10:24:23.225 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:23.231 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: true
-2026-04-01 10:24:23.235 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: true
-2026-04-01 10:24:23.235 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
-2026-04-01 10:24:23.236 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 8, 包名: cn.wps.moffice_eng, 类名: android.view.View
-2026-04-01 10:24:23.236 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  视图获得焦点: android.view.View
-2026-04-01 10:24:23.276 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务已禁用
-2026-04-01 10:24:23.276 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
-2026-04-01 10:24:23.280 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  优先使用已存储的本地文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:23.280 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:23.281 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：本地文件存在: true
-2026-04-01 10:24:23.281 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:23.286 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: true
-2026-04-01 10:24:23.289 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: true
-2026-04-01 10:24:23.289 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
-2026-04-01 10:24:23.290 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 32, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
-2026-04-01 10:24:23.291 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  窗口状态改变: android.widget.FrameLayout
-2026-04-01 10:24:23.299 16571-17858 FileSystemEventListener com.wpspasswordmanager               D  文件系统事件: 2, 路径: null
-2026-04-01 10:24:23.300 16571-17858 FileSystemEventListener com.wpspasswordmanager               D  文件系统事件: 2, 路径: null
-2026-04-01 10:24:23.306 16571-17858 FileSystemEventListener com.wpspasswordmanager               D  文件系统事件: 2, 路径: null
-2026-04-01 10:24:23.307 16571-17858 FileSystemEventListener com.wpspasswordmanager               D  文件系统事件: 8, 路径: null
-2026-04-01 10:24:23.307 16571-17858 FileSystemEventListener com.wpspasswordmanager               D  文件关闭写入，触发密码写入
-2026-04-01 10:24:23.903 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务已禁用
-2026-04-01 10:24:23.903 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
-2026-04-01 10:24:23.913 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  优先使用已存储的本地文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:23.913 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:23.913 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：本地文件存在: true
-2026-04-01 10:24:23.913 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:23.915 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: true
-2026-04-01 10:24:23.916 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: true
-2026-04-01 10:24:23.916 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
-2026-04-01 10:24:23.916 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  当前窗口类名: android.widget.FrameLayout
-2026-04-01 10:24:23.916 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
-2026-04-01 10:24:23.916 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
-2026-04-01 10:24:23.964 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务已禁用
-2026-04-01 10:24:23.964 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
-2026-04-01 10:24:23.976 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  优先使用已存储的本地文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:23.976 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:23.976 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：本地文件存在: true
-2026-04-01 10:24:23.976 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:23.979 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: true
-2026-04-01 10:24:23.982 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: true
-2026-04-01 10:24:23.982 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
-2026-04-01 10:24:23.983 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
-2026-04-01 10:24:23.983 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
-2026-04-01 10:24:24.025 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务已禁用
-2026-04-01 10:24:24.025 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
-2026-04-01 10:24:24.030 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  优先使用已存储的本地文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:24.031 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:24.031 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：本地文件存在: true
-2026-04-01 10:24:24.032 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:24.038 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: true
-2026-04-01 10:24:24.043 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: true
-2026-04-01 10:24:24.043 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
-2026-04-01 10:24:24.045 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
-2026-04-01 10:24:24.045 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
-2026-04-01 10:24:24.127 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务已禁用
-2026-04-01 10:24:24.127 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
-2026-04-01 10:24:24.132 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  优先使用已存储的本地文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:24.132 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:24.133 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：本地文件存在: true
-2026-04-01 10:24:24.133 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:24.137 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: true
-2026-04-01 10:24:24.140 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: true
-2026-04-01 10:24:24.140 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
-2026-04-01 10:24:24.141 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
-2026-04-01 10:24:24.141 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
-2026-04-01 10:24:24.199 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务已禁用
-2026-04-01 10:24:24.199 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
-2026-04-01 10:24:24.205 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  优先使用已存储的本地文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:24.205 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:24.206 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：本地文件存在: true
-2026-04-01 10:24:24.206 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:24.212 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: true
-2026-04-01 10:24:24.218 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: true
-2026-04-01 10:24:24.218 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
-2026-04-01 10:24:24.219 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 4096, 包名: cn.wps.moffice_eng, 类名: android.widget.ListView
-2026-04-01 10:24:24.219 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.TextView
-2026-04-01 10:24:24.219 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.TextView
-2026-04-01 10:24:24.269 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务已禁用
-2026-04-01 10:24:24.270 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
-2026-04-01 10:24:24.276 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  优先使用已存储的本地文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:24.276 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:24.278 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：本地文件存在: true
-2026-04-01 10:24:24.278 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:24.290 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: true
-2026-04-01 10:24:24.298 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: true
-2026-04-01 10:24:24.298 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
-2026-04-01 10:24:24.303 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
-2026-04-01 10:24:24.303 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
-2026-04-01 10:24:24.314 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务已禁用
-2026-04-01 10:24:24.314 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，保持当前状态
-2026-04-01 10:24:24.319 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  优先使用已存储的本地文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:24.319 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:24.320 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：本地文件存在: true
-2026-04-01 10:24:24.320 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:24.328 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: true
-2026-04-01 10:24:24.333 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: true
-2026-04-01 10:24:24.333 16571-16571 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
-2026-04-01 10:24:24.335 16571-16571 PasswordStorage         com.wpspasswordmanager               D  开始写入密码，文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:24.336 16571-16571 PasswordStorage         com.wpspasswordmanager               D  密码长度: 2
-2026-04-01 10:24:24.336 16571-16571 PasswordStorage         com.wpspasswordmanager               D  开始读取密码，文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:24.337 16571-16571 PasswordStorage         com.wpspasswordmanager               D  尝试从文件读取密码: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:24.346 16571-16571 ZipExtraFieldManager    com.wpspasswordmanager               D  尝试从文件读取密码: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:24.368 16571-16571 ZipExtraFieldManager    com.wpspasswordmanager               D  未找到WPPM密码数据
-2026-04-01 10:24:24.368 16571-16571 PasswordStorage         com.wpspasswordmanager               D  ZIP Extra Field未找到密码
-2026-04-01 10:24:24.377 16571-16571 PasswordStorage         com.wpspasswordmanager               D  文件存在，大小: 12800 bytes
-2026-04-01 10:24:24.378 16571-16571 PasswordStorage         com.wpspasswordmanager               D  尝试写入密码到文件: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:24.389 16571-16571 ZipExtraFieldManager    com.wpspasswordmanager               D  尝试写入密码到文件: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:24.404 16571-16571 ZipExtraFieldManager    com.wpspasswordmanager               D  尝试删除旧的WPPM标记
-2026-04-01 10:24:24.408 16571-17858 FileSystemEventListener com.wpspasswordmanager               D  文件系统事件: 2, 路径: null
-2026-04-01 10:24:24.409 16571-17858 FileSystemEventListener com.wpspasswordmanager               D  文件系统事件: 2, 路径: null
-2026-04-01 10:24:24.410 16571-17858 FileSystemEventListener com.wpspasswordmanager               D  文件系统事件: 8, 路径: null
-2026-04-01 10:24:24.411 16571-17858 FileSystemEventListener com.wpspasswordmanager               D  文件关闭写入，触发密码写入
-2026-04-01 10:24:24.424 16571-16571 ZipExtraFieldManager    com.wpspasswordmanager               D  未找到WPPM标记
-2026-04-01 10:24:24.426 16571-16571 ZipExtraFieldManager    com.wpspasswordmanager               D  成功删除旧的WPPM标记
-2026-04-01 10:24:24.427 16571-17858 FileSystemEventListener com.wpspasswordmanager               D  文件系统事件: 8, 路径: null
-2026-04-01 10:24:24.427 16571-17858 FileSystemEventListener com.wpspasswordmanager               D  文件关闭写入，触发密码写入
-2026-04-01 10:24:24.449 16571-16571 ZipExtraFieldManager    com.wpspasswordmanager               D  密码写入成功
-2026-04-01 10:24:24.449 16571-16571 PasswordStorage         com.wpspasswordmanager               D  使用ZIP Extra Field写入密码成功
-2026-04-01 10:24:24.449 16571-16571 FileSystemEventListener com.wpspasswordmanager               D  密码写入成功
-2026-04-01 10:24:24.451 16571-17858 FileSystemEventListener com.wpspasswordmanager               D  文件系统事件: 2, 路径: null
-2026-04-01 10:24:24.452 16571-17858 FileSystemEventListener com.wpspasswordmanager               D  文件系统事件: 8, 路径: null
-2026-04-01 10:24:24.453 16571-17858 FileSystemEventListener com.wpspasswordmanager               D  文件关闭写入，触发密码写入
-2026-04-01 10:24:24.500 16571-16571 FileSystemEventListener com.wpspasswordmanager               D  文件尾部WPPM标记内容: WPPM????????15�&8
-2026-04-01 10:24:24.502 16571-16571 FileSystemEventListener com.wpspasswordmanager               D  停止监听: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:24.504 16571-17858 FileSystemEventListener com.wpspasswordmanager               D  文件系统事件: 32768, 路径: null
-2026-04-01 10:24:25.456 16571-16571 PasswordStorage         com.wpspasswordmanager               D  开始写入密码，文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:25.456 16571-16571 PasswordStorage         com.wpspasswordmanager               D  密码长度: 2
-2026-04-01 10:24:25.456 16571-16571 PasswordStorage         com.wpspasswordmanager               D  开始读取密码，文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:25.457 16571-16571 PasswordStorage         com.wpspasswordmanager               D  尝试从文件读取密码: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:25.460 16571-16571 ZipExtraFieldManager    com.wpspasswordmanager               D  尝试从文件读取密码: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:25.464 16571-16571 ZipExtraFieldManager    com.wpspasswordmanager               D  Data Length: 2
-2026-04-01 10:24:25.465 16571-16571 ZipExtraFieldManager    com.wpspasswordmanager               D  当前位置: 12812, 剩余长度: 6
-2026-04-01 10:24:25.465 16571-16571 ZipExtraFieldManager    com.wpspasswordmanager               D  找到WPPM签名，位置: 12801
-2026-04-01 10:24:25.466 16571-16571 ZipExtraFieldManager    com.wpspasswordmanager               D  成功读取密码: 15
-2026-04-01 10:24:25.466 16571-16571 PasswordStorage         com.wpspasswordmanager               D  从ZIP Extra Field读取密码成功
-2026-04-01 10:24:25.466 16571-16571 PasswordStorage         com.wpspasswordmanager               D  密码未变化，跳过写入操作: /storage/emulated/0/Documents/WpsManagement/test1.docx
-2026-04-01 10:24:25.466 16571-16571 FileSystemEventListener com.wpspasswordmanager               D  密码写入成功
-2026-04-01 10:24:25.472 16571-16571 FileSystemEventListener com.wpspasswordmanager               D  文件尾部WPPM标记内容: WPPM????????15�&8
-2026-04-01 10:24:25.472 16571-16571 FileSystemEventListener com.wpspasswordmanager               D  停止监听: /storage/emulated/0/Documents/WpsManagement/test1.docx
+2026-04-02 15:57:46.952 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.TextView
+2026-04-02 15:57:46.953 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.TextView
+2026-04-02 15:57:47.323 14708-14737 BufferQueueProducer     com.wpspasswordmanager               I  [VRI[]#4(BLAST Consumer)4](id:397400000004,api:1,p:14708,c:14708) disconnect: api 1
+2026-04-02 15:57:47.325 14708-14708 FloatingButtonService   com.wpspasswordmanager               D  悬浮按钮移除成功
+2026-04-02 15:57:47.326 14708-14708 FloatingButtonService   com.wpspasswordmanager               D  悬浮按钮移除成功
+2026-04-02 15:57:47.330 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务停止成功
+2026-04-02 15:57:47.330 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，重置相关状态
+2026-04-02 15:57:47.339 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  优先使用已存储的本地文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
+2026-04-02 15:57:47.339 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
+2026-04-02 15:57:47.341 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  调试：本地文件存在: true
+2026-04-02 15:57:47.341 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
+2026-04-02 15:57:47.349 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: true
+2026-04-02 15:57:47.360 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: true
+2026-04-02 15:57:47.360 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-04-02 15:57:47.363 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
+2026-04-02 15:57:47.363 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
+2026-04-02 15:57:47.705 14708-14708 FloatingButtonService   com.wpspasswordmanager               D  悬浮按钮移除成功
+2026-04-02 15:57:47.706 14708-14708 FloatingButtonService   com.wpspasswordmanager               D  悬浮按钮移除成功
+2026-04-02 15:57:47.706 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务已经停止
+2026-04-02 15:57:47.706 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，重置相关状态
+2026-04-02 15:57:47.713 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  优先使用已存储的本地文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
+2026-04-02 15:57:47.713 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
+2026-04-02 15:57:47.716 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  调试：本地文件存在: true
+2026-04-02 15:57:47.716 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
+2026-04-02 15:57:47.730 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: true
+2026-04-02 15:57:47.741 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: true
+2026-04-02 15:57:47.741 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-04-02 15:57:47.743 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 32, 包名: cn.wps.moffice_eng, 类名: cn.wps.moffice.writer.multiactivity.Writer1
+2026-04-02 15:57:47.743 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  窗口状态改变: cn.wps.moffice.writer.multiactivity.Writer1
+2026-04-02 15:57:48.141 14708-14708 FloatingButtonService   com.wpspasswordmanager               D  悬浮按钮移除成功
+2026-04-02 15:57:48.142 14708-14708 FloatingButtonService   com.wpspasswordmanager               D  悬浮按钮移除成功
+2026-04-02 15:57:48.142 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务已经停止
+2026-04-02 15:57:48.142 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，重置相关状态
+2026-04-02 15:57:48.149 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  优先使用已存储的本地文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
+2026-04-02 15:57:48.149 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
+2026-04-02 15:57:48.151 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  调试：本地文件存在: true
+2026-04-02 15:57:48.151 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
+2026-04-02 15:57:48.162 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: true
+2026-04-02 15:57:48.174 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: true
+2026-04-02 15:57:48.174 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-04-02 15:57:48.174 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  当前窗口类名: cn.wps.moffice.writer.multiactivity.Writer1
+2026-04-02 15:57:48.175 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 8, 包名: cn.wps.moffice_eng, 类名: android.view.View
+2026-04-02 15:57:48.175 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  视图获得焦点: android.view.View
+2026-04-02 15:57:48.236 14708-14708 FloatingButtonService   com.wpspasswordmanager               D  悬浮按钮移除成功
+2026-04-02 15:57:48.237 14708-14708 FloatingButtonService   com.wpspasswordmanager               D  悬浮按钮移除成功
+2026-04-02 15:57:48.237 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务已经停止
+2026-04-02 15:57:48.237 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，重置相关状态
+2026-04-02 15:57:48.243 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  优先使用已存储的本地文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
+2026-04-02 15:57:48.243 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
+2026-04-02 15:57:48.245 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  调试：本地文件存在: true
+2026-04-02 15:57:48.246 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
+2026-04-02 15:57:48.263 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: true
+2026-04-02 15:57:48.273 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: true
+2026-04-02 15:57:48.273 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-04-02 15:57:48.274 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.TextView
+2026-04-02 15:57:48.274 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.TextView
+2026-04-02 15:57:48.334 14708-14708 FloatingButtonService   com.wpspasswordmanager               D  悬浮按钮移除成功
+2026-04-02 15:57:48.335 14708-14708 FloatingButtonService   com.wpspasswordmanager               D  悬浮按钮移除成功
+2026-04-02 15:57:48.335 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务已经停止
+2026-04-02 15:57:48.335 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，重置相关状态
+2026-04-02 15:57:48.340 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  优先使用已存储的本地文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
+2026-04-02 15:57:48.340 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
+2026-04-02 15:57:48.343 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  调试：本地文件存在: true
+2026-04-02 15:57:48.344 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
+2026-04-02 15:57:48.354 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: true
+2026-04-02 15:57:48.363 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: true
+2026-04-02 15:57:48.363 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-04-02 15:57:48.364 14708-14708 WindowOnBackDispatcher  com.wpspasswordmanager               W  sendCancelIfRunning: isInProgress=falsecallback=android.view.ViewRootImpl$$ExternalSyntheticLambda20@7b28a7c
+2026-04-02 15:57:48.365 14708-14708 VRI[]                   com.wpspasswordmanager               I  dispatchDetachedFromWindow in doDie
+2026-04-02 15:57:48.369 14708-14708 SurfaceControl          com.wpspasswordmanager               I  nativeRelease 0xb400007a983b4010 count: 2 name: #163639
+2026-04-02 15:57:48.369 14708-14708 BufferQueueConsumer     com.wpspasswordmanager               I  [VRI[]#4(BLAST Consumer)4](id:397400000004,api:0,p:-1,c:14708) disconnect
+2026-04-02 15:57:48.369 14708-14708 SurfaceControl          com.wpspasswordmanager               I  ~SurfaceControl 0xb400007a983b4010 #163639
+2026-04-02 15:57:48.386 14708-14708 FloatingButtonService   com.wpspasswordmanager               D  悬浮按钮服务销毁
+2026-04-02 15:57:48.387 14708-14708 FloatingButtonService   com.wpspasswordmanager               D  悬浮按钮视图已不存在，无需移除
+2026-04-02 15:57:48.387 14708-14708 Accessibil...iceManager com.wpspasswordmanager               D  悬浮按钮服务引用已清除
+2026-04-02 15:57:48.387 14708-14708 FloatingButtonService   com.wpspasswordmanager               D  已清除AccessibilityServiceManager中的悬浮按钮服务引用
+2026-04-02 15:57:48.392 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
+2026-04-02 15:57:48.392 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
+2026-04-02 15:57:48.419 14708-14708 Accessibil...iceManager com.wpspasswordmanager               D  悬浮按钮服务未初始化，无需隐藏
+2026-04-02 15:57:48.419 14708-14708 Accessibil...iceManager com.wpspasswordmanager               D  悬浮按钮服务未初始化，无需隐藏
+2026-04-02 15:57:48.419 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  悬浮按钮服务已经停止
+2026-04-02 15:57:48.420 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，重置相关状态
+2026-04-02 15:57:48.433 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  优先使用已存储的本地文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
+2026-04-02 15:57:48.434 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
+2026-04-02 15:57:48.436 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  调试：本地文件存在: true
+2026-04-02 15:57:48.437 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /storage/emulated/0/Documents/WpsManagement/test1.docx
+2026-04-02 15:57:48.444 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: true
+2026-04-02 15:57:48.453 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: true
+2026-04-02 15:57:48.453 14708-14708 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成

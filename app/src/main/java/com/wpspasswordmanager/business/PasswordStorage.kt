@@ -64,37 +64,40 @@ class PasswordStorage private constructor() {
      */
     fun writePassword(context: Context, key: String, password: String): Boolean {
         try {
-            Log.d(TAG, "开始写入密码，文件路径: $key")
-            Log.d(TAG, "密码长度: ${password.length}")
+            Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 开始写入密码，文件路径: $key")
+            Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 密码: '$password'，长度: ${password.length}")
             
             // 检查密码是否变化
             val currentPassword = getPassword(context, key)
+            Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 当前文件中的密码: '${currentPassword ?: "无"}'")
             if (currentPassword == password) {
-                Log.d(TAG, "密码未变化，跳过写入操作: $key")
+                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 密码未变化，跳过写入操作: $key")
                 return true
             }
             
             // 检查是否是content URI
             if (key.startsWith("content://")) {
                 val uri = Uri.parse(key)
-                Log.d(TAG, "写入密码到Content URI: $uri")
+                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 写入密码到Content URI: $uri")
                 val result = writePasswordToContentUri(context, uri, password)
-                Log.d(TAG, "写入密码到Content URI结果: $result")
+                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 写入密码到Content URI结果: $result")
                 return result
             } else {
                 // 处理普通文件路径
                 val file = File(key)
                 if (file.exists() && file.canWrite()) {
-                    Log.d(TAG, "文件存在，大小: ${file.length()} bytes")
+                    Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 文件存在，大小: ${file.length()} bytes, 可写: ${file.canWrite()}")
                     // 直接写入密码到本地文件
-                    return writePasswordToFile(context, file, password)
+                    val result = writePasswordToFile(context, file, password)
+                    Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 写入密码到本地文件结果: $result")
+                    return result
                 } else {
-                    Log.e(TAG, "文件不存在或不可写，无法写入密码")
+                    Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 文件不存在或不可写，无法写入密码")
                     return false
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "写入密码失败", e)
+            Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 写入密码失败", e)
             return false
         }
     }

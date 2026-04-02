@@ -35,50 +35,59 @@ class ZipExtraFieldManager private constructor() {
      */
     fun writePassword(file: File, password: String): Boolean {
         if (!file.exists() || !file.canWrite()) {
-            Log.e(TAG, "文件不存在或不可写: ${file.absolutePath}")
+            Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 文件不存在或不可写: ${file.absolutePath}")
             return false
         }
 
         var retryCount = 0
         while (retryCount < MAX_RETRY_COUNT) {
             try {
-                Log.d(TAG, "尝试写入密码到文件: ${file.absolutePath}")
+                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 尝试写入密码到文件: ${file.absolutePath}, 密码: '$password'")
                 
                 // 检测文件是否被锁定
                 if (isFileLocked(file)) {
-                    Log.w(TAG, "文件被锁定，等待重试...")
+                    Log.w(TAG, "[时间戳: ${System.currentTimeMillis()}] 文件被锁定，等待重试...")
                     Thread.sleep(RETRY_DELAY_MS.toLong())
                     retryCount++
                     continue
                 }
 
                 // 先删除旧的WPPM标记
+                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 开始删除旧的WPPM标记")
                 if (removeOldWppmMarkers(file)) {
-                    Log.d(TAG, "成功删除旧的WPPM标记")
+                    Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 成功删除旧的WPPM标记")
+                } else {
+                    Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 未找到旧的WPPM标记或删除失败")
                 }
 
                 // 构建Extra Field数据
+                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 开始构建Extra Field数据")
                 val extraFieldData = buildExtraFieldData(password)
+                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] Extra Field数据构建完成，长度: ${extraFieldData.size} bytes")
                 
                 // 写入到文件尾部
+                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 开始写入Extra Field数据到文件尾部")
                 RandomAccessFile(file, "rw").use { raf ->
-                    raf.seek(raf.length())
+                    val fileLength = raf.length()
+                    Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 文件当前长度: $fileLength bytes")
+                    raf.seek(fileLength)
                     raf.write(extraFieldData)
+                    Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 数据写入完成，文件新长度: ${fileLength + extraFieldData.size} bytes")
                 }
 
-                Log.d(TAG, "密码写入成功")
+                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 密码写入成功")
                 return true
             } catch (e: Exception) {
-                Log.e(TAG, "写入密码失败", e)
+                Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 写入密码失败", e)
                 retryCount++
                 if (retryCount < MAX_RETRY_COUNT) {
-                    Log.w(TAG, "重试写入... ($retryCount/$MAX_RETRY_COUNT)")
+                    Log.w(TAG, "[时间戳: ${System.currentTimeMillis()}] 重试写入... ($retryCount/$MAX_RETRY_COUNT)")
                     Thread.sleep(RETRY_DELAY_MS.toLong())
                 }
             }
         }
 
-        Log.e(TAG, "达到最大重试次数，写入失败")
+        Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 达到最大重试次数，写入失败")
         return false
     }
     
@@ -131,15 +140,9 @@ class ZipExtraFieldManager private constructor() {
                     return true
                 }
                 
-                // 如果只有一个标记且是密码类型，保留它
-                if (markers.size == 1) {
-                    raf.seek(markers[0] + 6) // 跳过Magic(4)和Version(2)
-                    val type = raf.readByte()
-                    if (type == METADATA_TYPE_PASSWORD.toByte()) {
-                        Log.d(TAG, "只找到一个密码类型的WPPM标记，保留它")
-                        return true
-                    }
-                }
+                // 无论有多少个标记，都删除所有旧的WPPM标记
+                // 这样可以确保每次写入时都只保留最新的密码标记
+                Log.d(TAG, "找到${markers.size}个WPPM标记，全部删除")
                 
                 // 删除所有WPPM标记：创建新文件，复制除WPPM标记外的所有内容
                 val tempFile = File.createTempFile("temp", ".tmp")

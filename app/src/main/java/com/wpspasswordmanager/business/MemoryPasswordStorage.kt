@@ -32,12 +32,15 @@ class MemoryPasswordStorage private constructor() {
     fun storePasswordInMemory(key: String, password: String, fileUri: String? = null): Boolean {
         try {
             // 存储到内存
+            Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 存储密码到内存，键: $key，密码: '$password'")
+            Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 存储前内存中的密码: '${passwordMap[key] ?: "null"}'")
             passwordMap[key] = password
-            Log.d(TAG, "密码已存储到内存: $key")
+            Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 密码已存储到内存: $key")
+            Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 存储后内存中的密码: '${passwordMap[key] ?: "null"}'")
 
             return true
         } catch (e: Exception) {
-            Log.e(TAG, "存储密码失败", e)
+            Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 存储密码失败", e)
             return false
         }
     }
