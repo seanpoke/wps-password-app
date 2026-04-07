@@ -1,0 +1,8 @@
+2026-04-07 13:46:11.047 26250-26250 OfficeEncryptUtils      com.wpspasswordmanager               D  找到EncryptionInfo流，开始读取...
+2026-04-07 13:46:11.048 26250-26250 OfficeEncryptUtils      com.wpspasswordmanager               D  EncryptionInfo流大小: 224 字节
+2026-04-07 13:46:11.069 26250-26250 OfficeEncryptUtils      com.wpspasswordmanager               D  EncryptionInfo前16字节: 04 00 02 00 24 00 00 00 8c 00 00 00 24 00 00 00
+2026-04-07 13:46:11.069 26250-26250 OfficeEncryptUtils      com.wpspasswordmanager               D  开始计算SHA-256哈希值...
+2026-04-07 13:46:11.077 26250-26250 OfficeEncryptUtils      com.wpspasswordmanager               D  计算完成，哈希值: 607ca0b82df09ab73a6280697575ba97a12ebb385d40bc7a9089a15d07cef284
+
+
+

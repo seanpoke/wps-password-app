@@ -4,15 +4,11 @@ import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.os.Build
 import android.text.InputType
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import com.wpspasswordmanager.business.MemoryPasswordStorage
-import com.wpspasswordmanager.business.PasswordStorage
-import com.wpspasswordmanager.monitor.FileSystemEventListener
 
 class WpsAccessibilityService : AccessibilityService() {
 
@@ -357,6 +353,8 @@ class WpsAccessibilityService : AccessibilityService() {
             Log.e(TAG, "显示操作通知失败", e)
         }
     }
+    
+
 
     private fun handleWindowStateChanged(event: AccessibilityEvent) {
         Log.d(TAG, "窗口状态改变: ${event.className}")
@@ -983,7 +981,7 @@ class WpsAccessibilityService : AccessibilityService() {
                                             if (clickSuccess) {
                                                 Log.i(TAG, "成功点击确认按钮")
                                                 isDocumentOpened = true // 标记文档已打开
-                                                
+
                                                 // 启动文件系统事件监听器
                                                 startFileSystemEventListener(password)
                                             } else {

@@ -124,43 +124,7 @@ class PasswordStorage private constructor() {
             return false
         }
     }
-    
-    /**
-     * 使用临时文件从Content URI写入密码
-     */
-    private fun writePasswordToContentUriWithTempFile(context: Context, uri: Uri, password: String): Boolean {
-        try {
-            Log.d(TAG, "尝试使用临时文件从Content URI写入密码")
-            
-            // 创建临时文件
-            val tempFile = File.createTempFile("temp", ".docx")
-            tempFile.deleteOnExit()
-            
-            // 复制内容到临时文件
-            context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                tempFile.outputStream().use { outputStream ->
-                    inputStream.copyTo(outputStream)
-                }
-            }
-            
-            // 写入密码到临时文件
-            val success = writePasswordToFile(context, tempFile, password)
-            
-            if (success) {
-                // 写回原文件
-                context.contentResolver.openOutputStream(uri)?.use { outputStream ->
-                    tempFile.inputStream().use { inputStream ->
-                        inputStream.copyTo(outputStream)
-                    }
-                }
-            }
-            
-            return success
-        } catch (e: Exception) {
-            Log.e(TAG, "使用临时文件写入密码失败", e)
-            return false
-        }
-    }
+
 
     /**
      * 写入密码到文件

@@ -2,7 +2,9 @@ package com.wpspasswordmanager.monitor
 
 import android.os.FileObserver
 import android.util.Log
+import com.wpspasswordmanager.business.OfficeEncryptUtils
 import com.wpspasswordmanager.business.PasswordStorage
+import com.wpspasswordmanager.ui.ProxyActivity
 import java.io.File
 
 /**
@@ -85,8 +87,24 @@ class FileSystemEventListener(private val filePath: String, private val password
                             Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 事件已在处理中，跳过")
                             return@Runnable
                         }
-                        
                         isHandlingEvent = true
+
+                        // 验证密码是否可以打开文件
+                        if (!filePath.startsWith("content://")) {
+                            val file = File(filePath)
+                            if (file.exists() && file.canRead()) {
+                                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 验证密码是否可以打开文件")
+                                val isPasswordValid = OfficeEncryptUtils.verifyPassword(file, password)
+                                if (!isPasswordValid) {
+                                    Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 密码验证失败，无法打开文件，跳过密码写入")
+                                    return@Runnable
+                                }
+                                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 密码验证成功，可以打开文件")
+                            } else {
+                                Log.w(TAG, "[时间戳: ${System.currentTimeMillis()}] 文件不存在或不可读，无法验证密码")
+                            }
+                        }
+
                         Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 开始处理文件系统事件，准备写入密码: '$password' 到文件: $filePath")
                         
                         // 写入密码
