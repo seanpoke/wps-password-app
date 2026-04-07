@@ -4,6 +4,7 @@ import android.os.FileObserver
 import android.util.Log
 import com.wpspasswordmanager.business.OfficeEncryptUtils
 import com.wpspasswordmanager.business.PasswordStorage
+import com.wpspasswordmanager.business.PasswordStateManager
 import com.wpspasswordmanager.ui.ProxyActivity
 import java.io.File
 
@@ -30,6 +31,7 @@ class FileSystemEventListener(private val filePath: String, private val password
     private var isContentUri = false
     private var handler: android.os.Handler? = null
     private var debounceRunnable: Runnable? = null
+    private var isHandlingEvent = false
 
     /**
      * 开始监听
@@ -89,37 +91,102 @@ class FileSystemEventListener(private val filePath: String, private val password
                         }
                         isHandlingEvent = true
 
-                        // 验证密码是否可以打开文件
-                        if (!filePath.startsWith("content://")) {
-                            val file = File(filePath)
-                            if (file.exists() && file.canRead()) {
-                                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 验证密码是否可以打开文件")
-                                val isPasswordValid = OfficeEncryptUtils.verifyPassword(file, password)
-                                if (!isPasswordValid) {
-                                    Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 密码验证失败，无法打开文件，跳过密码写入")
-                                    return@Runnable
+                        // 获取密码状态
+                        val passwordState = PasswordStateManager.getState(filePath)
+                        var passwordToUse: String? = null
+                        var shouldWritePassword = true
+                        
+                        // 按照逻辑处理密码选择
+                        val hasPendingPassword = passwordState?.pendingPassword != null && passwordState?.pendingPassword?.isNotEmpty() == true
+                        val hasCurrentPassword = passwordState?.currentPassword != null && passwordState?.currentPassword?.isNotEmpty() == true
+                        
+                        when {
+                            // 情况1：两者都不存在
+                            !hasPendingPassword && !hasCurrentPassword -> {
+                                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 无待定密码和当前密码，跳过密码写入操作")
+                                shouldWritePassword = false
+                            }
+                            
+                            // 情况2：只有currentPassword存在
+                            !hasPendingPassword && hasCurrentPassword -> {
+                                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 无待定密码，使用当前密码执行写入操作")
+                                passwordToUse = passwordState?.currentPassword
+                            }
+                            
+                            // 情况3：只有pendingPassword存在
+                            hasPendingPassword && !hasCurrentPassword -> {
+                                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 只有待定密码，需要校验权限")
+                                passwordToUse = passwordState?.pendingPassword
+                                
+                                // 校验pendingPassword是否具备文件打开权限
+                                if (!filePath.startsWith("content://")) {
+                                    val file = File(filePath)
+                                    if (file.exists() && file.canRead() && passwordToUse != null) {
+                                        Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 验证待定密码是否可以打开文件: '$passwordToUse'")
+                                        val isPasswordValid = OfficeEncryptUtils.verifyPassword(file, passwordToUse)
+                                        if (!isPasswordValid) {
+                                            Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 待定密码验证失败，无法打开文件，跳过密码写入")
+                                            shouldWritePassword = false
+                                        } else {
+                                            Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 待定密码验证成功，可以打开文件")
+                                        }
+                                    } else {
+                                        Log.w(TAG, "[时间戳: ${System.currentTimeMillis()}] 文件不存在或不可读，无法验证密码")
+                                    }
                                 }
-                                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 密码验证成功，可以打开文件")
-                            } else {
-                                Log.w(TAG, "[时间戳: ${System.currentTimeMillis()}] 文件不存在或不可读，无法验证密码")
+                            }
+                            
+                            // 情况4：两者都存在
+                            hasPendingPassword && hasCurrentPassword -> {
+                                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 待定密码和当前密码都存在，优先校验待定密码")
+                                
+                                // 校验pendingPassword是否具备文件打开权限
+                                if (!filePath.startsWith("content://")) {
+                                    val file = File(filePath)
+                                    if (file.exists() && file.canRead() && passwordState != null) {
+                                        val pendingPassword = passwordState.pendingPassword
+                                        if (pendingPassword != null) {
+                                            Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 验证待定密码是否可以打开文件: '$pendingPassword'")
+                                            val isPasswordValid = OfficeEncryptUtils.verifyPassword(file, pendingPassword)
+                                            if (isPasswordValid) {
+                                                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 待定密码验证成功，使用待定密码")
+                                                passwordToUse = pendingPassword
+                                            } else {
+                                                Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 待定密码验证失败，使用当前密码")
+                                                passwordToUse = passwordState.currentPassword
+                                            }
+                                        }
+                                    } else if (passwordState != null) {
+                                        Log.w(TAG, "[时间戳: ${System.currentTimeMillis()}] 文件不存在或不可读，无法验证密码，使用当前密码")
+                                        passwordToUse = passwordState.currentPassword
+                                    }
+                                } else if (passwordState != null) {
+                                    // 对于Content URI，优先使用待定密码
+                                    Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] Content URI，优先使用待定密码")
+                                    passwordToUse = passwordState.pendingPassword
+                                }
                             }
                         }
+                        
+                        // 执行密码写入操作
+                        if (shouldWritePassword && passwordToUse != null) {
+                            Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 开始处理文件系统事件，准备写入密码: '$passwordToUse' 到文件: $filePath")
+                            
+                            // 写入密码
+                            val success = PasswordStorage.getInstance().writePassword(context, filePath, passwordToUse)
 
-                        Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 开始处理文件系统事件，准备写入密码: '$password' 到文件: $filePath")
-                        
-                        // 写入密码
-                        val success = PasswordStorage.getInstance().writePassword(context, filePath, password)
-                        if (success) {
-                            Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 密码写入成功")
-                            // 打印文件zip尾部最后1KB的内容
-                            logFileTail()
-                        } else {
-                            Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 密码写入失败")
+                            if (success) {
+                                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 密码写入成功")
+                                // 打印文件zip尾部最后1KB的内容
+                                logFileTail()
+                            } else {
+                                Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 密码写入失败")
+                            }
+                            
+                            // 密码写入完成后，停止监听
+                            stopListening()
+                            Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 停止文件系统事件监听器")
                         }
-                        
-                        // 密码写入完成后，停止监听
-                        stopListening()
-                        Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 停止文件系统事件监听器")
                     } catch (e: Exception) {
                         Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 处理文件系统事件失败", e)
                     } finally {
@@ -139,10 +206,7 @@ class FileSystemEventListener(private val filePath: String, private val password
         }
     }
     
-    /**
-     * 是否正在处理事件
-     */
-    private var isHandlingEvent = false
+
     
     /**
      * 打印文件zip尾部最后1KB的内容，只输出WPPM标记相关的内容

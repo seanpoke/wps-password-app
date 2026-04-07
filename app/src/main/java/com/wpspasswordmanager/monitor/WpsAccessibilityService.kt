@@ -9,6 +9,7 @@ import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import com.wpspasswordmanager.business.MemoryPasswordStorage
+import com.wpspasswordmanager.business.PasswordStateManager
 
 class WpsAccessibilityService : AccessibilityService() {
 
@@ -190,6 +191,13 @@ class WpsAccessibilityService : AccessibilityService() {
                 tempPassword = password
                 Log.i(TAG, "[时间戳: ${System.currentTimeMillis()}] 已将用户输入的密码临时存储，等待用户确认: '$password'")
                 Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 变化后的tempPassword: '${tempPassword ?: "null"}'")
+                
+                // 更新待定密码到密码状态管理器
+                val filePath = currentFileUri ?: stableDocumentPath
+                if (filePath != null) {
+                    PasswordStateManager.updatePendingPassword(filePath, password)
+                    Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 已更新待定密码到密码状态管理器: $filePath")
+                }
             }
         }
     }
@@ -335,6 +343,12 @@ class WpsAccessibilityService : AccessibilityService() {
         isDocumentOpened = false
         // 清理临时密码
         tempPassword = null
+        // 清理密码状态
+        val filePath = currentFileUri ?: stableDocumentPath
+        if (filePath != null) {
+            PasswordStateManager.clearState(filePath)
+            Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 已清理密码状态: $filePath")
+        }
         // 清理文档路径
         currentFileUri = null
         stableDocumentPath = null
@@ -981,6 +995,13 @@ class WpsAccessibilityService : AccessibilityService() {
                                             if (clickSuccess) {
                                                 Log.i(TAG, "成功点击确认按钮")
                                                 isDocumentOpened = true // 标记文档已打开
+
+                                                // 初始化密码状态
+                                                val filePath = currentFileUri ?: stableDocumentPath
+                                                if (filePath != null) {
+                                                    PasswordStateManager.initFileState(filePath, password)
+                                                    Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 已初始化密码状态: $filePath")
+                                                }
 
                                                 // 启动文件系统事件监听器
                                                 startFileSystemEventListener(password)
