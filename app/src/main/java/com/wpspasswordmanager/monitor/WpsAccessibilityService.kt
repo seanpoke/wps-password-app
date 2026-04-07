@@ -490,7 +490,13 @@ class WpsAccessibilityService : AccessibilityService() {
             Log.d(TAG, "找到密码输入框: ${passwordInputNodes.size}，找到确认按钮: ${confirmButton != null}，判断为密码弹框")
             
             // 检测对话框类型
+            val previousDialogType = currentDialogType
             detectDialogType(rootNode)
+            
+            // 只有在对话框类型发生变化时才重置显示密码标志
+            if (previousDialogType != currentDialogType) {
+                showPasswordChecked = false
+            }
             
             // 尝试找到并点击【显示密码】选项
             findAndClickShowPasswordOption(rootNode)
@@ -676,7 +682,11 @@ class WpsAccessibilityService : AccessibilityService() {
                                         node.className?.toString()?.contains("Switch") ?: false ||
                                         node.className?.toString()?.contains("Toggle") ?: false
                 
-                if (hasShowPasswordText || isCheckboxOrSwitch) {
+                // 检查是否是清理按钮，避免误点击
+                val isClearButton = text.contains("清理") || text.contains("clear") || text.contains("Clear") ||
+                                  contentDescription.contains("清理") || contentDescription.contains("clear") || contentDescription.contains("Clear")
+                
+                if ((hasShowPasswordText || isCheckboxOrSwitch) && !isClearButton) {
                     foundShowPasswordOption = true
                     Log.d(TAG, "找到可能的【显示密码】选项: $text")
                     Log.d(TAG, "选项类名: ${node.className}")
@@ -685,89 +695,89 @@ class WpsAccessibilityService : AccessibilityService() {
                     Log.d(TAG, "当前对话框类型: $currentDialogType")
                     Log.d(TAG, "是否已经点击过: $hasClickedShowPassword")
                     
-                    // 对于修改密码对话框，需要实时监测可交互状态
-                    if (currentDialogType == DialogType.MODIFY_PASSWORD) {
-                        // 当检测到勾选框处于可勾选状态时，自动将其勾选
-                        if (node.isClickable) {
-                            Log.d(TAG, "修改密码对话框中【显示密码】选项可点击，尝试点击")
-                            val success = node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-                            if (success) {
-                                Log.i(TAG, "成功点击【显示密码】选项")
-                                showPasswordChecked = true
-                            } else {
-                                Log.e(TAG, "直接点击【显示密码】选项失败")
-                            }
-                        }
-                    } else {
-                        // 对于其他对话框类型，只在未点击过时点击
-                        if (!hasClickedShowPassword && node.isClickable) {
-                            val success = node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-                            if (success) {
-                                Log.i(TAG, "成功点击【显示密码】选项")
-                                hasClickedShowPassword = true
-                            } else {
-                                Log.e(TAG, "直接点击【显示密码】选项失败")
-                            }
+                    // 对于修改密码对话框，持续监测并确保【显示密码】选项处于勾选状态
+                if (currentDialogType == DialogType.MODIFY_PASSWORD) {
+                    // 只在showPasswordChecked为false时点击，避免重复操作
+                    if (node.isClickable && !showPasswordChecked) {
+                        Log.d(TAG, "修改密码对话框中【显示密码】选项可点击，尝试点击")
+                        val success = node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                        if (success) {
+                            Log.i(TAG, "成功点击【显示密码】选项")
+                            showPasswordChecked = true
+                        } else {
+                            Log.e(TAG, "直接点击【显示密码】选项失败")
                         }
                     }
-                    
-                    // 尝试点击子节点
-                    for (i in 0 until node.childCount) {
-                        val child = node.getChild(i)
-                        if (child != null && child.isClickable) {
-                            if (currentDialogType == DialogType.MODIFY_PASSWORD) {
-                                if (!showPasswordChecked) {
-                                    Log.d(TAG, "尝试点击子节点: ${child.className}")
-                                    val success = child.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-                                    if (success) {
-                                        Log.i(TAG, "成功点击【显示密码】选项的子节点")
-                                        showPasswordChecked = true
-                                    } else {
-                                        Log.e(TAG, "点击【显示密码】选项的子节点失败")
-                                    }
-                                }
-                            } else {
-                                if (!hasClickedShowPassword) {
-                                    Log.d(TAG, "尝试点击子节点: ${child.className}")
-                                    val success = child.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-                                    if (success) {
-                                        Log.i(TAG, "成功点击【显示密码】选项的子节点")
-                                        hasClickedShowPassword = true
-                                    } else {
-                                        Log.e(TAG, "点击【显示密码】选项的子节点失败")
-                                    }
-                                }
-                            }
+                } else {
+                    // 对于其他对话框类型，只在未点击过时点击
+                    if (!hasClickedShowPassword && node.isClickable) {
+                        val success = node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                        if (success) {
+                            Log.i(TAG, "成功点击【显示密码】选项")
+                            hasClickedShowPassword = true
+                        } else {
+                            Log.e(TAG, "直接点击【显示密码】选项失败")
                         }
                     }
-                    
-                    // 尝试点击父节点
-                    val parent = node.parent
-                    if (parent != null && parent.isClickable) {
+                }
+                
+                // 尝试点击子节点
+                for (i in 0 until node.childCount) {
+                    val child = node.getChild(i)
+                    if (child != null && child.isClickable) {
                         if (currentDialogType == DialogType.MODIFY_PASSWORD) {
                             if (!showPasswordChecked) {
-                                Log.d(TAG, "尝试点击父节点: ${parent.className}")
-                                val success = parent.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                                Log.d(TAG, "尝试点击子节点: ${child.className}")
+                                val success = child.performAction(AccessibilityNodeInfo.ACTION_CLICK)
                                 if (success) {
-                                    Log.i(TAG, "成功点击【显示密码】选项的父节点")
+                                    Log.i(TAG, "成功点击【显示密码】选项的子节点")
                                     showPasswordChecked = true
                                 } else {
-                                    Log.e(TAG, "点击【显示密码】选项的父节点失败")
+                                    Log.e(TAG, "点击【显示密码】选项的子节点失败")
                                 }
                             }
                         } else {
                             if (!hasClickedShowPassword) {
-                                Log.d(TAG, "尝试点击父节点: ${parent.className}")
-                                val success = parent.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                                Log.d(TAG, "尝试点击子节点: ${child.className}")
+                                val success = child.performAction(AccessibilityNodeInfo.ACTION_CLICK)
                                 if (success) {
-                                    Log.i(TAG, "成功点击【显示密码】选项的父节点")
+                                    Log.i(TAG, "成功点击【显示密码】选项的子节点")
                                     hasClickedShowPassword = true
                                 } else {
-                                    Log.e(TAG, "点击【显示密码】选项的父节点失败")
+                                    Log.e(TAG, "点击【显示密码】选项的子节点失败")
                                 }
                             }
                         }
                     }
+                }
+                
+                // 尝试点击父节点
+                val parent = node.parent
+                if (parent != null && parent.isClickable) {
+                    if (currentDialogType == DialogType.MODIFY_PASSWORD) {
+                        if (!showPasswordChecked) {
+                            Log.d(TAG, "尝试点击父节点: ${parent.className}")
+                            val success = parent.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                            if (success) {
+                                Log.i(TAG, "成功点击【显示密码】选项的父节点")
+                                showPasswordChecked = true
+                            } else {
+                                Log.e(TAG, "点击【显示密码】选项的父节点失败")
+                            }
+                        }
+                    } else {
+                        if (!hasClickedShowPassword) {
+                            Log.d(TAG, "尝试点击父节点: ${parent.className}")
+                            val success = parent.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                            if (success) {
+                                Log.i(TAG, "成功点击【显示密码】选项的父节点")
+                                hasClickedShowPassword = true
+                            } else {
+                                Log.e(TAG, "点击【显示密码】选项的父节点失败")
+                            }
+                        }
+                    }
+                }
                     
                     // 找到【显示密码】选项后，不再继续搜索
                     if (currentDialogType == DialogType.MODIFY_PASSWORD && showPasswordChecked) {
@@ -802,7 +812,8 @@ class WpsAccessibilityService : AccessibilityService() {
             if (!isMonitoringShowPassword && currentDialogType == DialogType.MODIFY_PASSWORD) {
                 Log.d(TAG, "开始监测显示密码勾选框")
                 isMonitoringShowPassword = true
-                showPasswordChecked = false
+                
+                // 不重置showPasswordChecked，保持当前状态
                 
                 // 创建并启动监测线程
                 showPasswordMonitorThread = Thread {
@@ -815,8 +826,8 @@ class WpsAccessibilityService : AccessibilityService() {
                                 // 重新检测对话框类型，确保仍然是修改密码弹窗
                                 detectDialogType(rootNode)
                                 
-                                if (currentDialogType == DialogType.MODIFY_PASSWORD && !showPasswordChecked) {
-                                    Log.d(TAG, "监测到显示密码未勾选，尝试勾选")
+                                if (currentDialogType == DialogType.MODIFY_PASSWORD) {
+                                    // 尝试找到并点击【显示密码】选项
                                     findAndClickShowPasswordOption(rootNode)
                                 }
                             }
@@ -825,7 +836,7 @@ class WpsAccessibilityService : AccessibilityService() {
                         Log.e(TAG, "监测线程异常", e)
                     } finally {
                         isMonitoringShowPassword = false
-                        showPasswordChecked = false
+                        // 不重置showPasswordChecked，保持当前状态
                         Log.d(TAG, "显示密码监测线程结束")
                     }
                 }
@@ -852,7 +863,7 @@ class WpsAccessibilityService : AccessibilityService() {
                 showPasswordMonitorThread?.join(1000) // 最多等待1秒
                 showPasswordMonitorThread = null
                 
-                showPasswordChecked = false
+                // 不重置showPasswordChecked，保持当前状态
                 Log.d(TAG, "显示密码监测已停止")
             }
         } catch (e: Exception) {
@@ -897,9 +908,9 @@ class WpsAccessibilityService : AccessibilityService() {
                 return
             }
             
-            // 【添加密码】弹窗不需要自动填充密码，只需要实现【显示密码】选项的自动勾选功能
-            if (currentDialogType == DialogType.ADD_PASSWORD) {
-                Log.d(TAG, "添加密码弹窗，跳过自动填充")
+            // 【添加密码】和【修改密码】弹窗不需要自动填充密码，只需要实现【显示密码】选项的自动勾选功能
+            if (currentDialogType == DialogType.ADD_PASSWORD || currentDialogType == DialogType.MODIFY_PASSWORD) {
+                Log.d(TAG, "添加密码或修改密码弹窗，跳过自动填充")
                 return
             }
             
