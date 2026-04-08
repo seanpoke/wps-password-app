@@ -707,89 +707,6 @@ class ZipExtraFieldManager private constructor() {
     }
 
     /**
-     * 搜索签名（从前向后）
-     */
-    private fun findSignature(buffer: ByteArray, length: Int): Int {
-        val signatureBytes = WPS_PASSWORD_SIGNATURE.toByteArray()
-        val signatureLength = signatureBytes.size
-        
-        for (i in 0..length - signatureLength) {
-            var match = true
-            for (j in 0 until signatureLength) {
-                if (buffer[i + j] != signatureBytes[j]) {
-                    match = false
-                    break
-                }
-            }
-            if (match) {
-                return i
-            }
-        }
-        return -1
-    }
-
-    /**
-     * 搜索签名（从后向前）
-     * 参考C++实现，从后向前搜索WPPM签名
-     */
-    private fun findSignatureFromEnd(buffer: ByteArray, length: Int): Int {
-        val signatureBytes = WPS_PASSWORD_SIGNATURE.toByteArray()
-        val signatureLength = signatureBytes.size
-        
-        // 从后向前搜索，找到最后一个匹配的签名
-        for (i in length - signatureLength downTo 0) {
-            var match = true
-            for (j in 0 until signatureLength) {
-                if (buffer[i + j] != signatureBytes[j]) {
-                    match = false
-                    break
-                }
-            }
-            if (match) {
-                return i
-            }
-        }
-        return -1
-    }
-
-    /**
-     * 加密密码
-     */
-    private fun encryptPassword(password: String): ByteArray {
-        try {
-            val key = generateKey()
-            val iv = generateIV()
-            
-            val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-            cipher.init(Cipher.ENCRYPT_MODE, key, iv)
-            
-            return cipher.doFinal(password.toByteArray())
-        } catch (e: Exception) {
-            Log.e(TAG, "加密密码失败", e)
-            throw e
-        }
-    }
-
-    /**
-     * 解密密码
-     */
-    private fun decryptPassword(encryptedPassword: ByteArray): String {
-        try {
-            val key = generateKey()
-            val iv = generateIV()
-            
-            val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-            cipher.init(Cipher.DECRYPT_MODE, key, iv)
-            
-            val decrypted = cipher.doFinal(encryptedPassword)
-            return String(decrypted)
-        } catch (e: Exception) {
-            Log.e(TAG, "解密密码失败", e)
-            throw e
-        }
-    }
-
-    /**
      * 生成加密密钥
      */
     private fun generateKey(): SecretKeySpec {
@@ -805,32 +722,6 @@ class ZipExtraFieldManager private constructor() {
         return IvParameterSpec(ivBytes)
     }
 
-    /**
-     * 计算校验和
-     */
-    private fun calculateChecksum(data: ByteArray): ByteArray {
-        try {
-            val checksum = MessageDigest.getInstance("MD5").digest(data)
-            val result = ByteArray(4)
-            System.arraycopy(checksum, 0, result, 0, minOf(4, checksum.size))
-            return result
-        } catch (e: Exception) {
-            Log.e(TAG, "计算校验和失败", e)
-            return ByteArray(4)
-        }
-    }
-
-    /**
-     * Int转ByteArray（大端序）
-     */
-    private fun intToByteArray(value: Int): ByteArray {
-        return byteArrayOf(
-            (value shr 24).toByte(),
-            (value shr 16).toByte(),
-            (value shr 8).toByte(),
-            value.toByte()
-        )
-    }
     
     /**
      * Int转ByteArray（小端序）

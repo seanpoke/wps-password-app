@@ -10,7 +10,6 @@ class PasswordStorage private constructor() {
 
     companion object {
         private const val TAG = "PasswordStorage"
-        private const val WPS_PASSWORD_METADATA_KEY = "wpsPassword"
 
         private var instance: PasswordStorage? = null
 
@@ -49,12 +48,6 @@ class PasswordStorage private constructor() {
         }
     }
 
-    /**
-     * 检查密码是否存在
-     */
-    fun hasPassword(context: Context, key: String): Boolean {
-        return getPassword(context, key) != null
-    }
 
     /**
      * 写入密码
@@ -261,20 +254,6 @@ class PasswordStorage private constructor() {
         } catch (e: Exception) {
             Log.e(TAG, "从输入流读取密码失败", e)
             return null
-        }
-    }
-
-
-
-    /**
-     * 获取文件扩展名
-     */
-    private fun getFileExtension(fileName: String): String {
-        val lastDotIndex = fileName.lastIndexOf('.')
-        return if (lastDotIndex > 0) {
-            fileName.substring(lastDotIndex + 1).lowercase()
-        } else {
-            ""
         }
     }
 }
