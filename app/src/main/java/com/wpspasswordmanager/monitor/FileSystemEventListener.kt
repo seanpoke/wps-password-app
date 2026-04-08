@@ -5,7 +5,6 @@ import android.util.Log
 import com.wpspasswordmanager.business.OfficeEncryptUtils
 import com.wpspasswordmanager.business.PasswordStorage
 import com.wpspasswordmanager.business.PasswordStateManager
-import com.wpspasswordmanager.ui.ProxyActivity
 import java.io.File
 
 /**
@@ -92,13 +91,17 @@ class FileSystemEventListener(private val filePath: String, private val password
                         isHandlingEvent = true
 
                         // 获取密码状态
-                        val passwordState = PasswordStateManager.getState(filePath)
+                        val pendingPasswordList = PasswordStateManager.getState(filePath)
                         var passwordToUse: String? = null
                         var shouldWritePassword = true
                         
+                        // 存储到局部变量以避免smart cast问题
+                        val pendingPasswords = pendingPasswordList?.pendingPasswordList
+                        val currentPassword = pendingPasswordList?.currentPassword
+                        
                         // 按照逻辑处理密码选择
-                        val hasPendingPassword = passwordState?.pendingPassword != null && passwordState?.pendingPassword?.isNotEmpty() == true
-                        val hasCurrentPassword = passwordState?.currentPassword != null && passwordState?.currentPassword?.isNotEmpty() == true
+                        val hasPendingPassword = pendingPasswords != null && !pendingPasswords.isEmpty()
+                        val hasCurrentPassword = currentPassword != null && currentPassword.isNotEmpty()
                         
                         when {
                             // 情况1：两者都不存在
@@ -110,29 +113,45 @@ class FileSystemEventListener(private val filePath: String, private val password
                             // 情况2：只有currentPassword存在
                             !hasPendingPassword && hasCurrentPassword -> {
                                 Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 无待定密码，使用当前密码执行写入操作")
-                                passwordToUse = passwordState?.currentPassword
+                                passwordToUse = currentPassword
                             }
                             
                             // 情况3：只有pendingPassword存在
                             hasPendingPassword && !hasCurrentPassword -> {
                                 Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 只有待定密码，需要校验权限")
-                                passwordToUse = passwordState?.pendingPassword
                                 
                                 // 校验pendingPassword是否具备文件打开权限
                                 if (!filePath.startsWith("content://")) {
                                     val file = File(filePath)
-                                    if (file.exists() && file.canRead() && passwordToUse != null) {
-                                        Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 验证待定密码是否可以打开文件: '$passwordToUse'")
-                                        val isPasswordValid = OfficeEncryptUtils.verifyPassword(file, passwordToUse)
-                                        if (!isPasswordValid) {
-                                            Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 待定密码验证失败，无法打开文件，跳过密码写入")
+                                    if (file.exists() && file.canRead() && pendingPasswords != null) {
+                                        var foundValidPassword = false
+                                        
+                                        // 遍历所有待定密码
+                                        for (pendingPassword in pendingPasswords) {
+                                            Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 验证待定密码是否可以打开文件: '$pendingPassword'")
+                                            val isPasswordValid = OfficeEncryptUtils.verifyPassword(file, pendingPassword)
+                                            if (isPasswordValid) {
+                                                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 待定密码验证成功，可以打开文件")
+                                                passwordToUse = pendingPassword
+                                                foundValidPassword = true
+                                                break // 找到有效密码后停止遍历
+                                            } else {
+                                                Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 待定密码验证失败: '$pendingPassword'")
+                                            }
+                                        }
+                                        
+                                        // 若全部校验失败，跳过密码写入操作
+                                        if (!foundValidPassword) {
+                                            Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 所有待定密码验证失败，无法打开文件，跳过密码写入")
                                             shouldWritePassword = false
-                                        } else {
-                                            Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 待定密码验证成功，可以打开文件")
                                         }
                                     } else {
                                         Log.w(TAG, "[时间戳: ${System.currentTimeMillis()}] 文件不存在或不可读，无法验证密码")
                                     }
+                                } else if (pendingPasswords != null) {
+                                    // 对于Content URI，使用第一个待定密码
+                                    Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] Content URI，使用第一个待定密码")
+                                    passwordToUse = pendingPasswords.firstOrNull()
                                 }
                             }
                             
@@ -143,27 +162,38 @@ class FileSystemEventListener(private val filePath: String, private val password
                                 // 校验pendingPassword是否具备文件打开权限
                                 if (!filePath.startsWith("content://")) {
                                     val file = File(filePath)
-                                    if (file.exists() && file.canRead() && passwordState != null) {
-                                        val pendingPassword = passwordState.pendingPassword
-                                        if (pendingPassword != null) {
-                                            Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 验证待定密码是否可以打开文件: '$pendingPassword'")
-                                            val isPasswordValid = OfficeEncryptUtils.verifyPassword(file, pendingPassword)
-                                            if (isPasswordValid) {
-                                                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 待定密码验证成功，使用待定密码")
-                                                passwordToUse = pendingPassword
-                                            } else {
-                                                Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 待定密码验证失败，使用当前密码")
-                                                passwordToUse = passwordState.currentPassword
+                                    if (file.exists() && file.canRead()) {
+                                        var foundValidPassword = false
+                                        
+                                        // 遍历所有待定密码
+                                        if (pendingPasswords != null) {
+                                            for (pendingPassword in pendingPasswords) {
+                                                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 验证待定密码是否可以打开文件: '$pendingPassword'")
+                                                val isPasswordValid = OfficeEncryptUtils.verifyPassword(file, pendingPassword)
+                                                if (isPasswordValid) {
+                                                    Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 待定密码验证成功，使用待定密码")
+                                                    passwordToUse = pendingPassword
+                                                    foundValidPassword = true
+                                                    break // 找到有效密码后停止遍历
+                                                } else {
+                                                    Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 待定密码验证失败: '$pendingPassword'")
+                                                }
                                             }
                                         }
-                                    } else if (passwordState != null) {
+                                        
+                                        // 若全部校验失败，使用currentPassword
+                                        if (!foundValidPassword) {
+                                            Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 所有待定密码验证失败，使用当前密码")
+                                            passwordToUse = currentPassword
+                                        }
+                                    } else {
                                         Log.w(TAG, "[时间戳: ${System.currentTimeMillis()}] 文件不存在或不可读，无法验证密码，使用当前密码")
-                                        passwordToUse = passwordState.currentPassword
+                                        passwordToUse = currentPassword
                                     }
-                                } else if (passwordState != null) {
+                                } else {
                                     // 对于Content URI，优先使用待定密码
                                     Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] Content URI，优先使用待定密码")
-                                    passwordToUse = passwordState.pendingPassword
+                                    passwordToUse = pendingPasswords?.firstOrNull()
                                 }
                             }
                         }

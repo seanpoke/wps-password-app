@@ -18,21 +18,33 @@ object PasswordStateManager {
         )
         stateMap[filePath] = state
         // 输出日志
-        Log.d("PasswordStateManager", "[时间戳: ${System.currentTimeMillis()}] initFileState - FileCryptoState: filePath='$filePath', currentPassword='${oldPass ?: "null"}', pendingPassword='${state.pendingPassword ?: "null"}'")
+        Log.d("PasswordStateManager", "[时间戳: ${System.currentTimeMillis()}] initFileState - FileCryptoState: filePath='$filePath', currentPassword='${oldPass ?: "null"}', pendingPasswordList='${state.pendingPasswordList?.toList() ?: "null"}'")
     }
 
     /**
      * 无障碍服务捕获到输入时更新
      */
     fun updatePendingPassword(filePath: String, newPassword: String) {
-        val state = stateMap[filePath]
+        var state = stateMap[filePath]
         if (state != null) {
-            state.pendingPassword = newPassword
+            if (state.pendingPasswordList == null) {
+                state.pendingPasswordList = OrderedSet()
+            }
+            state.pendingPasswordList?.add(newPassword)
             // 输出日志
-            Log.d("PasswordStateManager", "[时间戳: ${System.currentTimeMillis()}] updatePendingPassword - FileCryptoState: filePath='$filePath', currentPassword='${state.currentPassword ?: "null"}', pendingPassword='$newPassword'")
+            Log.d("PasswordStateManager", "[时间戳: ${System.currentTimeMillis()}] updatePendingPassword - FileCryptoState: filePath='$filePath', currentPassword='${state.currentPassword ?: "null"}', pendingPasswordList='${state.pendingPasswordList?.toList()}'")
         } else {
+            // 如果状态不存在，自动初始化一个新的状态
+            val pendingPasswordSet = OrderedSet<String>()
+            pendingPasswordSet.add(newPassword)
+            state = FileCryptoState(
+                filePath = filePath,
+                currentPassword = null,
+                pendingPasswordList = pendingPasswordSet
+            )
+            stateMap[filePath] = state
             // 输出日志
-            Log.d("PasswordStateManager", "[时间戳: ${System.currentTimeMillis()}] updatePendingPassword - FileCryptoState not found for filePath: '$filePath'")
+            Log.d("PasswordStateManager", "[时间戳: ${System.currentTimeMillis()}] updatePendingPassword - FileCryptoState not found, created new state: filePath='$filePath', pendingPasswordList='${state.pendingPasswordList?.toList()}'")
         }
     }
 

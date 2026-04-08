@@ -5,8 +5,6 @@ import org.apache.poi.poifs.filesystem.POIFSFileSystem
 import org.apache.poi.poifs.crypt.EncryptionInfo
 import java.io.FileInputStream
 import java.io.File
-import java.security.MessageDigest
-import kotlin.math.min
 
 object OfficeEncryptUtils {
 
