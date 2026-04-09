@@ -7,8 +7,7 @@ import android.text.InputType
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
-import com.wpspasswordmanager.business.MemoryPasswordStorage
-import com.wpspasswordmanager.business.PasswordStateManager
+import com.wpspasswordmanager.business.PasswordObjManager
 
 class WpsAccessibilityService : AccessibilityService() {
 
@@ -31,8 +30,6 @@ class WpsAccessibilityService : AccessibilityService() {
         // 显示密码监测相关变量
         private var isMonitoringShowPassword = false // 是否正在监测显示密码勾选框
         private var showPasswordChecked = false // 显示密码是否已勾选
-        private var openPermissionShowPasswordChecked = false // 打开权限板块的显示密码是否已勾选
-        private var modifyPermissionShowPasswordChecked = false // 修改权限板块的显示密码是否已勾选
         private var showPasswordMonitorThread: Thread? = null // 监测线程
 
         // 对话框类型
@@ -50,9 +47,6 @@ class WpsAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         Log.d(TAG, "无障碍服务已连接")
-
-        // 初始化 MemoryPasswordStorage
-        MemoryPasswordStorage.init(this)
 
         // 注册服务到管理器
         AccessibilityServiceManager.getInstance().setService(this)
@@ -215,42 +209,6 @@ class WpsAccessibilityService : AccessibilityService() {
                 if (password != null && password.isNotEmpty()) {
                     Log.i(TAG, "[时间戳: ${System.currentTimeMillis()}] 从临时存储中获取到密码: '$password'，长度: ${password.length}")
 
-                    // 将密码写入MemoryPasswordStorage进行持久化
-                    if (currentFileUri != null) {
-                        Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 准备将密码存储到内存，键: $currentFileUri")
-                        val stored = MemoryPasswordStorage.getInstance().storePasswordInMemory(currentFileUri!!, password, currentFileUri)
-                        if (stored) {
-                            Log.i(TAG, "[时间戳: ${System.currentTimeMillis()}] 已将密码持久化存储到内存: $currentFileUri")
-                            // 验证缓存状态
-                            val cachedPassword = MemoryPasswordStorage.getInstance().getPasswordFromMemory(currentFileUri!!)
-                            Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 缓存验证 - 键: $currentFileUri, 密码: '$cachedPassword'")
-                        } else {
-                            Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 存储密码到内存失败: $currentFileUri")
-                        }
-                    } else if (stableDocumentPath != null) {
-                        Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 准备将密码存储到内存，键: $stableDocumentPath")
-                        val stored = MemoryPasswordStorage.getInstance().storePasswordInMemory(stableDocumentPath!!, password)
-                        if (stored) {
-                            Log.i(TAG, "[时间戳: ${System.currentTimeMillis()}] 已将密码持久化存储到内存: $stableDocumentPath")
-                            // 验证缓存状态
-                            val cachedPassword = MemoryPasswordStorage.getInstance().getPasswordFromMemory(stableDocumentPath!!)
-                            Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 缓存验证 - 键: $stableDocumentPath, 密码: '$cachedPassword'")
-                        } else {
-                            Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 存储密码到内存失败: $stableDocumentPath")
-                        }
-                    } else {
-                        Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 准备将密码存储到内存，键: temp")
-                        val stored = MemoryPasswordStorage.getInstance().storePasswordInMemory("temp", password)
-                        if (stored) {
-                            Log.i(TAG, "[时间戳: ${System.currentTimeMillis()}] 已将密码持久化存储到临时内存")
-                            // 验证缓存状态
-                            val cachedPassword = MemoryPasswordStorage.getInstance().getPasswordFromMemory("temp")
-                            Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 缓存验证 - 键: temp, 密码: '$cachedPassword'")
-                        } else {
-                            Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 存储密码到临时内存失败")
-                        }
-                    }
-
                     showOperationNotification("操作处理", "密码已成功缓存到内存")
 
                     // 启动文件系统事件监听器，由FileObserver处理密码写入
@@ -311,7 +269,7 @@ class WpsAccessibilityService : AccessibilityService() {
         // 清理密码状态
         val filePath = currentFileUri ?: stableDocumentPath
         if (filePath != null) {
-            PasswordStateManager.clearState(filePath)
+            PasswordObjManager.clearState(filePath)
             Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 已清理密码状态: $filePath")
         }
         // 清理文档路径
@@ -355,40 +313,10 @@ class WpsAccessibilityService : AccessibilityService() {
             if (tempPassword != null && tempPassword!!.isNotEmpty()) {
                 Log.i(TAG, "[时间戳: ${System.currentTimeMillis()}] 检测到从密码弹框切换到文档编辑界面，处理未确认的临时密码: '$tempPassword'")
 
-                // 将临时密码写入MemoryPasswordStorage
-                if (currentFileUri != null) {
-                    Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 准备将临时密码存储到内存，键: $currentFileUri")
-                    val stored = MemoryPasswordStorage.getInstance().storePasswordInMemory(currentFileUri!!, tempPassword!!, currentFileUri)
-                    if (stored) {
-                        Log.i(TAG, "[时间戳: ${System.currentTimeMillis()}] handleWindowStateChanged-currentFileUri已将临时密码持久化存储到内存: $currentFileUri")
-                        // 验证缓存状态
-                        val cachedPassword = MemoryPasswordStorage.getInstance().getPasswordFromMemory(currentFileUri!!)
-                        Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 缓存验证 - 键: $currentFileUri, 密码: '$cachedPassword'")
-                    } else {
-                        Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 存储密码到内存失败: $currentFileUri")
-                    }
-                } else if (stableDocumentPath != null) {
-                    Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 准备将临时密码存储到内存，键: $stableDocumentPath")
-                    val stored = MemoryPasswordStorage.getInstance().storePasswordInMemory(stableDocumentPath!!, tempPassword!!)
-                    if (stored) {
-                        Log.i(TAG, "[时间戳: ${System.currentTimeMillis()}] handleWindowStateChanged-stableDocumentPath已将临时密码持久化存储到内存: $stableDocumentPath")
-                        // 验证缓存状态
-                        val cachedPassword = MemoryPasswordStorage.getInstance().getPasswordFromMemory(stableDocumentPath!!)
-                        Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 缓存验证 - 键: $stableDocumentPath, 密码: '$cachedPassword'")
-                    } else {
-                        Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 存储密码到内存失败: $stableDocumentPath")
-                    }
-                } else {
-                    Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 准备将临时密码存储到内存，键: temp")
-                    val stored = MemoryPasswordStorage.getInstance().storePasswordInMemory("temp", tempPassword!!)
-                    if (stored) {
-                        Log.i(TAG, "[时间戳: ${System.currentTimeMillis()}] 已将临时密码持久化存储到临时内存")
-                        // 验证缓存状态
-                        val cachedPassword = MemoryPasswordStorage.getInstance().getPasswordFromMemory("temp")
-                        Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 缓存验证 - 键: temp, 密码: '$cachedPassword'")
-                    } else {
-                        Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 存储密码到临时内存失败")
-                    }
+                val filePath = currentFileUri ?: stableDocumentPath
+                if (filePath != null) {
+                    PasswordObjManager.updatePendingPassword(filePath, tempPassword!!)
+                    Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 已更新待定密码到密码状态管理器: $filePath")
                 }
 
                 // 启动文件系统事件监听器
@@ -424,8 +352,6 @@ class WpsAccessibilityService : AccessibilityService() {
             currentDocumentPath = null
             // 清理临时存储的密码
             tempPassword = null
-            // 清理内存中的密码
-            MemoryPasswordStorage.getInstance().removePasswordFromMemory("temp")
             Log.d(TAG, "已清理密码相关缓存")
         }
     }
@@ -523,43 +449,8 @@ class WpsAccessibilityService : AccessibilityService() {
                 // 更新待定密码到密码状态管理器
                 val filePath = currentFileUri ?: stableDocumentPath
                 if (filePath != null) {
-                    PasswordStateManager.updatePendingPassword(filePath, tempPassword!!)
+                    PasswordObjManager.updatePendingPassword(filePath, tempPassword!!)
                     Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 已更新待定密码到密码状态管理器: $filePath")
-                }
-                // 将临时密码写入MemoryPasswordStorage
-                if (currentFileUri != null) {
-                    Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 准备将临时密码存储到内存，键: $currentFileUri")
-                    val stored = MemoryPasswordStorage.getInstance().storePasswordInMemory(currentFileUri!!, tempPassword!!, currentFileUri)
-                    if (stored) {
-                        Log.i(TAG, "[时间戳: ${System.currentTimeMillis()}] detectPasswordDialog-currentFileUri已将临时密码持久化存储到内存: $currentFileUri")
-                        // 验证缓存状态
-                        val cachedPassword = MemoryPasswordStorage.getInstance().getPasswordFromMemory(currentFileUri!!)
-                        Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 缓存验证 - 键: $currentFileUri, 密码: '$cachedPassword'")
-                    } else {
-                        Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 存储密码到内存失败: $currentFileUri")
-                    }
-                } else if (stableDocumentPath != null) {
-                    Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 准备将临时密码存储到内存，键: $stableDocumentPath")
-                    val stored = MemoryPasswordStorage.getInstance().storePasswordInMemory(stableDocumentPath!!, tempPassword!!)
-                    if (stored) {
-                        Log.i(TAG, "[时间戳: ${System.currentTimeMillis()}] detectPasswordDialog-stableDocumentPath已将临时密码持久化存储到内存: $stableDocumentPath")
-                        // 验证缓存状态
-                        val cachedPassword = MemoryPasswordStorage.getInstance().getPasswordFromMemory(stableDocumentPath!!)
-                        Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 缓存验证 - 键: $stableDocumentPath, 密码: '$cachedPassword'")
-                    } else {
-                        Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 存储密码到内存失败: $stableDocumentPath")
-                    }
-                } else {
-                    Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 准备将临时密码存储到内存，键: temp")
-                    val stored = MemoryPasswordStorage.getInstance().storePasswordInMemory("temp", tempPassword!!)
-                    if (stored) {
-                        Log.i(TAG, "[时间戳: ${System.currentTimeMillis()}] 已将临时密码持久化存储到临时内存")
-                        // 验证缓存状态
-                        val cachedPassword = MemoryPasswordStorage.getInstance().getPasswordFromMemory("temp")
-                        Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 缓存验证 - 键: temp, 密码: '$cachedPassword'")
-                    } else {
-                        Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 存储密码到临时内存失败")
-                    }
                 }
 
                 // 启动文件系统事件监听器
@@ -1089,19 +980,19 @@ class WpsAccessibilityService : AccessibilityService() {
 
             // 如果PasswordHolder中没有找到密码，尝试从内存中获取
             if (password == null && currentFileUri != null) {
-                Log.d(TAG, "尝试从内存读取密码: $currentFileUri")
-                password = MemoryPasswordStorage.getInstance().getPasswordFromMemory(currentFileUri!!)
+                Log.d(TAG, "尝试从currentFileUri读取密码: $currentFileUri")
+                password = PasswordObjManager.getCurrentPassword(currentFileUri!!)
                 if (password != null) {
-                    Log.i(TAG, "从内存读取密码成功: $currentFileUri")
+                    Log.i(TAG, "从currentFileUri读取密码成功: $currentFileUri")
                 }
             }
 
             // 如果内存中没有找到密码，尝试使用稳定文档路径
             if (password == null && stableDocumentPath != null) {
-                Log.d(TAG, "尝试从内存读取密码: $stableDocumentPath")
-                password = MemoryPasswordStorage.getInstance().getPasswordFromMemory(stableDocumentPath!!)
+                Log.d(TAG, "尝试从stableDocumentPath读取密码: $stableDocumentPath")
+                password = PasswordObjManager.getCurrentPassword(stableDocumentPath!!)
                 if (password != null) {
-                    Log.i(TAG, "从内存读取密码成功: $stableDocumentPath")
+                    Log.i(TAG, "从stableDocumentPath读取密码成功: $stableDocumentPath")
                 }
             }
 
@@ -1145,7 +1036,7 @@ class WpsAccessibilityService : AccessibilityService() {
                                                 // 初始化密码状态
                                                 val filePath = currentFileUri ?: stableDocumentPath
                                                 if (filePath != null) {
-                                                    PasswordStateManager.initFileState(filePath, password)
+                                                    PasswordObjManager.initFileState(filePath, password)
                                                     Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 已初始化密码状态: $filePath")
                                                 }
 

@@ -9,7 +9,6 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.wpspasswordmanager.R
-import com.wpspasswordmanager.business.MemoryPasswordStorage
 import com.wpspasswordmanager.business.PasswordGenerator
 import com.wpspasswordmanager.business.PasswordStorage
 import com.wpspasswordmanager.monitor.AccessibilityServiceManager
@@ -28,9 +27,6 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
-        // 初始化 MemoryPasswordStorage
-        MemoryPasswordStorage.init(this)
 
         // 初始化 UI 元素
         initUI()

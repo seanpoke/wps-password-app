@@ -10,6 +10,7 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.wpspasswordmanager.R
 import com.wpspasswordmanager.business.OfficeEncryptUtils
+import com.wpspasswordmanager.business.PasswordObjManager
 import com.wpspasswordmanager.business.PasswordStorage
 import com.wpspasswordmanager.business.ZipExtraFieldManager
 import com.wpspasswordmanager.monitor.WpsAccessibilityService
@@ -22,9 +23,6 @@ class ProxyActivity : AppCompatActivity() {
         private const val TAG = "ProxyActivity"
         private const val WPS_MANAGEMENT_DIR = "WpsManagement"
     }
-
-    // 内存缓存，存储文件名到密码的映射
-    private val fileNameToPassword = HashMap<String, String>()
 
     // FileObserver 实例
     private var fileObserver: FileObserver? = null
@@ -95,13 +93,10 @@ class ProxyActivity : AppCompatActivity() {
 
                 DELETE -> {
                     // 处理文件删除事件，清理缓存
-                    fileNameToPassword.remove(fullPath)
                     Log.d(TAG, "文件删除，清理缓存: $fullPath")
                 }
 
                 MOVED_FROM -> {
-                    // 处理文件重命名（原文件），清理缓存
-                    fileNameToPassword.remove(fullPath)
                     Log.d(TAG, "文件重命名(原文件)，清理缓存: $fullPath")
                 }
 
@@ -149,43 +144,8 @@ class ProxyActivity : AppCompatActivity() {
                 "文件状态 - 存在: ${file.exists()}, 可写: ${file.canWrite()}, 大小: ${file.length()} 字节"
             )
 
-            // 从内存缓存中查询密码信息
-            Log.d(TAG, "从内存缓存查询密码，缓存大小: ${fileNameToPassword.size}")
-            var password = fileNameToPassword[filePath]
-            Log.d(
-                TAG,
-                "从fileNameToPassword缓存中获取密码: ${if (password != null) "成功" else "失败"}"
-            )
-
-            // 如果缓存中没有，尝试从MemoryPasswordStorage获取
-            if (password == null) {
-                Log.d(TAG, "从fileNameToPassword缓存中未找到密码，尝试从MemoryPasswordStorage获取")
-                password = com.wpspasswordmanager.business.MemoryPasswordStorage.getInstance()
-                    .getPasswordFromMemory(filePath)
-                if (password != null) {
-                    Log.d(TAG, "从MemoryPasswordStorage获取到密码: $password")
-                } else {
-                    Log.d(TAG, "从MemoryPasswordStorage中也未找到密码")
-                }
-            } else {
-                Log.d(TAG, "从fileNameToPassword缓存中获取到密码: $password")
-            }
-
-            // 如果缓存中仍然没有密码，尝试直接从文件中读取
-            if (password == null) {
-                Log.d(TAG, "从MemoryPasswordStorage中未找到密码，尝试直接从文件读取")
-                try {
-                    password = PasswordStorage.getInstance().getPassword(this, filePath)
-                    if (password != null) {
-                        Log.d(TAG, "直接从文件中读取到密码: $password")
-                    } else {
-                        Log.d(TAG, "直接从文件中也未找到密码")
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, "直接从文件读取密码失败", e)
-                }
-            }
-
+            var password = PasswordObjManager.getWritePassword(filePath)
+            Log.d(TAG, "PA执行getWritePassword结果: $password")
 
             if (password != null) {
                 Log.d(TAG, "准备将密码写入文件: $password")
@@ -201,15 +161,6 @@ class ProxyActivity : AppCompatActivity() {
                                 .writePassword(this, filePath, password)
                             if (success) {
                                 Log.d(TAG, "成功将密码写入文件: $filePath")
-
-                                // 密码写入成功后，清理内存缓存
-                                fileNameToPassword.remove(filePath)
-                                com.wpspasswordmanager.business.MemoryPasswordStorage.getInstance()
-                                    .removePasswordFromMemory(filePath)
-                                Log.d(
-                                    TAG,
-                                    "已清理密码缓存: $filePath, 清理后缓存大小: ${fileNameToPassword.size}"
-                                )
                             } else {
                                 Log.e(TAG, "密码写入失败: $filePath")
                             }
@@ -221,10 +172,6 @@ class ProxyActivity : AppCompatActivity() {
                     }
                 } else {
                     Log.d(TAG, "密码未变化，跳过写入操作: $filePath")
-                    // 清理缓存，避免重复处理
-                    fileNameToPassword.remove(filePath)
-                    com.wpspasswordmanager.business.MemoryPasswordStorage.getInstance()
-                        .removePasswordFromMemory(filePath)
                 }
             } else {
                 Log.d(TAG, "所有缓存中均未找到文件密码: $filePath")
@@ -240,8 +187,6 @@ class ProxyActivity : AppCompatActivity() {
         super.onDestroy()
         // 停止文件观察者
         fileObserver?.stopWatching()
-        // 清空内存缓存
-        fileNameToPassword.clear()
     }
 
     private fun handleIntent(intent: Intent?) {
@@ -407,20 +352,6 @@ class ProxyActivity : AppCompatActivity() {
                 // 存储密码到PasswordHolder，供无障碍服务使用
                 com.wpspasswordmanager.business.PasswordHolder.storePassword(password, fileName)
                 Log.d(TAG, "密码已存储到PasswordHolder")
-                // 同时存储到MemoryPasswordStorage作为备份
-                val memoryStored =
-                    com.wpspasswordmanager.business.MemoryPasswordStorage.getInstance()
-                        .storePasswordInMemory(filePath, password, filePath)
-                Log.d(TAG, "密码已存储到MemoryPasswordStorage: $memoryStored")
-                // 存储密码到内存缓存，供FileObserver使用
-                fileNameToPassword[filePath] = password
-                Log.d(TAG, "密码已存储到内存缓存: $filePath, 缓存大小: ${fileNameToPassword.size}")
-                // 验证缓存是否成功
-                val cachedPassword = fileNameToPassword[filePath]
-                Log.d(
-                    TAG,
-                    "缓存验证: 密码存在于缓存中: ${cachedPassword != null}, 密码值: $cachedPassword"
-                )
             } else {
                 Log.d(TAG, "本地文件中未找到密码")
             }
