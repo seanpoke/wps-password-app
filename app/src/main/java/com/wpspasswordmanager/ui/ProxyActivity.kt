@@ -471,42 +471,6 @@ class ProxyActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * 复制文件到应用私有缓存目录
-     */
-    private fun copyFileToLocalCache(uri: Uri, fileName: String): File? {
-        try {
-            // 直接使用固定的文件名，避免文件名为空的问题
-            val tempDir = cacheDir
-            val localFile = File(tempDir, "temp_doc_${System.currentTimeMillis()}.docx")
-
-            // 确保目录存在
-            if (!tempDir.exists()) {
-                tempDir.mkdirs()
-            }
-
-            // 从ContentResolver读取文件内容并写入本地文件
-            val inputStream = contentResolver.openInputStream(uri)
-            inputStream?.use { input ->
-                FileOutputStream(localFile).use { output ->
-                    val buffer = ByteArray(4096)
-                    var bytesRead: Int
-                    while (input.read(buffer).also { bytesRead = it } != -1) {
-                        output.write(buffer, 0, bytesRead)
-                    }
-                }
-            }
-
-            if (localFile.exists() && localFile.length() > 0) {
-                return localFile
-            } else {
-                return null
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "文件复制失败", e)
-            return null
-        }
-    }
 
     /**
      * 保存文件URI到WpsAccessibilityService
@@ -614,45 +578,6 @@ class ProxyActivity : AppCompatActivity() {
             "com.wpspasswordmanager.fileprovider",
             file
         )
-    }
-
-    /**
-     * 从Content URI创建临时文件
-     */
-    private fun createTempFileFromContentUri(uri: Uri): File? {
-        try {
-            // 直接使用固定的文件名，避免文件名为空的问题
-            val tempDir = cacheDir
-            val tempFile = File(tempDir, "temp_doc_${System.currentTimeMillis()}.docx")
-
-            // 确保目录存在
-            if (!tempDir.exists()) {
-                tempDir.mkdirs()
-            }
-
-            // 从ContentResolver读取文件内容并写入临时文件
-            val inputStream = contentResolver.openInputStream(uri)
-            inputStream?.use { input ->
-                FileOutputStream(tempFile).use { output ->
-                    val buffer = ByteArray(4096)
-                    var bytesRead: Int
-                    while (input.read(buffer).also { bytesRead = it } != -1) {
-                        output.write(buffer, 0, bytesRead)
-                    }
-                }
-            }
-
-            if (tempFile.exists() && tempFile.length() > 0) {
-                Log.d(TAG, "创建临时文件成功: ${tempFile.absolutePath}")
-                return tempFile
-            } else {
-                Log.e(TAG, "创建临时文件失败，文件不存在或为空")
-                return null
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "创建临时文件失败", e)
-            return null
-        }
     }
 
     /**

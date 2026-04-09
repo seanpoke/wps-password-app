@@ -36,10 +36,6 @@ class AccessibilityServiceManager private constructor() {
         }
     }
 
-    fun getService(): WpsAccessibilityService? {
-        return accessibilityService
-    }
-
     fun isServiceEnabled(context: Context): Boolean {
         val enabledServices = Settings.Secure.getString(
             context.contentResolver,
@@ -47,11 +43,6 @@ class AccessibilityServiceManager private constructor() {
         )
         val packageName = context.packageName
         return enabledServices?.contains("$packageName/${WpsAccessibilityService::class.java.name}") ?: false
-    }
-
-    fun openAccessibilitySettings(context: Context) {
-        val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
-        context.startActivity(intent)
     }
 
     fun fillPassword(password: String) {

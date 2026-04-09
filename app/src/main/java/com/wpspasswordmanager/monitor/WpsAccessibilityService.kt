@@ -87,20 +87,6 @@ class WpsAccessibilityService : AccessibilityService() {
     }
 
     /**
-     * 保存当前文件URI
-     */
-    fun saveCurrentFileUri(uri: String) {
-        try {
-            currentFileUri = uri
-            stableDocumentPath = uri
-            currentDocumentPath = uri
-            Log.d(TAG, "保存文件URI: $uri")
-        } catch (e: Exception) {
-            Log.e(TAG, "保存文件URI失败", e)
-        }
-    }
-
-    /**
      * 清除当前文件URI
      */
     fun clearCurrentFileUri() {
@@ -287,17 +273,6 @@ class WpsAccessibilityService : AccessibilityService() {
     }
 
     /**
-     * 检查是否是清理按钮
-     */
-    private fun isClearButton(node: AccessibilityNodeInfo): Boolean {
-        val text = node.text?.toString() ?: ""
-        val contentDescription = node.contentDescription?.toString() ?: ""
-
-        return text.contains("清理") || text.contains("clear") || text.contains("Clear") ||
-               contentDescription.contains("清理") || contentDescription.contains("clear") || contentDescription.contains("Clear")
-    }
-
-    /**
      * 检查是否是生成密码按钮
      */
     private fun isGeneratePasswordButton(node: AccessibilityNodeInfo): Boolean {
@@ -307,22 +282,6 @@ class WpsAccessibilityService : AccessibilityService() {
         return text.contains("生成密码") || text.contains("generate password") ||
                text.contains("Generate Password") || contentDescription.contains("生成密码") ||
                contentDescription.contains("generate password") || contentDescription.contains("Generate Password")
-    }
-
-    private fun simulateFileSave(): Boolean {
-        Log.i(TAG, "开始执行文件保存操作，时间: ${System.currentTimeMillis()}")
-        val startTime = System.currentTimeMillis()
-        try {
-            // 模拟文件保存操作
-            Thread.sleep(500) // 模拟保存耗时
-            val endTime = System.currentTimeMillis()
-            val duration = endTime - startTime
-            Log.i(TAG, "文件保存操作成功，耗时: ${duration}ms，时间: $endTime")
-            return true
-        } catch (e: Exception) {
-            Log.e(TAG, "文件保存操作失败", e)
-            return false
-        }
     }
 
     override fun onInterrupt() {
@@ -1030,94 +989,6 @@ class WpsAccessibilityService : AccessibilityService() {
     }
 
     /**
-     * 在指定板块中查找并点击【显示密码】选项
-     * @param sectionNode 板块节点
-     * @param isOpenPermission 是否是打开权限板块
-     * @return Boolean 是否成功勾选了显示密码选项
-     */
-    private fun findAndClickShowPasswordInSection(sectionNode: AccessibilityNodeInfo, isOpenPermission: Boolean): Boolean {
-        var checked = false
-
-        try {
-            val queue = mutableListOf(sectionNode)
-
-            while (queue.isNotEmpty()) {
-                val node = queue.removeAt(0)
-
-                Log.d(TAG, "遍历节点: ${node.className}, 子节点数量: ${node.childCount}")
-
-                // 检查是否是【显示密码】选项
-                val text = node.text?.toString() ?: ""
-                val contentDescription = node.contentDescription?.toString() ?: ""
-
-                Log.d(TAG, "节点文本: '$text', 内容描述: '$contentDescription'")
-
-                val hasShowPasswordText = text.contains("显示密码") || text.contains("show password") ||
-                                         text.contains("Show Password") || contentDescription.contains("显示密码") ||
-                                         contentDescription.contains("show password") || contentDescription.contains("Show Password")
-
-                // 检查是否是复选框或开关
-                val isCheckboxOrSwitch = node.className?.toString()?.contains("CheckBox") ?: false ||
-                                        node.className?.toString()?.contains("Switch") ?: false ||
-                                        node.className?.toString()?.contains("Toggle") ?: false
-
-                // 检查是否是清理按钮，避免误点击
-                val isClearButton = text.contains("清理") || text.contains("clear") || text.contains("Clear") ||
-                                  contentDescription.contains("清理") || contentDescription.contains("clear") || contentDescription.contains("Clear")
-
-                // 情况1：找到带有"显示密码"文本的节点
-                if (hasShowPasswordText && !isClearButton) {
-                    Log.d(TAG, "在${if (isOpenPermission) "打开权限" else "修改权限"}板块中找到【显示密码】文本: $text")
-                    
-                    // 尝试找到相关联的复选框
-                    val checkboxNode = findAssociatedCheckbox(node)
-                    if (checkboxNode != null) {
-                        Log.d(TAG, "找到关联的复选框: ${checkboxNode.className}, 可点击: ${checkboxNode.isClickable}, 当前状态: ${checkboxNode.isChecked}")
-                        
-                        // 执行点击操作
-                        if (checkboxNode.isClickable) {
-                            val success = checkboxNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-                            if (success) {
-                                Log.i(TAG, "成功点击${if (isOpenPermission) "打开权限" else "修改权限"}板块中的【显示密码】复选框")
-                                checked = !checkboxNode.isChecked // 状态翻转
-                            } else {
-                                Log.e(TAG, "点击${if (isOpenPermission) "打开权限" else "修改权限"}板块中的【显示密码】复选框失败")
-                            }
-                        }
-                    }
-                } 
-                // 情况2：直接找到复选框
-                else if (isCheckboxOrSwitch && !isClearButton) {
-                    Log.d(TAG, "在${if (isOpenPermission) "打开权限" else "修改权限"}板块中找到复选框: ${node.className}, 可点击: ${node.isClickable}, 当前状态: ${node.isChecked}")
-                    
-                    if (node.isClickable) {
-                        val success = node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-                        if (success) {
-                            Log.i(TAG, "成功点击${if (isOpenPermission) "打开权限" else "修改权限"}板块中的复选框")
-                            checked = !node.isChecked // 状态翻转
-                        } else {
-                            Log.e(TAG, "点击${if (isOpenPermission) "打开权限" else "修改权限"}板块中的复选框失败")
-                        }
-                    }
-                }
-
-                // 遍历所有子节点
-                for (i in 0 until node.childCount) {
-                    val child = node.getChild(i)
-                    if (child != null) {
-                        Log.d(TAG, "添加子节点到队列: ${child.className}")
-                        queue.add(child)
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "在${if (isOpenPermission) "打开权限" else "修改权限"}板块中查找并点击【显示密码】选项失败", e)
-        }
-
-        return checked
-    }
-
-    /**
      * 查找与显示密码文本关联的复选框
      */
     private fun findAssociatedCheckbox(textNode: AccessibilityNodeInfo): AccessibilityNodeInfo? {
@@ -1317,46 +1188,6 @@ class WpsAccessibilityService : AccessibilityService() {
             Log.e(TAG, "自动填充密码失败", e)
             isFillingPassword = false
         }
-    }
-
-    /**
-     * 检查当前窗口是否是首次打开加密文件的窗口
-     * 只有 OpenEditDecryptDialog 窗口才允许自动提交
-     */
-    private fun isOpenEditDecryptDialog(): Boolean {
-        val rootNode = rootInActiveWindow
-        if (rootNode != null) {
-            // 检查根节点的类名
-            val rootClassName = rootNode.className?.toString() ?: ""
-            if (rootClassName.contains("OpenEditDecryptDialog")) {
-                Log.d(TAG, "当前窗口类名: $rootClassName, 是否为OpenEditDecryptDialog: true")
-                return true
-            }
-
-            // 如果根节点是FrameLayout，检查其子节点是否包含OpenEditDecryptDialog
-            if (rootClassName.contains("FrameLayout")) {
-                for (i in 0 until rootNode.childCount) {
-                    val child = rootNode.getChild(i)
-                    if (child != null) {
-                        val childClassName = child.className?.toString() ?: ""
-                        if (childClassName.contains("OpenEditDecryptDialog")) {
-                            Log.d(TAG, "子节点类名: $childClassName, 是否为OpenEditDecryptDialog: true")
-                            return true
-                        }
-                    }
-                }
-            }
-
-            // 检查窗口标题或其他元素
-            val windowTitle = rootNode.text?.toString() ?: ""
-            if (windowTitle.contains("文档已加密") || windowTitle.contains("Document is encrypted")) {
-                Log.d(TAG, "窗口标题: $windowTitle, 判断为加密文档窗口")
-                return true
-            }
-
-            Log.d(TAG, "当前窗口类名: $rootClassName, 是否为OpenEditDecryptDialog: false")
-        }
-        return false
     }
 
     private fun detectDocumentPath(rootNode: AccessibilityNodeInfo, enableLogging: Boolean = true) {

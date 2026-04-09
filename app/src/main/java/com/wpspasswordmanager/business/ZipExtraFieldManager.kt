@@ -489,13 +489,6 @@ class ZipExtraFieldManager private constructor() {
     }
 
     /**
-     * 检查文件是否包含密码
-     */
-    fun hasPassword(file: File): Boolean {
-        return readPassword(file) != null
-    }
-
-    /**
      * 检测文件是否被锁定
      */
     private fun isFileLocked(file: File): Boolean {
@@ -705,23 +698,6 @@ class ZipExtraFieldManager private constructor() {
             return null
         }
     }
-
-    /**
-     * 生成加密密钥
-     */
-    private fun generateKey(): SecretKeySpec {
-        val keyBytes = MessageDigest.getInstance("SHA-256").digest(ENCRYPTION_KEY.toByteArray())
-        return SecretKeySpec(keyBytes, "AES")
-    }
-
-    /**
-     * 生成初始化向量
-     */
-    private fun generateIV(): IvParameterSpec {
-        val ivBytes = MessageDigest.getInstance("MD5").digest(ENCRYPTION_IV.toByteArray())
-        return IvParameterSpec(ivBytes)
-    }
-
     
     /**
      * Int转ByteArray（小端序）
