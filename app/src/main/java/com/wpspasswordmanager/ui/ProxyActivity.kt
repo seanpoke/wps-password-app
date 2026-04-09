@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.os.FileObserver
+
 import android.provider.DocumentsContract
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
@@ -24,169 +24,15 @@ class ProxyActivity : AppCompatActivity() {
         private const val WPS_MANAGEMENT_DIR = "WpsManagement"
     }
 
-    // FileObserver 实例
-    private var fileObserver: FileObserver? = null
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // 初始化文件观察者
-        initFileObserver()
 
         // 处理传入的 Intent
         handleIntent(intent)
     }
 
-    /**
-     * 初始化文件观察者，只监听 WpsManagement 目录
-     */
-    private fun initFileObserver() {
-        val documentsDir =
-            android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOCUMENTS)
-        val wpsManagementDir = File(documentsDir, WPS_MANAGEMENT_DIR)
-
-        // 确保目录存在
-        if (!wpsManagementDir.exists()) {
-            wpsManagementDir.mkdirs()
-            Log.d(TAG, "创建 WpsManagement 目录: ${wpsManagementDir.absolutePath}")
-        }
-
-        // 检查目录是否存在且可访问
-        if (wpsManagementDir.exists() && wpsManagementDir.isDirectory && wpsManagementDir.canRead()) {
-            Log.d(TAG, "WpsManagement 目录存在且可访问: ${wpsManagementDir.absolutePath}")
-            // 列出目录内容
-            val files = wpsManagementDir.listFiles()
-            if (files != null && files.isNotEmpty()) {
-                Log.d(TAG, "WpsManagement 目录包含 ${files.size} 个文件/目录")
-                for (file in files) {
-                    Log.d(TAG, "  - ${file.name} (${if (file.isDirectory) "目录" else "文件"})")
-                }
-            } else {
-                Log.d(TAG, "WpsManagement 目录为空")
-            }
-        } else {
-            Log.e(TAG, "WpsManagement 目录不存在或不可访问: ${wpsManagementDir.absolutePath}")
-        }
-
-        // 使用简单文件观察者，只监控WpsManagement目录
-        fileObserver = SimpleFileObserver(wpsManagementDir.absolutePath)
-        fileObserver?.startWatching()
-        Log.d(TAG, "文件观察者已启动，监听目录: ${wpsManagementDir.absolutePath}")
-    }
-
-    /**
-     * 简单文件观察者，只监控指定目录
-     */
-    private inner class SimpleFileObserver(path: String) : FileObserver(path, ALL_EVENTS) {
-        private val rootPath = path
-
-        override fun onEvent(event: Int, path: String?) {
-            if (path == null) return
-
-            val fullPath = File(rootPath, path).absolutePath
-
-            when (event and ALL_EVENTS) {
-                CLOSE_WRITE -> {
-                    // 处理文件写入完成事件
-                    handleFileCloseWrite(fullPath)
-                }
-
-                DELETE -> {
-                    // 处理文件删除事件，清理缓存
-                    Log.d(TAG, "文件删除，清理缓存: $fullPath")
-                }
-
-                MOVED_FROM -> {
-                    Log.d(TAG, "文件重命名(原文件)，清理缓存: $fullPath")
-                }
-
-                MOVED_TO -> {
-                    // 处理文件重命名（新文件），可能是WPS的保存操作
-                    Log.d(TAG, "监听到文件移动完成: $fullPath")
-                    // 检查是否是我们监控的文件类型
-                    if (fullPath.endsWith(".docx") || fullPath.endsWith(".doc") || fullPath.endsWith(
-                            ".xlsx"
-                        ) || fullPath.endsWith(".xls") || fullPath.endsWith(".pptx") || fullPath.endsWith(
-                            ".ppt"
-                        )
-                    ) {
-                        handleFileCloseWrite(fullPath)
-                    }
-                }
-            }
-        }
-    }
-
-    // 用于跟踪正在处理的文件，避免循环处理
-    private val processingFiles = mutableSetOf<String>()
-
-    /**
-     * 处理文件写入完成事件
-     */
-    private fun handleFileCloseWrite(filePath: String) {
-        // 避免循环处理同一个文件
-        if (processingFiles.contains(filePath)) {
-            Log.d(TAG, "文件正在处理中，跳过: $filePath")
-            return
-        }
-
-        Log.d(TAG, "监听到文件写入完成事件: $filePath")
-
-        // 标记文件正在处理
-        processingFiles.add(filePath)
-        Log.d(TAG, "标记文件为正在处理: $filePath, 处理中文件数量: ${processingFiles.size}")
-
-        try {
-            // 检查文件状态
-            val file = File(filePath)
-            Log.d(
-                TAG,
-                "文件状态 - 存在: ${file.exists()}, 可写: ${file.canWrite()}, 大小: ${file.length()} 字节"
-            )
-
-            var password = PasswordObjManager.getWritePassword(filePath)
-            Log.d(TAG, "PA执行getWritePassword结果: $password")
-
-            if (password != null) {
-                Log.d(TAG, "准备将密码写入文件: $password")
-                // 检查是否真的需要写入密码（避免无限循环）
-                val currentPassword = PasswordStorage.getInstance().getPassword(this, filePath)
-                if (currentPassword == null || currentPassword != password) {
-                    // 使用ZipExtraFieldManager将密码回写到文件尾部
-                    try {
-                        if (file.exists() && file.canWrite()) {
-                            Log.d(TAG, "开始写入密码到文件")
-                            // 使用ZipExtraFieldManager将密码写入文件
-                            val success = ZipExtraFieldManager.getInstance()
-                                .writePassword(this, filePath, password)
-                            if (success) {
-                                Log.d(TAG, "成功将密码写入文件: $filePath")
-                            } else {
-                                Log.e(TAG, "密码写入失败: $filePath")
-                            }
-                        } else {
-                            Log.e(TAG, "文件不存在或不可写: $filePath")
-                        }
-                    } catch (e: Exception) {
-                        Log.e(TAG, "处理文件写入完成事件失败", e)
-                    }
-                } else {
-                    Log.d(TAG, "密码未变化，跳过写入操作: $filePath")
-                }
-            } else {
-                Log.d(TAG, "所有缓存中均未找到文件密码: $filePath")
-            }
-        } finally {
-            // 移除处理标记
-            processingFiles.remove(filePath)
-            Log.d(TAG, "移除文件处理标记: $filePath, 处理中文件数量: ${processingFiles.size}")
-        }
-    }
-
     override fun onDestroy() {
         super.onDestroy()
-        // 停止文件观察者
-        fileObserver?.stopWatching()
     }
 
     private fun handleIntent(intent: Intent?) {

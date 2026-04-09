@@ -14,7 +14,6 @@ class WpsAccessibilityService : AccessibilityService() {
     companion object {
         private const val TAG = "WpsAccessibilityService"
         private val WPS_PACKAGES = arrayOf("cn.wps.moffice_eng", "cn.wps.moffice")
-        private var lastPassword: String? = null
         private var tempPassword: String? = null // 临时存储密码，用户确认前不写入MemoryPasswordStorage
         var currentDocumentPath: String? = null
         var stableDocumentPath: String? = null // 稳定的文档路径
@@ -41,9 +40,6 @@ class WpsAccessibilityService : AccessibilityService() {
         }
     }
 
-    // 文件系统事件监听器实例
-    private var fileSystemEventListener: FileSystemEventListener? = null
-
     override fun onServiceConnected() {
         super.onServiceConnected()
         Log.d(TAG, "无障碍服务已连接")
@@ -65,7 +61,6 @@ class WpsAccessibilityService : AccessibilityService() {
         currentFileUri = null
         stableDocumentPath = null
         currentDocumentPath = null
-        fileSystemEventListener = null
 
         val info = AccessibilityServiceInfo().apply {
             eventTypes = AccessibilityEvent.TYPES_ALL_MASK
@@ -208,13 +203,6 @@ class WpsAccessibilityService : AccessibilityService() {
 
                 if (password != null && password.isNotEmpty()) {
                     Log.i(TAG, "[时间戳: ${System.currentTimeMillis()}] 从临时存储中获取到密码: '$password'，长度: ${password.length}")
-
-                    showOperationNotification("操作处理", "密码已成功缓存到内存")
-
-                    // 启动文件系统事件监听器，由FileObserver处理密码写入
-                    Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 启动文件系统事件监听器，密码: '$password'")
-                    startFileSystemEventListener(password)
-
                     // 清除临时密码
                     tempPassword = null
                     Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 已清除临时密码")
@@ -253,9 +241,6 @@ class WpsAccessibilityService : AccessibilityService() {
         Log.d(TAG, "无障碍服务被销毁")
         // 停止显示密码监测
         stopShowPasswordMonitoring()
-        // 停止文件系统事件监听器
-        fileSystemEventListener?.stopListening()
-        fileSystemEventListener = null
         // 清理其他状态
         currentDialogType = DialogType.UNKNOWN
         hasClickedShowPassword = false
@@ -319,10 +304,6 @@ class WpsAccessibilityService : AccessibilityService() {
                     Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 已更新待定密码到密码状态管理器: $filePath")
                 }
 
-                // 启动文件系统事件监听器
-                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 启动文件系统事件监听器，密码: '$tempPassword'")
-                startFileSystemEventListener(tempPassword!!)
-
                 // 清除临时密码
                 tempPassword = null
                 Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 已清除临时密码")
@@ -340,11 +321,6 @@ class WpsAccessibilityService : AccessibilityService() {
             // 重置状态
             isDocumentOpened = false
             hasClickedShowPassword = false
-
-            // 停止文件系统事件监听器
-            Log.d(TAG, "停止文件系统事件监听器")
-            fileSystemEventListener?.stopListening()
-            fileSystemEventListener = null
 
             // 清理相关缓存
             clearCurrentFileUri()
@@ -452,10 +428,6 @@ class WpsAccessibilityService : AccessibilityService() {
                     PasswordObjManager.updatePendingPassword(filePath, tempPassword!!)
                     Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 已更新待定密码到密码状态管理器: $filePath")
                 }
-
-                // 启动文件系统事件监听器
-                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 启动文件系统事件监听器，密码: '$tempPassword'")
-                startFileSystemEventListener(tempPassword!!)
             }
 
             // 重置对话框类型
@@ -1030,7 +1002,7 @@ class WpsAccessibilityService : AccessibilityService() {
                                             Log.i(TAG, "找到确认按钮，尝试点击")
                                             val clickSuccess = confirmButton.performAction(AccessibilityNodeInfo.ACTION_CLICK)
                                             if (clickSuccess) {
-                                                Log.i(TAG, "成功点击确认按钮")
+                                                Log.i(TAG, "autoFillPassword-成功点击确认按钮")
                                                 isDocumentOpened = true // 标记文档已打开
 
                                                 // 初始化密码状态
@@ -1039,9 +1011,6 @@ class WpsAccessibilityService : AccessibilityService() {
                                                     PasswordObjManager.initFileState(filePath, password)
                                                     Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 已初始化密码状态: $filePath")
                                                 }
-
-                                                // 启动文件系统事件监听器
-                                                startFileSystemEventListener(password)
                                             } else {
                                                 Log.e(TAG, "点击确认按钮失败")
                                             }
@@ -1804,39 +1773,6 @@ class WpsAccessibilityService : AccessibilityService() {
     }
 
     /**
-     * 启动文件系统事件监听器
-     */
-    private fun startFileSystemEventListener(password: String) {
-        try {
-            var targetPath: String? = null
-            if (currentFileUri != null) {
-                targetPath = currentFileUri
-            } else if (stableDocumentPath != null) {
-                targetPath = stableDocumentPath
-            }
-
-            if (targetPath != null) {
-                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 启动文件系统事件监听器: $targetPath, 密码: '$password'")
-                // 先停止之前可能存在的监听器
-                fileSystemEventListener?.stopListening()
-                // 创建并启动新的文件系统事件监听器
-                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 创建文件系统事件监听器，目标路径: $targetPath, 密码: '$password'")
-                fileSystemEventListener = FileSystemEventListener(targetPath, password, this)
-                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 启动文件系统事件监听器")
-                fileSystemEventListener?.startListening()
-                showOperationNotification("操作成功", "已启动文件监听，将在文件保存后自动写入密码")
-                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 文件系统事件监听器启动完成")
-            } else {
-                Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 没有可用的文件路径")
-                showOperationNotification("操作失败", "没有可用的文件路径")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 启动文件系统事件监听器失败", e)
-            showOperationNotification("操作失败", "启动文件监听失败")
-        }
-    }
-
-    /**
      * 查找密码输入框
      */
     private fun findPasswordInputNodes(rootNode: AccessibilityNodeInfo): List<AccessibilityNodeInfo> {
@@ -2026,9 +1962,8 @@ class WpsAccessibilityService : AccessibilityService() {
 
                     if (fillSuccess) {
                         showOperationNotification("密码填充", "密码填充成功，弹窗保持打开状态")
-                        // 临时存储密码，用户确认前不写入MemoryPasswordStorage
+                        // 临时存储密码
                         tempPassword = password
-                        lastPassword = password
                         Log.i(TAG, "已将密码临时存储，等待用户确认: '$password'")
                     } else {
                         Log.e(TAG, "所有密码输入框填充失败")
