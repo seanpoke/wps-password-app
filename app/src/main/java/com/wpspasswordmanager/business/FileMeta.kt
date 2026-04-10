@@ -74,11 +74,12 @@ class OrderedSet<T> {
     }
 }
 
-data class FileCryptoState(
+data class FileMeta(
     // --- 基础信息 ---
     val filePath: String,            // 文件绝对路径 (作为唯一标识)
     
-    // --- 密码状态 ---
+    // --- 元数据信息 ---
+    var uid: String?,    // 文件权限标识
     var currentPassword: String?,    // 旧密码：当前已确认生效的密码
     var pendingPasswordList: OrderedSet<String>? = null, // 待定密码：无障碍服务捕获到的新密码集合
 )

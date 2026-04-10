@@ -4,26 +4,27 @@ import android.util.Log
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
-object PasswordObjManager {
+object FileMetaFactory {
     // 使用 ConcurrentHashMap 保证线程安全
     // Key: 文件路径, Value: 文件加密状态
-    private val stateMap = ConcurrentHashMap<String, FileCryptoState>()
+    private val map = ConcurrentHashMap<String, FileMeta>()
 
-    private const val TAG = "PasswordObjManager"
+    private const val TAG = "FileMetaFactory"
 
     /**
      * 文件打开时初始化
      */
     fun initFileState(filePath: String, oldPass: String?) {
-        val state = FileCryptoState(
+        val fileMeta = FileMeta(
             filePath = filePath,
+            uid = null,
             currentPassword = oldPass,
         )
-        stateMap[filePath] = state
+        map[filePath] = fileMeta
         // 输出日志
         Log.d(
-            "PasswordStateManager",
-            "[时间戳: ${System.currentTimeMillis()}] initFileState - FileCryptoState: filePath='$filePath', currentPassword='${oldPass ?: "null"}', pendingPasswordList='${state.pendingPasswordList?.toList() ?: "null"}'"
+            TAG,
+            "[时间戳: ${System.currentTimeMillis()}] initFileState - FileCryptoState: filePath='$filePath', currentPassword='${oldPass ?: "null"}', pendingPasswordList='${fileMeta.pendingPasswordList?.toList() ?: "null"}'"
         )
     }
 
@@ -31,31 +32,32 @@ object PasswordObjManager {
      * 无障碍服务捕获到输入时更新
      */
     fun updatePendingPassword(filePath: String, newPassword: String) {
-        var state = stateMap[filePath]
-        if (state != null) {
-            if (state.pendingPasswordList == null) {
-                state.pendingPasswordList = OrderedSet()
+        var fileMeta = map[filePath]
+        if (fileMeta != null) {
+            if (fileMeta.pendingPasswordList == null) {
+                fileMeta.pendingPasswordList = OrderedSet()
             }
-            state.pendingPasswordList?.add(newPassword)
+            fileMeta.pendingPasswordList?.add(newPassword)
             // 输出日志
             Log.d(
-                "PasswordStateManager",
-                "[时间戳: ${System.currentTimeMillis()}] updatePendingPassword - FileCryptoState: filePath='$filePath', currentPassword='${state.currentPassword ?: "null"}', pendingPasswordList='${state.pendingPasswordList?.toList()}'"
+                TAG,
+                "[时间戳: ${System.currentTimeMillis()}] updatePendingPassword - FileCryptoState: filePath='$filePath', currentPassword='${fileMeta.currentPassword ?: "null"}', pendingPasswordList='${fileMeta.pendingPasswordList?.toList()}'"
             )
         } else {
             // 如果状态不存在，自动初始化一个新的状态
             val pendingPasswordSet = OrderedSet<String>()
             pendingPasswordSet.add(newPassword)
-            state = FileCryptoState(
+            fileMeta = FileMeta(
                 filePath = filePath,
+                uid = null,
                 currentPassword = null,
                 pendingPasswordList = pendingPasswordSet
             )
-            stateMap[filePath] = state
+            map[filePath] = fileMeta
             // 输出日志
             Log.d(
-                "PasswordStateManager",
-                "[时间戳: ${System.currentTimeMillis()}] updatePendingPassword - FileCryptoState not found, created new state: filePath='$filePath', pendingPasswordList='${state.pendingPasswordList?.toList()}'"
+                TAG,
+                "[时间戳: ${System.currentTimeMillis()}] updatePendingPassword - FileCryptoState not found, created new state: filePath='$filePath', pendingPasswordList='${fileMeta.pendingPasswordList?.toList()}'"
             )
         }
     }
@@ -64,14 +66,25 @@ object PasswordObjManager {
      * 清理资源 (文件关闭时调用)
      */
     fun clearFile(filePath: String) {
-        stateMap.remove(filePath)
+        map.remove(filePath)
+    }
+
+    /**
+     * 清理资源 (文件关闭时调用)
+     */
+    fun getUid(filePath: String):String? {
+        var fileMeta = map[filePath]
+        if (fileMeta != null) {
+            return fileMeta.uid
+        }
+        return null;
     }
 
     /**
      * 获取有效的密码
      */
     fun getWritePassword(filePath: String): String? {
-        val fileObj = stateMap[filePath]
+        val fileObj = map[filePath]
         val pendingPasswords = fileObj?.pendingPasswordList
         val currentPassword = fileObj?.currentPassword
 
@@ -128,5 +141,13 @@ object PasswordObjManager {
             "[时间戳: ${System.currentTimeMillis()}] 所有待定密码验证失败，使用当前密码"
         )
         return currentPassword
+    }
+
+    /**
+     * 获取文件的当前密码
+     */
+    fun getCurrentPassword(filePath: String): String? {
+        val fileMeta = map[filePath]
+        return fileMeta?.currentPassword
     }
 }

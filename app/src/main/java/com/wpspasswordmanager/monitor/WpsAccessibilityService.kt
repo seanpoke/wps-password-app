@@ -7,7 +7,8 @@ import android.text.InputType
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
-import com.wpspasswordmanager.business.PasswordObjManager
+import com.wpspasswordmanager.business.FileMetaFactory
+import com.wpspasswordmanager.business.PasswordHolder
 
 class WpsAccessibilityService : AccessibilityService() {
 
@@ -15,6 +16,13 @@ class WpsAccessibilityService : AccessibilityService() {
         private const val TAG = "WpsAccessibilityService"
         private val WPS_PACKAGES = arrayOf("cn.wps.moffice_eng", "cn.wps.moffice")
         private var tempPassword: String? = null // 临时存储密码，用户确认前不写入MemoryPasswordStorage
+
+        /**
+         * 获取临时密码
+         */
+        fun getTempPassword(): String? {
+            return tempPassword
+        }
         var currentDocumentPath: String? = null
         var stableDocumentPath: String? = null // 稳定的文档路径
         var currentFileUri: String? = null // 当前文件的URI
@@ -254,7 +262,7 @@ class WpsAccessibilityService : AccessibilityService() {
         // 清理密码状态
         val filePath = currentFileUri ?: stableDocumentPath
         if (filePath != null) {
-            PasswordObjManager.clearState(filePath)
+            FileMetaFactory.clearFile(filePath)
             Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 已清理密码状态: $filePath")
         }
         // 清理文档路径
@@ -300,7 +308,7 @@ class WpsAccessibilityService : AccessibilityService() {
 
                 val filePath = currentFileUri ?: stableDocumentPath
                 if (filePath != null) {
-                    PasswordObjManager.updatePendingPassword(filePath, tempPassword!!)
+                    FileMetaFactory.updatePendingPassword(filePath, tempPassword!!)
                     Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 已更新待定密码到密码状态管理器: $filePath")
                 }
 
@@ -425,7 +433,7 @@ class WpsAccessibilityService : AccessibilityService() {
                 // 更新待定密码到密码状态管理器
                 val filePath = currentFileUri ?: stableDocumentPath
                 if (filePath != null) {
-                    PasswordObjManager.updatePendingPassword(filePath, tempPassword!!)
+                    FileMetaFactory.updatePendingPassword(filePath, tempPassword!!)
                     Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 已更新待定密码到密码状态管理器: $filePath")
                 }
             }
@@ -942,33 +950,13 @@ class WpsAccessibilityService : AccessibilityService() {
             var password: String? = null
 
             // 优先从PasswordHolder中获取密码
-            if (com.wpspasswordmanager.business.PasswordHolder.hasCachedPassword()) {
+            if (PasswordHolder.hasCachedPassword()) {
                 Log.d(TAG, "尝试从PasswordHolder读取密码")
-                password = com.wpspasswordmanager.business.PasswordHolder.cachedPassword
+                password = PasswordHolder.cachedPassword
                 if (password != null) {
                     Log.i(TAG, "从PasswordHolder读取密码成功")
                 }
             }
-
-            // 如果PasswordHolder中没有找到密码，尝试从内存中获取
-            if (password == null && currentFileUri != null) {
-                Log.d(TAG, "尝试从currentFileUri读取密码: $currentFileUri")
-                password = PasswordObjManager.getCurrentPassword(currentFileUri!!)
-                if (password != null) {
-                    Log.i(TAG, "从currentFileUri读取密码成功: $currentFileUri")
-                }
-            }
-
-            // 如果内存中没有找到密码，尝试使用稳定文档路径
-            if (password == null && stableDocumentPath != null) {
-                Log.d(TAG, "尝试从stableDocumentPath读取密码: $stableDocumentPath")
-                password = PasswordObjManager.getCurrentPassword(stableDocumentPath!!)
-                if (password != null) {
-                    Log.i(TAG, "从stableDocumentPath读取密码成功: $stableDocumentPath")
-                }
-            }
-
-            // 不再尝试从文件元数据中读取，避免权限问题
 
             // 如果找到密码，自动填充
             if (password != null && password.isNotEmpty()) {
@@ -1008,7 +996,7 @@ class WpsAccessibilityService : AccessibilityService() {
                                                 // 初始化密码状态
                                                 val filePath = currentFileUri ?: stableDocumentPath
                                                 if (filePath != null) {
-                                                    PasswordObjManager.initFileState(filePath, password)
+                                                    FileMetaFactory.initFileState(filePath, password)
                                                     Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 已初始化密码状态: $filePath")
                                                 }
                                             } else {
@@ -1022,7 +1010,7 @@ class WpsAccessibilityService : AccessibilityService() {
                                     }
 
                                     // 填充后清除PasswordHolder缓存
-                                    com.wpspasswordmanager.business.PasswordHolder.clear()
+                                    PasswordHolder.clear()
 
                                     // 重置生成密码标志
                                     if (hasClickedGeneratePassword) {

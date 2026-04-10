@@ -15,8 +15,9 @@ import android.view.WindowManager
 import android.widget.Button
 import android.widget.Toast
 import com.wpspasswordmanager.R
+import com.wpspasswordmanager.business.FileMetaFactory
 import com.wpspasswordmanager.business.PasswordGenerator
-import com.wpspasswordmanager.business.PasswordStorage
+import com.wpspasswordmanager.business.PasswordManager
 import com.wpspasswordmanager.monitor.AccessibilityServiceManager
 import com.wpspasswordmanager.monitor.WpsAccessibilityService
 
@@ -226,8 +227,13 @@ class FloatingButtonService : Service() {
             return
         }
 
-        // 从文件扩展属性读取密码
-        val password = PasswordStorage.getInstance().getPassword(this, documentPath)
+        // 优先使用临时密码
+        var password = WpsAccessibilityService.getTempPassword()
+        if (password == null || password.isEmpty()) {
+            // 如果临时密码为空，从FileMeta获取当前密码
+            password = FileMetaFactory.getCurrentPassword(documentPath)
+        }
+
         if (password != null && password.isNotEmpty()) {
             // 将密码复制到剪贴板
             copyToClipboard(password)
@@ -235,7 +241,7 @@ class FloatingButtonService : Service() {
             showOperationNotification("查看密码", "密码已复制到剪贴板")
             // 显示Toast提示
             Toast.makeText(this, "密码已复制到剪贴板", Toast.LENGTH_LONG).show()
-            Log.d(TAG, "从文件扩展属性读取密码成功: $password")
+            Log.d(TAG, "获取密码成功: $password")
         } else {
             showOperationNotification("查看密码", "未找到存储的密码")
             Toast.makeText(this, "未找到存储的密码", Toast.LENGTH_SHORT).show()

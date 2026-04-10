@@ -3,6 +3,7 @@ package com.wpspasswordmanager
 import android.app.Application
 import android.os.FileObserver
 import android.util.Log
+import com.wpspasswordmanager.business.FileMetaFactory
 import java.io.File
 
 class WpsPasswordManagerApplication : Application() {
@@ -18,7 +19,7 @@ class WpsPasswordManagerApplication : Application() {
 
     // FileObserver 实例
     private var fileObserver: FileObserver? = null
-    
+
     // Handler 和防抖任务
     private var handler: android.os.Handler? = null
     private var debounceRunnable: Runnable? = null
@@ -27,7 +28,7 @@ class WpsPasswordManagerApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         instance = this
-        
+
         // 初始化文件观察者
         initFileObserver()
     }
@@ -36,7 +37,8 @@ class WpsPasswordManagerApplication : Application() {
      * 初始化文件观察者，只监听 WpsManagement 目录
      */
     private fun initFileObserver() {
-        val documentsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOCUMENTS)
+        val documentsDir =
+            android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOCUMENTS)
         val wpsManagementDir = File(documentsDir, WPS_MANAGEMENT_DIR)
 
         // 确保目录存在
@@ -86,8 +88,6 @@ class WpsPasswordManagerApplication : Application() {
 
             val fullPath = File(rootPath, path).absolutePath
 
-//            Log.d(TAG, "文件事件: $event, 路径: $fullPath")
-
             when (event and ALL_EVENTS) {
                 CLOSE_WRITE -> {
                     // 处理文件写入完成事件
@@ -96,11 +96,13 @@ class WpsPasswordManagerApplication : Application() {
 
                 DELETE -> {
                     // 处理文件删除事件，清理缓存
+                    FileMetaFactory.clearFile(fullPath)
                     Log.d(TAG, "文件删除: $fullPath")
                 }
 
                 MOVED_FROM -> {
                     // 处理文件重命名（原文件），清理缓存
+                    FileMetaFactory.clearFile(fullPath)
                     Log.d(TAG, "文件重命名(原文件): $fullPath")
                 }
 
@@ -108,7 +110,12 @@ class WpsPasswordManagerApplication : Application() {
                     // 处理文件重命名（新文件），可能是WPS的保存操作
                     Log.d(TAG, "监听到文件移动完成: $fullPath")
                     // 检查是否是我们监控的文件类型
-                    if (fullPath.endsWith(".docx") || fullPath.endsWith(".doc") || fullPath.endsWith(".xlsx") || fullPath.endsWith(".xls") || fullPath.endsWith(".pptx") || fullPath.endsWith(".ppt")) {
+                    if (fullPath.endsWith(".docx") || fullPath.endsWith(".doc") || fullPath.endsWith(
+                            ".xlsx"
+                        ) || fullPath.endsWith(".xls") || fullPath.endsWith(".pptx") || fullPath.endsWith(
+                            ".ppt"
+                        )
+                    ) {
                         handleFileCloseWrite(fullPath)
                     }
                 }
@@ -134,34 +141,36 @@ class WpsPasswordManagerApplication : Application() {
             try {
                 // 检查是否已经处理过此事件
                 if (isHandlingEvent) {
-                    Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 事件已在处理中，跳过: $filePath")
+                    Log.d(
+                        TAG,
+                        "[时间戳: ${System.currentTimeMillis()}] 事件已在处理中，跳过: $filePath"
+                    )
                     return@Runnable
                 }
                 isHandlingEvent = true
 
-                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 开始处理文件写入事件: $filePath")
+                Log.d(
+                    TAG,
+                    "[时间戳: ${System.currentTimeMillis()}] 开始处理文件写入事件: $filePath"
+                )
 
                 // 检查文件状态
                 val file = File(filePath)
-                Log.d(TAG, "文件状态 - 存在: ${file.exists()}, 可写: ${file.canWrite()}, 大小: ${file.length()} 字节")
+                Log.d(
+                    TAG,
+                    "文件状态 - 存在: ${file.exists()}, 可写: ${file.canWrite()}, 大小: ${file.length()} 字节"
+                )
 
-                var password = com.wpspasswordmanager.business.PasswordObjManager.getWritePassword(filePath)
+                var password = FileMetaFactory.getWritePassword(filePath)
                 Log.d(TAG, "应用执行getWritePassword结果: $password")
 
                 // 卫语句：如果密码为null，直接返回
                 if (password == null) {
-                    Log.d(TAG, "所有缓存中均未找到文件密码: $filePath")
+                    Log.d(TAG, "元数据中未找到文件密码: $filePath")
                     return@Runnable
                 }
 
                 Log.d(TAG, "准备将密码写入文件: $password")
-                
-                // 检查是否真的需要写入密码（避免无限循环）
-                val currentPassword = com.wpspasswordmanager.business.PasswordStorage.getInstance().getPassword(this, filePath)
-                if (currentPassword != null && currentPassword == password) {
-                    Log.d(TAG, "密码未变化，跳过写入操作: $filePath")
-                    return@Runnable
-                }
 
                 // 写入密码到文件
                 writePasswordToFile(file, filePath, password)
@@ -177,7 +186,10 @@ class WpsPasswordManagerApplication : Application() {
         debounceRunnable = runnable
 
         // 延迟执行，确保只处理最后一次事件
-        Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 延迟 ${DEBOUNCE_DELAY}ms 执行密码写入: $filePath")
+        Log.d(
+            TAG,
+            "[时间戳: ${System.currentTimeMillis()}] 延迟 ${DEBOUNCE_DELAY}ms 执行密码写入: $filePath"
+        )
         handler?.postDelayed(runnable, DEBOUNCE_DELAY)
     }
 
@@ -192,7 +204,8 @@ class WpsPasswordManagerApplication : Application() {
             }
 
             Log.d(TAG, "开始写入密码到文件")
-            val success = com.wpspasswordmanager.business.ZipExtraFieldManager.getInstance().writePassword(this, filePath, password)
+            val success = com.wpspasswordmanager.business.ZipExtraFieldManager.getInstance()
+                .writePassword(filePath, password)
             if (success) {
                 Log.d(TAG, "成功将密码写入文件: $filePath")
                 logFileTail(filePath)
@@ -208,7 +221,7 @@ class WpsPasswordManagerApplication : Application() {
     /**
      * 打印文件zip尾部最后1KB的内容，只输出WPPM标记相关的内容
      */
-    private fun logFileTail(filePath:String?) {
+    private fun logFileTail(filePath: String?) {
         try {
             val file = File(filePath)
             if (file.exists() && file.canRead()) {

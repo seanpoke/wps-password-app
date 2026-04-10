@@ -15,8 +15,6 @@ class ZipExtraFieldManager private constructor() {
         private const val WPS_PASSWORD_SIGNATURE = "WPPM"  // 4字节Magic
         private const val WPS_PASSWORD_VERSION = 1
         private const val METADATA_TYPE_PASSWORD = 1  // 元数据类型：1=密码
-        private const val ENCRYPTION_KEY = "wps_password_manager_key"
-        private const val ENCRYPTION_IV = "wps_password_iv"
         private const val MAX_RETRY_COUNT = 5
         private const val RETRY_DELAY_MS = 1000
 
@@ -31,9 +29,10 @@ class ZipExtraFieldManager private constructor() {
     }
 
     /**
-     * 写入密码到ZIP文件的Extra Field
+     * 写入密码到ZIP文件的尾部流
      */
-    fun writePassword(file: File, password: String): Boolean {
+    fun writePassword(filePath: String, password: String): Boolean {
+        val file = File(filePath)
         if (!file.exists() || !file.canWrite()) {
             Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 文件不存在或不可写: ${file.absolutePath}")
             return false
@@ -197,111 +196,7 @@ class ZipExtraFieldManager private constructor() {
             return false
         }
     }
-    
-    /**
-     * 写入密码到ZIP文件的Extra Field（接受Context参数）
-     */
-    fun writePassword(context: android.content.Context, filePath: String, password: String): Boolean {
-        val file = File(filePath)
-        return writePassword(file, password)
-    }
 
-    /**
-     * 使用ParcelFileDescriptor直接操作写入密码（方案5）
-     * 按照核心流程文档要求：使用"wa"模式（Write Append）直接在文件末尾追加数据
-     */
-    fun writePasswordWithParcelFileDescriptor(context: android.content.Context, uri: android.net.Uri, password: String): Boolean {
-        var retryCount = 0
-        while (retryCount < MAX_RETRY_COUNT) {
-            try {
-                Log.d(TAG, "尝试使用ParcelFileDescriptor直接操作写入密码: $uri, 重试次数: $retryCount")
-                
-                // 检查Content URI权限
-                try {
-                    val contentResolver = context.contentResolver
-                    // 尝试获取Content URI的元数据，检查权限
-                    val cursor = contentResolver.query(uri, null, null, null, null)
-                    cursor?.use { 
-                        if (it.moveToFirst()) {
-                            Log.d(TAG, "Content URI权限检查成功")
-                        }
-                    }
-                } catch (e: SecurityException) {
-                    Log.e(TAG, "Content URI权限被拒绝", e)
-                    // 尝试请求临时权限
-                    try {
-                        val intent = android.content.Intent(android.content.Intent.ACTION_OPEN_DOCUMENT)
-                        intent.addCategory(android.content.Intent.CATEGORY_OPENABLE)
-                        intent.type = "*/*"
-                        intent.putExtra(android.content.Intent.EXTRA_ALLOW_MULTIPLE, false)
-                        Log.d(TAG, "建议用户通过系统文件选择器授予权限")
-                    } catch (innerE: Exception) {
-                        Log.e(TAG, "创建权限请求Intent失败", innerE)
-                    }
-                    return false
-                }
-                
-                // 尝试不同的打开模式
-                val modes = arrayOf("wa", "w", "rw")
-                var pfd: android.os.ParcelFileDescriptor? = null
-                
-                for (mode in modes) {
-                    try {
-                        Log.d(TAG, "尝试以模式 $mode 打开ParcelFileDescriptor")
-                        pfd = context.contentResolver.openFileDescriptor(uri, mode)
-                        if (pfd != null) {
-                            Log.d(TAG, "成功以模式 $mode 打开ParcelFileDescriptor")
-                            break
-                        }
-                    } catch (e: Exception) {
-                        Log.e(TAG, "以模式 $mode 打开ParcelFileDescriptor失败", e)
-                    }
-                }
-                
-                if (pfd != null) {
-                    pfd.use { 
-                        // 获取文件长度
-                        val fileLength = pfd.statSize
-                        Log.d(TAG, "文件长度: $fileLength")
-                        
-                        // 构建Extra Field数据
-                        val extraFieldData = buildExtraFieldData(password)
-                        Log.d(TAG, "Extra Field数据长度: ${extraFieldData.size}")
-                        
-                        // 使用FileOutputStream写入到文件尾部
-                        val fos = android.os.ParcelFileDescriptor.AutoCloseOutputStream(pfd)
-                        fos.use {
-                            // 定位到文件末尾
-                            fos.channel.position(fileLength)
-                            // 写入数据
-                            fos.write(extraFieldData)
-                            fos.flush()
-                        }
-                        
-                        Log.d(TAG, "使用ParcelFileDescriptor写入密码成功")
-                        return true
-                    }
-                } else {
-                    Log.e(TAG, "无法打开ParcelFileDescriptor")
-                    retryCount++
-                    if (retryCount < MAX_RETRY_COUNT) {
-                        Log.w(TAG, "重试打开ParcelFileDescriptor... ($retryCount/$MAX_RETRY_COUNT)")
-                        Thread.sleep(RETRY_DELAY_MS.toLong())
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "使用ParcelFileDescriptor写入密码失败", e)
-                retryCount++
-                if (retryCount < MAX_RETRY_COUNT) {
-                    Log.w(TAG, "重试写入... ($retryCount/$MAX_RETRY_COUNT)")
-                    Thread.sleep(RETRY_DELAY_MS.toLong())
-                }
-            }
-        }
-        
-        Log.e(TAG, "达到最大重试次数，写入失败")
-        return false
-    }
 
     /**
      * 从ZIP文件的Extra Field读取密码

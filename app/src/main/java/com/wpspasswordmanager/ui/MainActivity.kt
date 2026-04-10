@@ -10,7 +10,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.wpspasswordmanager.R
 import com.wpspasswordmanager.business.PasswordGenerator
-import com.wpspasswordmanager.business.PasswordStorage
+import com.wpspasswordmanager.business.PasswordManager
 import com.wpspasswordmanager.monitor.AccessibilityServiceManager
 
 class MainActivity : AppCompatActivity() {
@@ -70,7 +70,7 @@ class MainActivity : AppCompatActivity() {
         managePasswordsButton.setOnClickListener {
             // 示例：读取存储的密码
             val key = "password_1234567890" // 示例key
-            val password = PasswordStorage.getInstance().getPassword(this, key)
+            val password = PasswordManager.getInstance().getPasswordFromFile(this, key)
             if (password != null) {
                 Toast.makeText(this, "读取的密码: $password", Toast.LENGTH_LONG).show()
             } else {

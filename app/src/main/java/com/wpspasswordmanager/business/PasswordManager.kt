@@ -6,16 +6,16 @@ import android.util.Log
 import java.io.File
 import java.io.InputStream
 
-class PasswordStorage private constructor() {
+class PasswordManager private constructor() {
 
     companion object {
-        private const val TAG = "PasswordStorage"
+        private const val TAG = "PasswordManager"
 
-        private var instance: PasswordStorage? = null
+        private var instance: PasswordManager? = null
 
-        fun getInstance(): PasswordStorage {
+        fun getInstance(): PasswordManager {
             if (instance == null) {
-                instance = PasswordStorage()
+                instance = PasswordManager()
             }
             return instance!!
         }
@@ -24,7 +24,7 @@ class PasswordStorage private constructor() {
     /**
      * 从文件元数据读取密码
      */
-    fun getPassword(context: Context, key: String): String? {
+    fun getPasswordFromFile(context: Context, key: String): String? {
         try {
             Log.d(TAG, "开始读取密码，文件路径: $key")
             
@@ -45,100 +45,6 @@ class PasswordStorage private constructor() {
         } catch (e: Exception) {
             Log.e(TAG, "读取密码失败", e)
             return null
-        }
-    }
-
-
-    /**
-     * 写入密码
-     * 按照核心流程文档要求：
-     * 1. 对于本地文件，直接写入密码
-     * 2. 对于Content URI，尝试使用ParcelFileDescriptor直接操作
-     */
-    fun writePassword(context: Context, key: String, password: String): Boolean {
-        try {
-            Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 开始写入密码，文件路径: $key")
-            Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 密码: '$password'，长度: ${password.length}")
-            
-            // 检查密码是否变化
-            val currentPassword = getPassword(context, key)
-            Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 当前文件中的密码: '${currentPassword ?: "无"}'")
-            if (currentPassword == password) {
-                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 密码未变化，跳过写入操作: $key")
-                return true
-            }
-            
-            // 检查是否是content URI
-            if (key.startsWith("content://")) {
-                val uri = Uri.parse(key)
-                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 写入密码到Content URI: $uri")
-                val result = writePasswordToContentUri(context, uri, password)
-                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 写入密码到Content URI结果: $result")
-                return result
-            } else {
-                // 处理普通文件路径
-                val file = File(key)
-                if (file.exists() && file.canWrite()) {
-                    Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 文件存在，大小: ${file.length()} bytes, 可写: ${file.canWrite()}")
-                    // 直接写入密码到本地文件
-                    val result = writePasswordToFile(context, file, password)
-                    Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 写入密码到本地文件结果: $result")
-                    return result
-                } else {
-                    Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 文件不存在或不可写，无法写入密码")
-                    return false
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "[时间戳: ${System.currentTimeMillis()}] 写入密码失败", e)
-            return false
-        }
-    }
-
-    /**
-     * 从Content URI写入密码
-     */
-    private fun writePasswordToContentUri(context: Context, uri: Uri, password: String): Boolean {
-        try {
-            Log.d(TAG, "尝试从Content URI写入密码: $uri")
-            
-            // 按照核心流程文档要求：采用方案5（ParcelFileDescriptor直接操作）
-            Log.d(TAG, "使用ParcelFileDescriptor直接操作写入密码")
-            val parcelResult = ZipExtraFieldManager.getInstance().writePasswordWithParcelFileDescriptor(context, uri, password)
-            if (parcelResult) {
-                Log.d(TAG, "使用ParcelFileDescriptor直接操作写入密码成功")
-                return true
-            }
-            
-            Log.e(TAG, "ParcelFileDescriptor直接操作失败")
-            return false
-        } catch (e: Exception) {
-            Log.e(TAG, "从Content URI写入密码失败", e)
-            return false
-        }
-    }
-
-
-    /**
-     * 写入密码到文件
-     */
-    private fun writePasswordToFile(context: Context, file: File, password: String): Boolean {
-        try {
-            Log.d(TAG, "尝试写入密码到文件: ${file.absolutePath}")
-            
-            // 尝试使用ZIP Extra Field
-            val zipResult = ZipExtraFieldManager.getInstance().writePassword(file, password)
-            if (zipResult) {
-                Log.d(TAG, "使用ZIP Extra Field写入密码成功")
-                return true
-            }
-            
-            // 备用方案：使用文件属性
-            Log.w(TAG, "ZIP Extra Field写入失败，尝试使用文件属性")
-            return FileManager.getInstance().writePasswordToFileComment(context, file.absolutePath, password)
-        } catch (e: Exception) {
-            Log.e(TAG, "写入密码失败", e)
-            return false
         }
     }
 
