@@ -32,6 +32,10 @@ object FileMetaFactory {
      * 无障碍服务捕获到输入时更新
      */
     fun updatePendingPassword(filePath: String, newPassword: String) {
+        Log.d(
+            TAG,
+            "updatePendingPassword密码入参 '$filePath'"
+        )
         var fileMeta = map[filePath]
         if (fileMeta != null) {
             if (fileMeta.pendingPasswordList == null) {
@@ -66,6 +70,10 @@ object FileMetaFactory {
      * 清理资源 (文件关闭时调用)
      */
     fun clearFile(filePath: String) {
+        Log.d(
+            TAG,
+            "clearFile密码入参入参 '$filePath'"
+        )
         map.remove(filePath)
     }
 
@@ -84,9 +92,13 @@ object FileMetaFactory {
      * 获取有效的密码
      */
     fun getWritePassword(filePath: String): String? {
-        val fileObj = map[filePath]
-        val pendingPasswords = fileObj?.pendingPasswordList
-        val currentPassword = fileObj?.currentPassword
+        Log.d(
+            TAG,
+            "getWritePassword密码入参入参 '$filePath'"
+        )
+        val fileMeta = map[filePath]
+        val pendingPasswords = fileMeta?.pendingPasswordList
+        val currentPassword = fileMeta?.currentPassword
 
         // 如果pendPasswordList为空，返回currentPassword
         if (pendingPasswords == null || pendingPasswords.isEmpty()) {

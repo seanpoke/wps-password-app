@@ -1921,7 +1921,7 @@ class WpsAccessibilityService : AccessibilityService() {
                 isFillingPassword = true
                 try {
                     // 根据对话框类型决定填充策略
-                    val nodesToFill = if (currentDialogType == DialogType.ADD_PASSWORD) {
+                    val nodesToFill = if (currentDialogType == DialogType.ADD_PASSWORD || currentDialogType == DialogType.MODIFY_PASSWORD) {
                         // 对于添加密码窗口，只填充前两个输入框（假设是【打开权限】部分）
                         Log.i(TAG, "添加密码窗口，只填充前两个密码输入框")
                         passwordInputNodes.take(2)

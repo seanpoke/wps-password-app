@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.wpspasswordmanager.R
+import com.wpspasswordmanager.WpsPasswordManagerApplication
 import com.wpspasswordmanager.business.PasswordHolder
 import com.wpspasswordmanager.business.PasswordManager
 import com.wpspasswordmanager.monitor.WpsAccessibilityService
@@ -209,6 +210,9 @@ class ProxyActivity : AppCompatActivity() {
      */
     private fun copyFileFromContentUri(uri: Uri, targetFile: File): Boolean {
         try {
+            // 设置插件操作标志，避免触发文件事件监听器
+            WpsPasswordManagerApplication.instance.setPluginOperation(true)
+            
             val inputStream = contentResolver.openInputStream(uri)
             inputStream?.use { input ->
                 FileOutputStream(targetFile).use { output ->

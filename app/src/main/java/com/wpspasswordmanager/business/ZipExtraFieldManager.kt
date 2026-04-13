@@ -1,9 +1,11 @@
 package com.wpspasswordmanager.business
 
 import android.util.Log
+import com.wpspasswordmanager.WpsPasswordManagerApplication
 import java.io.*
 import java.security.MessageDigest
 import java.security.SecureRandom
+import java.util.concurrent.atomic.AtomicLong
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
 import javax.crypto.spec.SecretKeySpec
@@ -94,6 +96,14 @@ class ZipExtraFieldManager private constructor() {
      * 删除文件中旧的WPPM标记
      */
     private fun removeOldWppmMarkers(file: File): Boolean {
+        // 同时设置插件操作标志
+        if (WpsPasswordManagerApplication::class.java.declaredFields.isNotEmpty()) {
+            try {
+                WpsPasswordManagerApplication.instance.setPluginOperation(true)
+            } catch (e: Exception) {
+                Log.d(TAG, "无法设置插件操作标志: ${e.message}")
+            }
+        }
         try {
             Log.d(TAG, "尝试删除旧的WPPM标记")
             
