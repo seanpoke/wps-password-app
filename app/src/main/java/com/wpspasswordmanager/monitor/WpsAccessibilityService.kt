@@ -349,7 +349,7 @@ class WpsAccessibilityService : AccessibilityService() {
                     FileMetaFactory.updatePendingPassword(filePath, tempPassword!!)
                     Log.d(
                         TAG,
-                        "[时间戳: ${System.currentTimeMillis()}] 已更新待定密码到密码状态管理器: $filePath"
+                        "handleWindowStateChanged-已更新待定密码到密码状态管理器: $filePath"
                     )
                 }
 
@@ -486,7 +486,7 @@ class WpsAccessibilityService : AccessibilityService() {
                     FileMetaFactory.updatePendingPassword(filePath, tempPassword!!)
                     Log.d(
                         TAG,
-                        "[时间戳: ${System.currentTimeMillis()}] 已更新待定密码到密码状态管理器: $filePath"
+                        "detectPasswordDialog-已更新待定密码到密码状态管理器: $filePath"
                     )
                 }
             }

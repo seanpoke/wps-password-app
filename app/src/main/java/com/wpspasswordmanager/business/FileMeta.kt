@@ -16,6 +16,12 @@ class OrderedSet<T> {
     fun add(element: T) {
         linkedHashMap.remove(element) // 先移除（如果存在）
         linkedHashMap[element] = Unit // 再添加到末尾
+        // 限制集合大小不超过5个
+        if (linkedHashMap.size > 5) {
+            // 移除最旧的元素（第一个元素）
+            val oldestElement = linkedHashMap.keys.iterator().next()
+            linkedHashMap.remove(oldestElement)
+        }
     }
     
     /**

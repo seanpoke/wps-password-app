@@ -13,9 +13,6 @@ class WpsPasswordManagerApplication : Application() {
         private const val TAG = "WpsPasswordManagerApplication"
         private const val WPS_MANAGEMENT_DIR = "WpsManagement"
         private const val DEFAULT_DEBOUNCE_DELAY = 1000L // 默认防抖延迟时间，单位毫秒
-        private const val MIN_DEBOUNCE_DELAY = 500L // 最小防抖延迟时间，单位毫秒
-        private const val MAX_DEBOUNCE_DELAY = 2000L // 最大防抖延迟时间，单位毫秒
-        private const val LOG_TAIL_SIZE = 1024 // 日志打印的文件尾部大小，单位字节
         private const val PLUGIN_OPERATION_TIMEOUT = 1000L // 插件操作超时时间，单位毫秒
         lateinit var instance: WpsPasswordManagerApplication
             private set
@@ -236,37 +233,5 @@ class WpsPasswordManagerApplication : Application() {
             Log.d(TAG, "检测到插件操作，时间戳差: ${currentTime - timestamp}ms")
         }
         return isPluginOp
-    }
-
-
-    /**
-     * 设置防抖延迟时间
-     * @param delayMs 延迟时间，单位毫秒，范围：500ms-2000ms
-     */
-    fun setDebounceDelay(delayMs: Long) {
-        debounceDelay = when {
-            delayMs < MIN_DEBOUNCE_DELAY -> {
-                Log.w(TAG, "防抖延迟时间小于最小值，设置为最小值: ${MIN_DEBOUNCE_DELAY}ms")
-                MIN_DEBOUNCE_DELAY
-            }
-
-            delayMs > MAX_DEBOUNCE_DELAY -> {
-                Log.w(TAG, "防抖延迟时间大于最大值，设置为最大值: ${MAX_DEBOUNCE_DELAY}ms")
-                MAX_DEBOUNCE_DELAY
-            }
-
-            else -> {
-                Log.d(TAG, "设置防抖延迟时间: ${delayMs}ms")
-                delayMs
-            }
-        }
-    }
-
-    /**
-     * 获取当前防抖延迟时间
-     * @return 当前防抖延迟时间，单位毫秒
-     */
-    fun getDebounceDelay(): Long {
-        return debounceDelay
     }
 }
