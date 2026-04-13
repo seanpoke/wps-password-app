@@ -6,16 +6,16 @@ import android.util.Log
 import java.io.File
 import java.io.InputStream
 
-class PasswordManager private constructor() {
+class FileMetaManager private constructor() {
 
     companion object {
-        private const val TAG = "PasswordManager"
+        private const val TAG = "FileMetaManager"
 
-        private var instance: PasswordManager? = null
+        private var instance: FileMetaManager? = null
 
-        fun getInstance(): PasswordManager {
+        fun getInstance(): FileMetaManager {
             if (instance == null) {
-                instance = PasswordManager()
+                instance = FileMetaManager()
             }
             return instance!!
         }

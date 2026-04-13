@@ -17,7 +17,6 @@ import android.widget.Toast
 import com.wpspasswordmanager.R
 import com.wpspasswordmanager.business.FileMetaFactory
 import com.wpspasswordmanager.business.PasswordGenerator
-import com.wpspasswordmanager.business.PasswordManager
 import com.wpspasswordmanager.monitor.AccessibilityServiceManager
 import com.wpspasswordmanager.monitor.WpsAccessibilityService
 

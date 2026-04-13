@@ -10,7 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.wpspasswordmanager.R
 import com.wpspasswordmanager.WpsPasswordManagerApplication
 import com.wpspasswordmanager.business.PasswordHolder
-import com.wpspasswordmanager.business.PasswordManager
+import com.wpspasswordmanager.business.FileMetaManager
 import com.wpspasswordmanager.monitor.WpsAccessibilityService
 import java.io.File
 import java.io.FileOutputStream
@@ -190,7 +190,7 @@ class ProxyActivity : AppCompatActivity() {
             Log.d(TAG, "文件可读: ${file.canRead()}")
             Log.d(TAG, "文件大小: ${file.length()} 字节")
 
-            val password = PasswordManager.getInstance().getPasswordFromFile(this, filePath)
+            val password = FileMetaManager.getInstance().getPasswordFromFile(this, filePath)
             if (password != null) {
                 Log.d(TAG, "从本地文件读取到密码: $password")
                 // 存储密码到PasswordHolder，供无障碍服务使用
