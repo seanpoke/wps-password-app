@@ -8,7 +8,7 @@ import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import com.wpspasswordmanager.business.FileMetaFactory
-import com.wpspasswordmanager.business.PasswordHolder
+import com.wpspasswordmanager.business.FileMetaHolder
 
 class WpsAccessibilityService : AccessibilityService() {
 
@@ -23,6 +23,7 @@ class WpsAccessibilityService : AccessibilityService() {
         fun getTempPassword(): String? {
             return tempPassword
         }
+
         var currentDocumentPath: String? = null
         var stableDocumentPath: String? = null // 稳定的文档路径
         var currentFileUri: String? = null // 当前文件的URI
@@ -99,32 +100,51 @@ class WpsAccessibilityService : AccessibilityService() {
         try {
             val packageName = event.packageName?.toString()
             if (packageName in WPS_PACKAGES) {
-                Log.d(TAG, "收到事件: ${event.eventType}, 包名: $packageName, 类名: ${event.className}")
+                Log.d(
+                    TAG,
+                    "收到事件: ${event.eventType}, 包名: $packageName, 类名: ${event.className}"
+                )
                 when (event.eventType) {
                     AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
                         handleWindowStateChanged(event)
                     }
+
                     AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> {
                         handleWindowContentChanged(event)
                     }
+
                     AccessibilityEvent.TYPE_VIEW_FOCUSED -> {
                         handleViewFocused(event)
                     }
+
                     AccessibilityEvent.TYPE_VIEW_CLICKED -> {
-                        Log.d(TAG, "收到点击事件: ${event.source?.className}, 文本: ${event.source?.text}")
+                        Log.d(
+                            TAG,
+                            "收到点击事件: ${event.source?.className}, 文本: ${event.source?.text}"
+                        )
                         handleViewClicked(event)
                     }
+
                     AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED -> {
-                        Log.d(TAG, "收到文本变化事件: ${event.source?.className}, 文本: ${event.text}")
+                        Log.d(
+                            TAG,
+                            "收到文本变化事件: ${event.source?.className}, 文本: ${event.text}"
+                        )
                         handleViewTextChanged(event)
                     }
+
                     AccessibilityEvent.TYPE_VIEW_LONG_CLICKED -> {
-                        Log.d(TAG, "收到长按事件: ${event.source?.className}, 文本: ${event.source?.text}")
+                        Log.d(
+                            TAG,
+                            "收到长按事件: ${event.source?.className}, 文本: ${event.source?.text}"
+                        )
                         handleViewClicked(event)
                     }
+
                     AccessibilityEvent.TYPE_VIEW_SELECTED -> {
                         Log.d(TAG, "收到视图选择事件: ${event.source?.className}")
                     }
+
                     AccessibilityEvent.TYPE_VIEW_ACCESSIBILITY_FOCUSED -> {
                         Log.d(TAG, "收到视图无障碍焦点事件: ${event.source?.className}")
                     }
@@ -170,12 +190,24 @@ class WpsAccessibilityService : AccessibilityService() {
             }
 
             if (password.isNotEmpty()) {
-                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 密码输入框文本变化: '$password'，长度: ${password.length}")
-                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 变化前的tempPassword: '${tempPassword ?: "null"}'")
+                Log.d(
+                    TAG,
+                    "[时间戳: ${System.currentTimeMillis()}] 密码输入框文本变化: '$password'，长度: ${password.length}"
+                )
+                Log.d(
+                    TAG,
+                    "[时间戳: ${System.currentTimeMillis()}] 变化前的tempPassword: '${tempPassword ?: "null"}'"
+                )
                 // 临时存储密码，用户确认前不写入MemoryPasswordStorage
                 tempPassword = password
-                Log.i(TAG, "[时间戳: ${System.currentTimeMillis()}] 已将用户输入的密码临时存储，等待用户确认: '$password'")
-                Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 变化后的tempPassword: '${tempPassword ?: "null"}'")
+                Log.i(
+                    TAG,
+                    "[时间戳: ${System.currentTimeMillis()}] 已将用户输入的密码临时存储，等待用户确认: '$password'"
+                )
+                Log.d(
+                    TAG,
+                    "[时间戳: ${System.currentTimeMillis()}] 变化后的tempPassword: '${tempPassword ?: "null"}'"
+                )
             }
         }
     }
@@ -210,7 +242,10 @@ class WpsAccessibilityService : AccessibilityService() {
                 var password: String? = tempPassword
 
                 if (password != null && password.isNotEmpty()) {
-                    Log.i(TAG, "[时间戳: ${System.currentTimeMillis()}] 从临时存储中获取到密码: '$password'，长度: ${password.length}")
+                    Log.i(
+                        TAG,
+                        "[时间戳: ${System.currentTimeMillis()}] 从临时存储中获取到密码: '$password'，长度: ${password.length}"
+                    )
                     // 清除临时密码
                     tempPassword = null
                     Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 已清除临时密码")
@@ -234,8 +269,8 @@ class WpsAccessibilityService : AccessibilityService() {
         val contentDescription = node.contentDescription?.toString() ?: ""
 
         return text.contains("生成密码") || text.contains("generate password") ||
-               text.contains("Generate Password") || contentDescription.contains("生成密码") ||
-               contentDescription.contains("generate password") || contentDescription.contains("Generate Password")
+                text.contains("Generate Password") || contentDescription.contains("生成密码") ||
+                contentDescription.contains("generate password") || contentDescription.contains("Generate Password")
     }
 
     override fun onInterrupt() {
@@ -278,12 +313,12 @@ class WpsAccessibilityService : AccessibilityService() {
         try {
             Log.d(TAG, "操作通知: $title - $content")
             // 使用通知管理器显示通知
-            com.wpspasswordmanager.ui.AppNotificationManager.getInstance(this).showOperationNotification(title, content)
+            com.wpspasswordmanager.ui.AppNotificationManager.getInstance(this)
+                .showOperationNotification(title, content)
         } catch (e: Exception) {
             Log.e(TAG, "显示操作通知失败", e)
         }
     }
-
 
 
     private fun handleWindowStateChanged(event: AccessibilityEvent) {
@@ -298,18 +333,24 @@ class WpsAccessibilityService : AccessibilityService() {
 
         // 检查是否切换到文档编辑界面
         val isDocumentEditor = className.contains("Writer") || className.contains("writer") ||
-                               className.contains("Spreadsheets") || className.contains("spreadsheets") ||
-                               className.contains("Presentation") || className.contains("presentation")
+                className.contains("Spreadsheets") || className.contains("spreadsheets") ||
+                className.contains("Presentation") || className.contains("presentation")
 
         if (isDocumentEditor) {
             // 检查是否有临时密码未处理
             if (tempPassword != null && tempPassword!!.isNotEmpty()) {
-                Log.i(TAG, "[时间戳: ${System.currentTimeMillis()}] 检测到从密码弹框切换到文档编辑界面，处理未确认的临时密码: '$tempPassword'")
+                Log.i(
+                    TAG,
+                    "[时间戳: ${System.currentTimeMillis()}] 检测到从密码弹框切换到文档编辑界面，处理未确认的临时密码: '$tempPassword'"
+                )
 
                 val filePath = currentFileUri ?: stableDocumentPath
                 if (filePath != null) {
                     FileMetaFactory.updatePendingPassword(filePath, tempPassword!!)
-                    Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 已更新待定密码到密码状态管理器: $filePath")
+                    Log.d(
+                        TAG,
+                        "[时间戳: ${System.currentTimeMillis()}] 已更新待定密码到密码状态管理器: $filePath"
+                    )
                 }
 
                 // 清除临时密码
@@ -320,9 +361,9 @@ class WpsAccessibilityService : AccessibilityService() {
 
         // 增强检测：多种可能的文件列表页类名
         val isFileListScreen = className.contains("HomeRootActivity") ||
-                               className.contains("FileManagerActivity") ||
-                               className.contains("DocumentListActivity") ||
-                               className.contains("MainActivity")
+                className.contains("FileManagerActivity") ||
+                className.contains("DocumentListActivity") ||
+                className.contains("MainActivity")
 
         if (isFileListScreen) {
             Log.d(TAG, "检测到回退到文件列表页，尝试写入密码")
@@ -374,7 +415,10 @@ class WpsAccessibilityService : AccessibilityService() {
         val isPasswordDialog = passwordInputNodes.isNotEmpty() && confirmButton != null
 
         if (isPasswordDialog) {
-            Log.d(TAG, "找到密码输入框: ${passwordInputNodes.size}，找到确认按钮: ${confirmButton != null}，判断为密码弹框")
+            Log.d(
+                TAG,
+                "找到密码输入框: ${passwordInputNodes.size}，找到确认按钮: ${confirmButton != null}，判断为密码弹框"
+            )
 
             // 检测对话框类型
             val previousDialogType = currentDialogType
@@ -400,7 +444,7 @@ class WpsAccessibilityService : AccessibilityService() {
                 // 对于其他对话框类型，停止监测
                 stopShowPasswordMonitoring()
             }
-            
+
             // 更新上次的对话框类型
             lastDialogType = currentDialogType
 
@@ -416,8 +460,11 @@ class WpsAccessibilityService : AccessibilityService() {
                 stopFloatingButtonService()
             }
 
-            // 尝试自动填充密码
-            autoFillPassword(rootNode)
+            if (currentDialogType == DialogType.OPEN_ENCRYPTED_DOCUMENT) {
+                // 尝试自动填充密码
+                autoFillPassword(rootNode)
+            }
+
         } else {
             // 隐藏悬浮按钮
             AccessibilityServiceManager.getInstance().hideFloatingButton()
@@ -429,12 +476,18 @@ class WpsAccessibilityService : AccessibilityService() {
 
             // 处理未确认的临时密码
             if (tempPassword != null && tempPassword!!.isNotEmpty()) {
-                Log.i(TAG, "[时间戳: ${System.currentTimeMillis()}] 检测到密码弹框关闭，处理未确认的临时密码: '$tempPassword'")
+                Log.i(
+                    TAG,
+                    "[时间戳: ${System.currentTimeMillis()}] 检测到密码弹框关闭，处理未确认的临时密码: '$tempPassword'"
+                )
                 // 更新待定密码到密码状态管理器
                 val filePath = currentFileUri ?: stableDocumentPath
                 if (filePath != null) {
                     FileMetaFactory.updatePendingPassword(filePath, tempPassword!!)
-                    Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 已更新待定密码到密码状态管理器: $filePath")
+                    Log.d(
+                        TAG,
+                        "[时间戳: ${System.currentTimeMillis()}] 已更新待定密码到密码状态管理器: $filePath"
+                    )
                 }
             }
 
@@ -478,11 +531,17 @@ class WpsAccessibilityService : AccessibilityService() {
                     currentDialogType = DialogType.OPEN_ENCRYPTED_DOCUMENT
                     Log.d(TAG, "检测到对话框类型: 打开加密文档")
                     return
-                } else if (text.contains("添加密码") || text.contains("Add Password") || text.contains("add password")) {
+                } else if (text.contains("添加密码") || text.contains("Add Password") || text.contains(
+                        "add password"
+                    )
+                ) {
                     currentDialogType = DialogType.ADD_PASSWORD
                     Log.d(TAG, "检测到对话框类型: 添加密码")
                     return
-                } else if (text.contains("修改密码") || text.contains("Modify Password") || text.contains("modify password")) {
+                } else if (text.contains("修改密码") || text.contains("Modify Password") || text.contains(
+                        "modify password"
+                    )
+                ) {
                     currentDialogType = DialogType.MODIFY_PASSWORD
                     Log.d(TAG, "检测到对话框类型: 修改密码")
                     return
@@ -493,11 +552,17 @@ class WpsAccessibilityService : AccessibilityService() {
                     currentDialogType = DialogType.OPEN_ENCRYPTED_DOCUMENT
                     Log.d(TAG, "检测到对话框类型: 打开加密文档")
                     return
-                } else if (contentDescription.contains("添加密码") || contentDescription.contains("Add Password") || contentDescription.contains("add password")) {
+                } else if (contentDescription.contains("添加密码") || contentDescription.contains("Add Password") || contentDescription.contains(
+                        "add password"
+                    )
+                ) {
                     currentDialogType = DialogType.ADD_PASSWORD
                     Log.d(TAG, "检测到对话框类型: 添加密码")
                     return
-                } else if (contentDescription.contains("修改密码") || contentDescription.contains("Modify Password") || contentDescription.contains("modify password")) {
+                } else if (contentDescription.contains("修改密码") || contentDescription.contains("Modify Password") || contentDescription.contains(
+                        "modify password"
+                    )
+                ) {
                     currentDialogType = DialogType.MODIFY_PASSWORD
                     Log.d(TAG, "检测到对话框类型: 修改密码")
                     return
@@ -529,7 +594,10 @@ class WpsAccessibilityService : AccessibilityService() {
             val queue = mutableListOf(rootNode)
             var foundShowPasswordOption = false
 
-            Log.d(TAG, "开始查找【显示密码】选项，根节点: ${rootNode.className}, 子节点数量: ${rootNode.childCount}")
+            Log.d(
+                TAG,
+                "开始查找【显示密码】选项，根节点: ${rootNode.className}, 子节点数量: ${rootNode.childCount}"
+            )
 
             while (queue.isNotEmpty()) {
                 val node = queue.removeAt(0)
@@ -542,18 +610,25 @@ class WpsAccessibilityService : AccessibilityService() {
 
                 Log.d(TAG, "节点文本: '$text', 内容描述: '$contentDescription'")
 
-                val hasShowPasswordText = text.contains("显示密码") || text.contains("show password") ||
-                                         text.contains("Show Password") || contentDescription.contains("显示密码") ||
-                                         contentDescription.contains("show password") || contentDescription.contains("Show Password")
+                val hasShowPasswordText =
+                    text.contains("显示密码") || text.contains("show password") ||
+                            text.contains("Show Password") || contentDescription.contains("显示密码") ||
+                            contentDescription.contains("show password") || contentDescription.contains(
+                        "Show Password"
+                    )
 
                 // 检查是否是复选框或开关
-                val isCheckboxOrSwitch = node.className?.toString()?.contains("CheckBox") ?: false ||
-                                        node.className?.toString()?.contains("Switch") ?: false ||
-                                        node.className?.toString()?.contains("Toggle") ?: false
+                val isCheckboxOrSwitch =
+                    node.className?.toString()?.contains("CheckBox") ?: false ||
+                            node.className?.toString()?.contains("Switch") ?: false ||
+                            node.className?.toString()?.contains("Toggle") ?: false
 
                 // 检查是否是清理按钮，避免误点击
-                val isClearButton = text.contains("清理") || text.contains("clear") || text.contains("Clear") ||
-                                  contentDescription.contains("清理") || contentDescription.contains("clear") || contentDescription.contains("Clear")
+                val isClearButton =
+                    text.contains("清理") || text.contains("clear") || text.contains("Clear") ||
+                            contentDescription.contains("清理") || contentDescription.contains("clear") || contentDescription.contains(
+                        "Clear"
+                    )
 
                 if ((hasShowPasswordText || isCheckboxOrSwitch) && !isClearButton) {
                     foundShowPasswordOption = true
@@ -565,86 +640,90 @@ class WpsAccessibilityService : AccessibilityService() {
                     Log.d(TAG, "是否已经点击过: $hasClickedShowPassword")
 
                     // 对于修改密码对话框，持续监测并确保【显示密码】选项处于勾选状态
-                if (currentDialogType == DialogType.MODIFY_PASSWORD) {
-                    // 只在showPasswordChecked为false时点击，避免重复操作
-                    if (node.isClickable && !showPasswordChecked) {
-                        Log.d(TAG, "修改密码对话框中【显示密码】选项可点击，尝试点击")
-                        val success = node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-                        if (success) {
-                            Log.i(TAG, "成功点击【显示密码】选项")
-                            showPasswordChecked = true
-                        } else {
-                            Log.e(TAG, "直接点击【显示密码】选项失败")
+                    if (currentDialogType == DialogType.MODIFY_PASSWORD) {
+                        // 只在showPasswordChecked为false时点击，避免重复操作
+                        if (node.isClickable && !showPasswordChecked) {
+                            Log.d(TAG, "修改密码对话框中【显示密码】选项可点击，尝试点击")
+                            val success = node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                            if (success) {
+                                Log.i(TAG, "成功点击【显示密码】选项")
+                                showPasswordChecked = true
+                            } else {
+                                Log.e(TAG, "直接点击【显示密码】选项失败")
+                            }
+                        }
+                    } else {
+                        // 对于其他对话框类型，只在未点击过时点击
+                        if (!hasClickedShowPassword && node.isClickable) {
+                            val success = node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                            if (success) {
+                                Log.i(TAG, "成功点击【显示密码】选项")
+                                hasClickedShowPassword = true
+                            } else {
+                                Log.e(TAG, "直接点击【显示密码】选项失败")
+                            }
                         }
                     }
-                } else {
-                    // 对于其他对话框类型，只在未点击过时点击
-                    if (!hasClickedShowPassword && node.isClickable) {
-                        val success = node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-                        if (success) {
-                            Log.i(TAG, "成功点击【显示密码】选项")
-                            hasClickedShowPassword = true
-                        } else {
-                            Log.e(TAG, "直接点击【显示密码】选项失败")
-                        }
-                    }
-                }
 
-                // 尝试点击子节点
-                for (i in 0 until node.childCount) {
-                    val child = node.getChild(i)
-                    if (child != null && child.isClickable) {
-                        Log.d(TAG, "尝试点击子节点: ${child.className}")
+                    // 尝试点击子节点
+                    for (i in 0 until node.childCount) {
+                        val child = node.getChild(i)
+                        if (child != null && child.isClickable) {
+                            Log.d(TAG, "尝试点击子节点: ${child.className}")
+                            if (currentDialogType == DialogType.MODIFY_PASSWORD) {
+                                if (!showPasswordChecked) {
+                                    val success =
+                                        child.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                                    if (success) {
+                                        Log.i(TAG, "成功点击【显示密码】选项的子节点")
+                                        showPasswordChecked = true
+                                    } else {
+                                        Log.e(TAG, "点击【显示密码】选项的子节点失败")
+                                    }
+                                }
+                            } else {
+                                if (!hasClickedShowPassword) {
+                                    val success =
+                                        child.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                                    if (success) {
+                                        Log.i(TAG, "成功点击【显示密码】选项的子节点")
+                                        hasClickedShowPassword = true
+                                    } else {
+                                        Log.e(TAG, "点击【显示密码】选项的子节点失败")
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // 尝试点击父节点
+                    val parent = node.parent
+                    if (parent != null && parent.isClickable) {
+                        Log.d(TAG, "尝试点击父节点: ${parent.className}")
                         if (currentDialogType == DialogType.MODIFY_PASSWORD) {
                             if (!showPasswordChecked) {
-                                val success = child.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                                val success =
+                                    parent.performAction(AccessibilityNodeInfo.ACTION_CLICK)
                                 if (success) {
-                                    Log.i(TAG, "成功点击【显示密码】选项的子节点")
+                                    Log.i(TAG, "成功点击【显示密码】选项的父节点")
                                     showPasswordChecked = true
                                 } else {
-                                    Log.e(TAG, "点击【显示密码】选项的子节点失败")
+                                    Log.e(TAG, "点击【显示密码】选项的父节点失败")
                                 }
                             }
                         } else {
                             if (!hasClickedShowPassword) {
-                                val success = child.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                                val success =
+                                    parent.performAction(AccessibilityNodeInfo.ACTION_CLICK)
                                 if (success) {
-                                    Log.i(TAG, "成功点击【显示密码】选项的子节点")
+                                    Log.i(TAG, "成功点击【显示密码】选项的父节点")
                                     hasClickedShowPassword = true
                                 } else {
-                                    Log.e(TAG, "点击【显示密码】选项的子节点失败")
+                                    Log.e(TAG, "点击【显示密码】选项的父节点失败")
                                 }
                             }
                         }
                     }
-                }
-
-                // 尝试点击父节点
-                val parent = node.parent
-                if (parent != null && parent.isClickable) {
-                    Log.d(TAG, "尝试点击父节点: ${parent.className}")
-                    if (currentDialogType == DialogType.MODIFY_PASSWORD) {
-                        if (!showPasswordChecked) {
-                            val success = parent.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-                            if (success) {
-                                Log.i(TAG, "成功点击【显示密码】选项的父节点")
-                                showPasswordChecked = true
-                            } else {
-                                Log.e(TAG, "点击【显示密码】选项的父节点失败")
-                            }
-                        }
-                    } else {
-                        if (!hasClickedShowPassword) {
-                            val success = parent.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-                            if (success) {
-                                Log.i(TAG, "成功点击【显示密码】选项的父节点")
-                                hasClickedShowPassword = true
-                            } else {
-                                Log.e(TAG, "点击【显示密码】选项的父节点失败")
-                            }
-                        }
-                    }
-                }
 
                     // 找到【显示密码】选项后，不再继续搜索
                     if (currentDialogType == DialogType.MODIFY_PASSWORD && showPasswordChecked) {
@@ -764,11 +843,14 @@ class WpsAccessibilityService : AccessibilityService() {
      */
     private fun findMFShowPassword(rootNode: AccessibilityNodeInfo): Set<AccessibilityNodeInfo> {
         val showPasswordNodes = mutableSetOf<AccessibilityNodeInfo>()
-        
+
         try {
             val queue = mutableListOf(rootNode)
-            
-            Log.d(TAG, "开始查找【显示密码】节点，根节点: ${rootNode.className}, 子节点数量: ${rootNode.childCount}")
+
+            Log.d(
+                TAG,
+                "开始查找【显示密码】节点，根节点: ${rootNode.className}, 子节点数量: ${rootNode.childCount}"
+            )
 
             while (queue.isNotEmpty()) {
                 val node = queue.removeAt(0)
@@ -781,22 +863,32 @@ class WpsAccessibilityService : AccessibilityService() {
 
                 Log.d(TAG, "节点文本: '$text', 内容描述: '$contentDescription'")
 
-                val hasShowPasswordText = text.contains("显示密码") || text.contains("show password") ||
-                                         text.contains("Show Password") || contentDescription.contains("显示密码") ||
-                                         contentDescription.contains("show password") || contentDescription.contains("Show Password")
+                val hasShowPasswordText =
+                    text.contains("显示密码") || text.contains("show password") ||
+                            text.contains("Show Password") || contentDescription.contains("显示密码") ||
+                            contentDescription.contains("show password") || contentDescription.contains(
+                        "Show Password"
+                    )
 
                 if (hasShowPasswordText) {
-                    Log.d(TAG, "找到【显示密码】文本节点: ${node.className}, 父节点: ${node.parent?.className}")
+                    Log.d(
+                        TAG,
+                        "找到【显示密码】文本节点: ${node.className}, 父节点: ${node.parent?.className}"
+                    )
                     showPasswordNodes.add(node)
                 }
 
                 // 检查是否是复选框或开关
-                val isCheckboxOrSwitch = node.className?.toString()?.contains("CheckBox") ?: false ||
-                                        node.className?.toString()?.contains("Switch") ?: false ||
-                                        node.className?.toString()?.contains("Toggle") ?: false
+                val isCheckboxOrSwitch =
+                    node.className?.toString()?.contains("CheckBox") ?: false ||
+                            node.className?.toString()?.contains("Switch") ?: false ||
+                            node.className?.toString()?.contains("Toggle") ?: false
 
                 if (isCheckboxOrSwitch) {
-                    Log.d(TAG, "找到复选框/开关节点: ${node.className}, 父节点: ${node.parent?.className}")
+                    Log.d(
+                        TAG,
+                        "找到复选框/开关节点: ${node.className}, 父节点: ${node.parent?.className}"
+                    )
                 }
 
                 // 遍历子节点
@@ -808,12 +900,12 @@ class WpsAccessibilityService : AccessibilityService() {
                     }
                 }
             }
-            
+
             Log.d(TAG, "查找完成，找到 ${showPasswordNodes.size} 个【显示密码】节点")
         } catch (e: Exception) {
             Log.e(TAG, "查找【显示密码】节点失败", e)
         }
-        
+
         return showPasswordNodes
     }
 
@@ -823,15 +915,18 @@ class WpsAccessibilityService : AccessibilityService() {
      */
     private fun clickMFShowPassword(node: AccessibilityNodeInfo): Boolean {
         var success = false
-        
+
         try {
             Log.d(TAG, "处理【显示密码】节点: ${node.className}")
-            
+
             // 尝试找到关联的复选框
             val checkboxNode = findAssociatedCheckbox(node)
             if (checkboxNode != null) {
-                Log.d(TAG, "找到关联的复选框: ${checkboxNode.className}, 可点击: ${checkboxNode.isClickable}, 当前状态: ${checkboxNode.isChecked}")
-                
+                Log.d(
+                    TAG,
+                    "找到关联的复选框: ${checkboxNode.className}, 可点击: ${checkboxNode.isClickable}, 当前状态: ${checkboxNode.isChecked}"
+                )
+
                 // 执行点击操作
                 if (checkboxNode.isClickable) {
                     success = checkboxNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)
@@ -855,7 +950,7 @@ class WpsAccessibilityService : AccessibilityService() {
         } catch (e: Exception) {
             Log.e(TAG, "处理【显示密码】节点失败", e)
         }
-        
+
         return success
     }
 
@@ -870,7 +965,10 @@ class WpsAccessibilityService : AccessibilityService() {
                 val sibling = parent.getChild(i)
                 if (sibling != null && sibling != textNode) {
                     val className = sibling.className?.toString() ?: ""
-                    if (className.contains("CheckBox") || className.contains("Switch") || className.contains("Toggle")) {
+                    if (className.contains("CheckBox") || className.contains("Switch") || className.contains(
+                            "Toggle"
+                        )
+                    ) {
                         return sibling
                     }
                 }
@@ -946,18 +1044,14 @@ class WpsAccessibilityService : AccessibilityService() {
             // 检测文档路径（减少日志输出）
             detectDocumentPath(rootNode, false)
 
-            // 尝试从PasswordHolder中获取密码
-            var password: String? = null
+            // 从PasswordHolder中获取fileMeta
+            var password = FileMetaHolder.cachedPassword
+            Log.i(TAG, "从FileMetaHolder读取密码: $password")
+            var uid = FileMetaHolder.cachedUid
+            Log.i(TAG, "从FileMetaHolder读取uid: $uid")
 
-            // 优先从PasswordHolder中获取密码
-            if (PasswordHolder.hasCachedPassword()) {
-                Log.d(TAG, "尝试从PasswordHolder读取密码")
-                password = PasswordHolder.cachedPassword
-                if (password != null) {
-                    Log.i(TAG, "从PasswordHolder读取密码成功")
-                }
-            }
-
+            // 初始化密码状态
+            val filePath = currentFileUri ?: stableDocumentPath
             // 如果找到密码，自动填充
             if (password != null && password.isNotEmpty()) {
                 Log.i(TAG, "开始自动填充密码")
@@ -971,16 +1065,26 @@ class WpsAccessibilityService : AccessibilityService() {
                             try {
                                 // 填充密码
                                 val arguments = android.os.Bundle()
-                                arguments.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, password)
-                                val success = node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments)
+                                arguments.putCharSequence(
+                                    AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,
+                                    password
+                                )
+                                val success = node.performAction(
+                                    AccessibilityNodeInfo.ACTION_SET_TEXT,
+                                    arguments
+                                )
                                 if (success) {
                                     Log.i(TAG, "密码填充成功")
 
                                     // 检查是否需要自动点击确认按钮
                                     // 只有在首次打开加密文件的场景中才自动提交
-                                    val shouldAutoSubmit = !hasClickedGeneratePassword && (currentDialogType == DialogType.OPEN_ENCRYPTED_DOCUMENT)
+                                    val shouldAutoSubmit =
+                                        !hasClickedGeneratePassword && (currentDialogType == DialogType.OPEN_ENCRYPTED_DOCUMENT)
 
-                                    Log.i(TAG, "是否自动提交: $shouldAutoSubmit, 场景类型: ${if (hasClickedGeneratePassword) "生成密码" else if (currentDialogType == DialogType.OPEN_ENCRYPTED_DOCUMENT) "首次打开" else "修改密码"}")
+                                    Log.i(
+                                        TAG,
+                                        "是否自动提交: $shouldAutoSubmit, 场景类型: ${if (hasClickedGeneratePassword) "生成密码" else if (currentDialogType == DialogType.OPEN_ENCRYPTED_DOCUMENT) "首次打开" else "修改密码"}"
+                                    )
 
                                     if (shouldAutoSubmit) {
                                         // 场景1：首次打开加密文件，自动点击确认按钮
@@ -988,17 +1092,11 @@ class WpsAccessibilityService : AccessibilityService() {
                                         val confirmButton = findConfirmButton(rootNode)
                                         if (confirmButton != null) {
                                             Log.i(TAG, "找到确认按钮，尝试点击")
-                                            val clickSuccess = confirmButton.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                                            val clickSuccess =
+                                                confirmButton.performAction(AccessibilityNodeInfo.ACTION_CLICK)
                                             if (clickSuccess) {
                                                 Log.i(TAG, "autoFillPassword-成功点击确认按钮")
                                                 isDocumentOpened = true // 标记文档已打开
-
-                                                // 初始化密码状态
-                                                val filePath = currentFileUri ?: stableDocumentPath
-                                                if (filePath != null) {
-                                                    FileMetaFactory.initFileState(filePath, password)
-                                                    Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 已初始化密码状态: $filePath")
-                                                }
                                             } else {
                                                 Log.e(TAG, "点击确认按钮失败")
                                             }
@@ -1010,7 +1108,7 @@ class WpsAccessibilityService : AccessibilityService() {
                                     }
 
                                     // 填充后清除PasswordHolder缓存
-                                    PasswordHolder.clear()
+                                    FileMetaHolder.clear()
 
                                     // 重置生成密码标志
                                     if (hasClickedGeneratePassword) {
@@ -1031,6 +1129,11 @@ class WpsAccessibilityService : AccessibilityService() {
                 }
             } else {
                 Log.d(TAG, "未找到密码，等待用户手动输入")
+            }
+
+            if (filePath != null) {
+                FileMetaFactory.initFileMeta(filePath, password, uid)
+                Log.d(TAG, "初始化文件[ $filePath ]的元数据")
             }
         } catch (e: Exception) {
             Log.e(TAG, "自动填充密码失败", e)
@@ -1171,15 +1274,15 @@ class WpsAccessibilityService : AccessibilityService() {
 
         // 检查是否是真实的文件路径
         val isRealFilePath = detectedPath?.contains(".doc") == true ||
-                           detectedPath?.contains(".docx") == true ||
-                           detectedPath?.contains(".xls") == true ||
-                           detectedPath?.contains(".xlsx") == true ||
-                           detectedPath?.contains(".ppt") == true ||
-                           detectedPath?.contains(".pptx") == true ||
-                           detectedPath?.contains("/storage/") == true ||
-                           detectedPath?.contains("SD卡") == true ||
-                           detectedPath?.contains("Internal storage") == true ||
-                           detectedPath?.contains("file:/") == true
+                detectedPath?.contains(".docx") == true ||
+                detectedPath?.contains(".xls") == true ||
+                detectedPath?.contains(".xlsx") == true ||
+                detectedPath?.contains(".ppt") == true ||
+                detectedPath?.contains(".pptx") == true ||
+                detectedPath?.contains("/storage/") == true ||
+                detectedPath?.contains("SD卡") == true ||
+                detectedPath?.contains("Internal storage") == true ||
+                detectedPath?.contains("file:/") == true
 
         if (enableLogging) {
             Log.d(TAG, "检测到的文档路径: $detectedPath")
@@ -1187,7 +1290,10 @@ class WpsAccessibilityService : AccessibilityService() {
         }
 
         // 保持文档路径稳定，只在第一次设置或检测到新的有效路径时更新
-        if (stableDocumentPath == null || (isRealFilePath && (!stableDocumentPath!!.contains(".doc") && !stableDocumentPath!!.contains(".xls") && !stableDocumentPath!!.contains(".ppt") && !stableDocumentPath!!.contains("/storage/")))) {
+        if (stableDocumentPath == null || (isRealFilePath && (!stableDocumentPath!!.contains(".doc") && !stableDocumentPath!!.contains(
+                ".xls"
+            ) && !stableDocumentPath!!.contains(".ppt") && !stableDocumentPath!!.contains("/storage/")))
+        ) {
             stableDocumentPath = detectedPath
             if (enableLogging) {
                 Log.d(TAG, "设置稳定文档路径: $stableDocumentPath")
@@ -1243,16 +1349,26 @@ class WpsAccessibilityService : AccessibilityService() {
             val contentDescription = currentNode.contentDescription?.toString() ?: ""
 
             // 检查是否包含文件路径特征
-            if (text.isNotEmpty() && (text.contains("/storage/") || text.contains("SD卡") || text.contains("Internal storage")) &&
+            if (text.isNotEmpty() && (text.contains("/storage/") || text.contains("SD卡") || text.contains(
+                    "Internal storage"
+                )) &&
                 (text.contains(".doc") || text.contains(".docx") || text.contains(".xls") ||
-                 text.contains(".xlsx") || text.contains(".ppt") || text.contains(".pptx"))) {
+                        text.contains(".xlsx") || text.contains(".ppt") || text.contains(".pptx"))
+            ) {
                 Log.d(TAG, "从系统元素找到文件路径: $text")
                 return text
             }
 
-            if (contentDescription.isNotEmpty() && (contentDescription.contains("/storage/") || contentDescription.contains("SD卡") || contentDescription.contains("Internal storage")) &&
-                (contentDescription.contains(".doc") || contentDescription.contains(".docx") || contentDescription.contains(".xls") ||
-                 contentDescription.contains(".xlsx") || contentDescription.contains(".ppt") || contentDescription.contains(".pptx"))) {
+            if (contentDescription.isNotEmpty() && (contentDescription.contains("/storage/") || contentDescription.contains(
+                    "SD卡"
+                ) || contentDescription.contains("Internal storage")) &&
+                (contentDescription.contains(".doc") || contentDescription.contains(".docx") || contentDescription.contains(
+                    ".xls"
+                ) ||
+                        contentDescription.contains(".xlsx") || contentDescription.contains(".ppt") || contentDescription.contains(
+                    ".pptx"
+                ))
+            ) {
                 Log.d(TAG, "从系统元素内容描述找到文件路径: $contentDescription")
                 return contentDescription
             }
@@ -1286,20 +1402,25 @@ class WpsAccessibilityService : AccessibilityService() {
             // 检查是否是导航栏相关的节点
             if (className.contains("Navigation") || className.contains("navigation") ||
                 className.contains("Toolbar") || className.contains("toolbar") ||
-                className.contains("ActionBar") || className.contains("action_bar")) {
+                className.contains("ActionBar") || className.contains("action_bar")
+            ) {
 
                 // 检查文本是否包含文件路径特征
                 if (text.isNotEmpty() && (text.contains(".doc") || text.contains(".docx") ||
-                    text.contains(".xls") || text.contains(".xlsx") ||
-                    text.contains(".ppt") || text.contains(".pptx"))) {
+                            text.contains(".xls") || text.contains(".xlsx") ||
+                            text.contains(".ppt") || text.contains(".pptx"))
+                ) {
                     Log.d(TAG, "从导航栏找到文件路径: $text")
                     return text
                 }
 
                 // 检查内容描述
-                if (contentDescription.isNotEmpty() && (contentDescription.contains(".doc") || contentDescription.contains(".docx") ||
-                    contentDescription.contains(".xls") || contentDescription.contains(".xlsx") ||
-                    contentDescription.contains(".ppt") || contentDescription.contains(".pptx"))) {
+                if (contentDescription.isNotEmpty() && (contentDescription.contains(".doc") || contentDescription.contains(
+                        ".docx"
+                    ) ||
+                            contentDescription.contains(".xls") || contentDescription.contains(".xlsx") ||
+                            contentDescription.contains(".ppt") || contentDescription.contains(".pptx"))
+                ) {
                     Log.d(TAG, "从导航栏内容描述找到文件路径: $contentDescription")
                     return contentDescription
                 }
@@ -1331,22 +1452,30 @@ class WpsAccessibilityService : AccessibilityService() {
             val contentDescription = currentNode.contentDescription?.toString() ?: ""
 
             // 检查是否包含文件路径特征
-            if (text.isNotEmpty() && (text.contains("路径") || text.contains("Path") || text.contains("path")) &&
+            if (text.isNotEmpty() && (text.contains("路径") || text.contains("Path") || text.contains(
+                    "path"
+                )) &&
                 (text.contains(".doc") || text.contains(".docx") ||
-                 text.contains(".xls") || text.contains(".xlsx") ||
-                 text.contains(".ppt") || text.contains(".pptx") ||
-                 text.contains("/storage/") || text.contains("SD卡") ||
-                 text.contains("Internal storage") || text.contains("file:/"))) {
+                        text.contains(".xls") || text.contains(".xlsx") ||
+                        text.contains(".ppt") || text.contains(".pptx") ||
+                        text.contains("/storage/") || text.contains("SD卡") ||
+                        text.contains("Internal storage") || text.contains("file:/"))
+            ) {
                 Log.d(TAG, "从文件属性区域找到文件路径: $text")
                 return text
             }
 
-            if (contentDescription.isNotEmpty() && (contentDescription.contains("路径") || contentDescription.contains("Path") || contentDescription.contains("path")) &&
+            if (contentDescription.isNotEmpty() && (contentDescription.contains("路径") || contentDescription.contains(
+                    "Path"
+                ) || contentDescription.contains("path")) &&
                 (contentDescription.contains(".doc") || contentDescription.contains(".docx") ||
-                 contentDescription.contains(".xls") || contentDescription.contains(".xlsx") ||
-                 contentDescription.contains(".ppt") || contentDescription.contains(".pptx") ||
-                 contentDescription.contains("/storage/") || contentDescription.contains("SD卡") ||
-                 contentDescription.contains("Internal storage") || contentDescription.contains("file:/"))) {
+                        contentDescription.contains(".xls") || contentDescription.contains(".xlsx") ||
+                        contentDescription.contains(".ppt") || contentDescription.contains(".pptx") ||
+                        contentDescription.contains("/storage/") || contentDescription.contains("SD卡") ||
+                        contentDescription.contains("Internal storage") || contentDescription.contains(
+                    "file:/"
+                ))
+            ) {
                 Log.d(TAG, "从文件属性区域内容描述找到文件路径: $contentDescription")
                 return contentDescription
             }
@@ -1379,15 +1508,19 @@ class WpsAccessibilityService : AccessibilityService() {
 
             // 检查是否是文件名（包含常见的文档扩展名）
             if (text.isNotEmpty() && (text.contains(".doc") || text.contains(".docx") ||
-                text.contains(".xls") || text.contains(".xlsx") ||
-                text.contains(".ppt") || text.contains(".pptx"))) {
+                        text.contains(".xls") || text.contains(".xlsx") ||
+                        text.contains(".ppt") || text.contains(".pptx"))
+            ) {
                 Log.d(TAG, "从WPS找到文件名: $text")
                 return text
             }
 
-            if (contentDescription.isNotEmpty() && (contentDescription.contains(".doc") || contentDescription.contains(".docx") ||
-                contentDescription.contains(".xls") || contentDescription.contains(".xlsx") ||
-                contentDescription.contains(".ppt") || contentDescription.contains(".pptx"))) {
+            if (contentDescription.isNotEmpty() && (contentDescription.contains(".doc") || contentDescription.contains(
+                    ".docx"
+                ) ||
+                        contentDescription.contains(".xls") || contentDescription.contains(".xlsx") ||
+                        contentDescription.contains(".ppt") || contentDescription.contains(".pptx"))
+            ) {
                 Log.d(TAG, "从WPS内容描述找到文件名: $contentDescription")
                 return contentDescription
             }
@@ -1420,24 +1553,31 @@ class WpsAccessibilityService : AccessibilityService() {
 
             // 检查是否是状态栏相关的节点
             if (className.contains("Status") || className.contains("status") ||
-                className.contains("Bar") || className.contains("bar")) {
+                className.contains("Bar") || className.contains("bar")
+            ) {
 
                 // 检查文本是否包含文件路径特征
                 if (text.isNotEmpty() && (
-                    text.contains(".doc") || text.contains(".docx") ||
-                    text.contains(".xls") || text.contains(".xlsx") ||
-                    text.contains(".ppt") || text.contains(".pptx")
-                )) {
+                            text.contains(".doc") || text.contains(".docx") ||
+                                    text.contains(".xls") || text.contains(".xlsx") ||
+                                    text.contains(".ppt") || text.contains(".pptx")
+                            )
+                ) {
                     Log.d(TAG, "从状态栏找到文件路径: $text")
                     return text
                 }
 
                 // 检查内容描述
                 if (contentDescription.isNotEmpty() && (
-                    contentDescription.contains(".doc") || contentDescription.contains(".docx") ||
-                    contentDescription.contains(".xls") || contentDescription.contains(".xlsx") ||
-                    contentDescription.contains(".ppt") || contentDescription.contains(".pptx")
-                )) {
+                            contentDescription.contains(".doc") || contentDescription.contains(".docx") ||
+                                    contentDescription.contains(".xls") || contentDescription.contains(
+                                ".xlsx"
+                            ) ||
+                                    contentDescription.contains(".ppt") || contentDescription.contains(
+                                ".pptx"
+                            )
+                            )
+                ) {
                     Log.d(TAG, "从状态栏内容描述找到文件路径: $contentDescription")
                     return contentDescription
                 }
@@ -1470,35 +1610,37 @@ class WpsAccessibilityService : AccessibilityService() {
 
             // 检查是否包含文件路径特征
             if (text.isNotEmpty() && (
-                text.contains("/storage/") ||
-                text.contains("SD卡") ||
-                text.contains("Internal storage") ||
-                text.contains("file:/")
-            ) && (
-                text.contains(".doc") ||
-                text.contains(".docx") ||
-                text.contains(".xls") ||
-                text.contains(".xlsx") ||
-                text.contains(".ppt") ||
-                text.contains(".pptx")
-            )) {
+                        text.contains("/storage/") ||
+                                text.contains("SD卡") ||
+                                text.contains("Internal storage") ||
+                                text.contains("file:/")
+                        ) && (
+                        text.contains(".doc") ||
+                                text.contains(".docx") ||
+                                text.contains(".xls") ||
+                                text.contains(".xlsx") ||
+                                text.contains(".ppt") ||
+                                text.contains(".pptx")
+                        )
+            ) {
                 Log.d(TAG, "从文件信息区域找到文件路径: $text")
                 return text
             }
 
             if (contentDescription.isNotEmpty() && (
-                contentDescription.contains("/storage/") ||
-                contentDescription.contains("SD卡") ||
-                contentDescription.contains("Internal storage") ||
-                contentDescription.contains("file:/")
-            ) && (
-                contentDescription.contains(".doc") ||
-                contentDescription.contains(".docx") ||
-                contentDescription.contains(".xls") ||
-                contentDescription.contains(".xlsx") ||
-                contentDescription.contains(".ppt") ||
-                contentDescription.contains(".pptx")
-            )) {
+                        contentDescription.contains("/storage/") ||
+                                contentDescription.contains("SD卡") ||
+                                contentDescription.contains("Internal storage") ||
+                                contentDescription.contains("file:/")
+                        ) && (
+                        contentDescription.contains(".doc") ||
+                                contentDescription.contains(".docx") ||
+                                contentDescription.contains(".xls") ||
+                                contentDescription.contains(".xlsx") ||
+                                contentDescription.contains(".ppt") ||
+                                contentDescription.contains(".pptx")
+                        )
+            ) {
                 Log.d(TAG, "从文件信息区域内容描述找到文件路径: $contentDescription")
                 return contentDescription
             }
@@ -1535,14 +1677,16 @@ class WpsAccessibilityService : AccessibilityService() {
                 className.contains("Bar") || className.contains("bar") ||
                 className.contains("File") || className.contains("file") ||
                 className.contains("Info") || className.contains("info") ||
-                className.contains("Toolbar") || className.contains("toolbar")) {
+                className.contains("Toolbar") || className.contains("toolbar")
+            ) {
 
                 // 检查文本是否包含文件路径或文件名
                 if (text.isNotEmpty()) {
                     // 检查是否包含文件扩展名
                     if (text.contains(".doc") || text.contains(".docx") ||
                         text.contains(".xls") || text.contains(".xlsx") ||
-                        text.contains(".ppt") || text.contains(".pptx")) {
+                        text.contains(".ppt") || text.contains(".pptx")
+                    ) {
                         Log.d(TAG, "从WPS特定元素找到文件路径: $text")
                         return text
                     }
@@ -1553,7 +1697,8 @@ class WpsAccessibilityService : AccessibilityService() {
                     // 检查是否包含文件扩展名
                     if (contentDescription.contains(".doc") || contentDescription.contains(".docx") ||
                         contentDescription.contains(".xls") || contentDescription.contains(".xlsx") ||
-                        contentDescription.contains(".ppt") || contentDescription.contains(".pptx")) {
+                        contentDescription.contains(".ppt") || contentDescription.contains(".pptx")
+                    ) {
                         Log.d(TAG, "从WPS特定元素内容描述找到文件路径: $contentDescription")
                         return contentDescription
                     }
@@ -1561,9 +1706,12 @@ class WpsAccessibilityService : AccessibilityService() {
             }
 
             // 检查是否是文件路径相关的节点
-            if (text.isNotEmpty() && (text.contains("/storage/") || text.contains("SD卡") || text.contains("Internal storage")) &&
+            if (text.isNotEmpty() && (text.contains("/storage/") || text.contains("SD卡") || text.contains(
+                    "Internal storage"
+                )) &&
                 (text.contains(".doc") || text.contains(".docx") || text.contains(".xls") ||
-                 text.contains(".xlsx") || text.contains(".ppt") || text.contains(".pptx"))) {
+                        text.contains(".xlsx") || text.contains(".ppt") || text.contains(".pptx"))
+            ) {
                 Log.d(TAG, "从文件路径相关节点找到文件路径: $text")
                 return text
             }
@@ -1603,14 +1751,16 @@ class WpsAccessibilityService : AccessibilityService() {
                 // 检查是否包含文件扩展名
                 if (text.contains(".doc") || text.contains(".docx") ||
                     text.contains(".xls") || text.contains(".xlsx") ||
-                    text.contains(".ppt") || text.contains(".pptx")) {
+                    text.contains(".ppt") || text.contains(".pptx")
+                ) {
                     Log.d(TAG, "从标题栏找到文件路径: $text")
                     return text
                 }
 
                 // 检查是否包含存储路径
                 if (text.contains("/storage/") || text.contains("SD卡") ||
-                    text.contains("Internal storage")) {
+                    text.contains("Internal storage")
+                ) {
                     Log.d(TAG, "从标题栏找到存储路径: $text")
                     return text
                 }
@@ -1620,14 +1770,16 @@ class WpsAccessibilityService : AccessibilityService() {
                 // 检查是否包含文件扩展名
                 if (contentDescription.contains(".doc") || contentDescription.contains(".docx") ||
                     contentDescription.contains(".xls") || contentDescription.contains(".xlsx") ||
-                    contentDescription.contains(".ppt") || contentDescription.contains(".pptx")) {
+                    contentDescription.contains(".ppt") || contentDescription.contains(".pptx")
+                ) {
                     Log.d(TAG, "从标题栏内容描述找到文件路径: $contentDescription")
                     return contentDescription
                 }
 
                 // 检查是否包含存储路径
                 if (contentDescription.contains("/storage/") || contentDescription.contains("SD卡") ||
-                    contentDescription.contains("Internal storage")) {
+                    contentDescription.contains("Internal storage")
+                ) {
                     Log.d(TAG, "从标题栏内容描述找到存储路径: $contentDescription")
                     return contentDescription
                 }
@@ -1641,7 +1793,8 @@ class WpsAccessibilityService : AccessibilityService() {
                     // 尝试获取节点的包名和类名，可能包含文件信息
                     val className = nodeInfo.className?.toString() ?: ""
                     if (className.contains("Title") || className.contains("title") ||
-                        className.contains("bar") || className.contains("Bar")) {
+                        className.contains("bar") || className.contains("Bar")
+                    ) {
                         // 对于标题栏节点，尝试获取其文本或子节点的文本
                         val titleText = nodeInfo.text?.toString() ?: ""
                         if (titleText.isNotEmpty()) {
@@ -1678,15 +1831,17 @@ class WpsAccessibilityService : AccessibilityService() {
             if (text.isNotEmpty()) {
                 // 检查文本是否包含文件路径特征
                 if ((text.contains(".doc") || text.contains(".docx") || text.contains(".xls") ||
-                     text.contains(".xlsx") || text.contains(".ppt") || text.contains(".pptx")) &&
+                            text.contains(".xlsx") || text.contains(".ppt") || text.contains(".pptx")) &&
                     (text.contains("/") || text.contains("\\") || text.contains("storage/") ||
-                     text.contains("SD卡") || text.contains("Internal storage"))) {
+                            text.contains("SD卡") || text.contains("Internal storage"))
+                ) {
                     return text
                 }
                 // 检查文本是否只是文件名（包含扩展名）
                 if (text.contains(".doc") || text.contains(".docx") ||
                     text.contains(".xls") || text.contains(".xlsx") ||
-                    text.contains(".ppt") || text.contains(".pptx")) {
+                    text.contains(".ppt") || text.contains(".pptx")
+                ) {
                     return text
                 }
             }
@@ -1696,17 +1851,19 @@ class WpsAccessibilityService : AccessibilityService() {
             if (contentDescription.isNotEmpty()) {
                 // 检查内容描述是否包含文件路径特征
                 if ((contentDescription.contains(".doc") || contentDescription.contains(".docx") ||
-                     contentDescription.contains(".xls") || contentDescription.contains(".xlsx") ||
-                     contentDescription.contains(".ppt") || contentDescription.contains(".pptx")) &&
+                            contentDescription.contains(".xls") || contentDescription.contains(".xlsx") ||
+                            contentDescription.contains(".ppt") || contentDescription.contains(".pptx")) &&
                     (contentDescription.contains("/") || contentDescription.contains("\\") ||
-                     contentDescription.contains("storage/") || contentDescription.contains("SD卡") ||
-                     contentDescription.contains("Internal storage"))) {
+                            contentDescription.contains("storage/") || contentDescription.contains("SD卡") ||
+                            contentDescription.contains("Internal storage"))
+                ) {
                     return contentDescription
                 }
                 // 检查内容描述是否只是文件名（包含扩展名）
                 if (contentDescription.contains(".doc") || contentDescription.contains(".docx") ||
                     contentDescription.contains(".xls") || contentDescription.contains(".xlsx") ||
-                    contentDescription.contains(".ppt") || contentDescription.contains(".pptx")) {
+                    contentDescription.contains(".ppt") || contentDescription.contains(".pptx")
+                ) {
                     return contentDescription
                 }
             }
@@ -1726,7 +1883,8 @@ class WpsAccessibilityService : AccessibilityService() {
     private fun startFloatingButtonService() {
         try {
             if (!isFloatingButtonServiceStarted) {
-                val intent = Intent(this, com.wpspasswordmanager.ui.FloatingButtonService::class.java)
+                val intent =
+                    Intent(this, com.wpspasswordmanager.ui.FloatingButtonService::class.java)
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                     startForegroundService(intent)
                 } else {
@@ -1748,7 +1906,8 @@ class WpsAccessibilityService : AccessibilityService() {
             AccessibilityServiceManager.getInstance().hideFloatingButton()
 
             if (isFloatingButtonServiceStarted) {
-                val intent = Intent(this, com.wpspasswordmanager.ui.FloatingButtonService::class.java)
+                val intent =
+                    Intent(this, com.wpspasswordmanager.ui.FloatingButtonService::class.java)
                 stopService(intent)
                 isFloatingButtonServiceStarted = false
                 Log.d(TAG, "悬浮按钮服务停止成功")
@@ -1799,27 +1958,29 @@ class WpsAccessibilityService : AccessibilityService() {
 
         // 更灵活地识别输入框
         val isInput = className.contains("EditText") || className.contains("Input") ||
-                     className.contains("Text") || className.contains("editText") ||
-                     className.contains("input") || className.contains("text") ||
-                     className.contains("android.widget.EditText") || className.contains("androidx.appcompat.widget.AppCompatEditText") ||
-                     className.contains("View") || className.contains("view") || // 增加对View类的支持，因为有些输入框可能使用View实现
-                     className.contains("TextView") || className.contains("textView") // 增加对TextView类的支持，因为有些输入框可能使用TextView实现
+                className.contains("Text") || className.contains("editText") ||
+                className.contains("input") || className.contains("text") ||
+                className.contains("android.widget.EditText") || className.contains("androidx.appcompat.widget.AppCompatEditText") ||
+                className.contains("View") || className.contains("view") || // 增加对View类的支持，因为有些输入框可能使用View实现
+                className.contains("TextView") || className.contains("textView") // 增加对TextView类的支持，因为有些输入框可能使用TextView实现
 
         // 检查输入类型是否为密码
         val isPasswordType = inputType and InputType.TYPE_TEXT_VARIATION_PASSWORD != 0 ||
-                            inputType and InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD != 0 ||
-                            inputType and InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD != 0
+                inputType and InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD != 0 ||
+                inputType and InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD != 0
 
         // 检查节点文本或内容描述是否包含密码相关词汇
         val hasPasswordText = text.contains("密码") || text.contains("password") ||
-                            text.contains("PASSWORD") || text.contains("Pass") || text.contains("pass") ||
-                            contentDescription.contains("密码") || contentDescription.contains("password") ||
-                            contentDescription.contains("PASSWORD") || contentDescription.contains("Pass") || contentDescription.contains("pass") ||
-                            contentDescription.contains("输入密码") || contentDescription.contains("enter password") ||
-                            contentDescription.contains("确认密码") || contentDescription.contains("confirm password") ||
-                            contentDescription.contains("OPEN PERMISSION") || contentDescription.contains("Open Permission") ||
-                            contentDescription.contains("打开权限") || contentDescription.contains("open permission") ||
-                            contentDescription.contains("修改权限") || contentDescription.contains("modify permission")
+                text.contains("PASSWORD") || text.contains("Pass") || text.contains("pass") ||
+                contentDescription.contains("密码") || contentDescription.contains("password") ||
+                contentDescription.contains("PASSWORD") || contentDescription.contains("Pass") || contentDescription.contains(
+            "pass"
+        ) ||
+                contentDescription.contains("输入密码") || contentDescription.contains("enter password") ||
+                contentDescription.contains("确认密码") || contentDescription.contains("confirm password") ||
+                contentDescription.contains("OPEN PERMISSION") || contentDescription.contains("Open Permission") ||
+                contentDescription.contains("打开权限") || contentDescription.contains("open permission") ||
+                contentDescription.contains("修改权限") || contentDescription.contains("modify permission")
 
         // 检查是否是可编辑的输入框
         val isEditable = node.isEditable
@@ -1860,27 +2021,31 @@ class WpsAccessibilityService : AccessibilityService() {
 
         // 更灵活地识别按钮，不只是检查类名是否包含Button
         val isButton = className.contains("Button") || className.contains("button") ||
-                      className.contains("android.widget.Button") || className.contains("androidx.appcompat.widget.AppCompatButton") ||
-                      className.contains("View") || className.contains("view") || // 增加对View类的支持，因为有些按钮可能使用View实现
-                      className.contains("TextView") || className.contains("textView") || // 增加对TextView类的支持，因为有些按钮可能使用TextView实现
-                      className.contains("AppCompatButton") || className.contains("appcompat_button") // 增加对AppCompatButton的支持
+                className.contains("android.widget.Button") || className.contains("androidx.appcompat.widget.AppCompatButton") ||
+                className.contains("View") || className.contains("view") || // 增加对View类的支持，因为有些按钮可能使用View实现
+                className.contains("TextView") || className.contains("textView") || // 增加对TextView类的支持，因为有些按钮可能使用TextView实现
+                className.contains("AppCompatButton") || className.contains("appcompat_button") // 增加对AppCompatButton的支持
 
         // 检查文本或内容描述是否包含确认相关词汇
         val hasConfirmText = text.contains("确定") || text.contains("确认") ||
-                            text.contains("OK") || text.contains("Confirm") ||
-                            text.contains("ok") || text.contains("confirm") ||
-                            text.contains("确定") || text.contains("确认") ||
-                            contentDescription.contains("确定") || contentDescription.contains("确认") ||
-                            contentDescription.contains("OK") || contentDescription.contains("Confirm") ||
-                            contentDescription.contains("ok") || contentDescription.contains("confirm")
+                text.contains("OK") || text.contains("Confirm") ||
+                text.contains("ok") || text.contains("confirm") ||
+                text.contains("确定") || text.contains("确认") ||
+                contentDescription.contains("确定") || contentDescription.contains("确认") ||
+                contentDescription.contains("OK") || contentDescription.contains("Confirm") ||
+                contentDescription.contains("ok") || contentDescription.contains("confirm")
 
         // 检查是否是特定的确认按钮ID
-        val isConfirmId = viewId.contains("confirm") || viewId.contains("ok") || viewId.contains("button1")
+        val isConfirmId =
+            viewId.contains("confirm") || viewId.contains("ok") || viewId.contains("button1")
 
         // 综合判断
         val result = (isButton && hasConfirmText) || isConfirmId
         if (result) {
-            Log.d(TAG, "确认按钮识别成功: 类名=$className, 文本=$text, 内容描述=$contentDescription, ID=$viewId")
+            Log.d(
+                TAG,
+                "确认按钮识别成功: 类名=$className, 文本=$text, 内容描述=$contentDescription, ID=$viewId"
+            )
         }
 
         return result
@@ -1921,21 +2086,26 @@ class WpsAccessibilityService : AccessibilityService() {
                 isFillingPassword = true
                 try {
                     // 根据对话框类型决定填充策略
-                    val nodesToFill = if (currentDialogType == DialogType.ADD_PASSWORD || currentDialogType == DialogType.MODIFY_PASSWORD) {
-                        // 对于添加密码窗口，只填充前两个输入框（假设是【打开权限】部分）
-                        Log.i(TAG, "添加密码窗口，只填充前两个密码输入框")
-                        passwordInputNodes.take(2)
-                    } else {
-                        // 对于其他窗口，填充所有密码输入框
-                        passwordInputNodes
-                    }
+                    val nodesToFill =
+                        if (currentDialogType == DialogType.ADD_PASSWORD || currentDialogType == DialogType.MODIFY_PASSWORD) {
+                            // 对于添加密码窗口，只填充前两个输入框（假设是【打开权限】部分）
+                            Log.i(TAG, "添加密码窗口，只填充前两个密码输入框")
+                            passwordInputNodes.take(2)
+                        } else {
+                            // 对于其他窗口，填充所有密码输入框
+                            passwordInputNodes
+                        }
 
                     for (node in nodesToFill) {
                         try {
                             // 填充密码
                             val arguments = android.os.Bundle()
-                            arguments.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, password)
-                            val success = node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments)
+                            arguments.putCharSequence(
+                                AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,
+                                password
+                            )
+                            val success =
+                                node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments)
                             if (success) {
                                 Log.i(TAG, "密码填充成功")
                                 Log.i(TAG, "明文密码填充成功: '$password'")

@@ -4,7 +4,7 @@ import android.app.Application
 import android.os.FileObserver
 import android.util.Log
 import com.wpspasswordmanager.business.FileMetaFactory
-import com.wpspasswordmanager.business.ZipExtraFieldManager
+import com.wpspasswordmanager.business.FileMetaManager
 import java.io.File
 
 class WpsPasswordManagerApplication : Application() {
@@ -20,7 +20,7 @@ class WpsPasswordManagerApplication : Application() {
         lateinit var instance: WpsPasswordManagerApplication
             private set
     }
-    
+
     // 防抖延迟时间，单位毫秒
     private var debounceDelay: Long = DEFAULT_DEBOUNCE_DELAY
 
@@ -31,7 +31,7 @@ class WpsPasswordManagerApplication : Application() {
     private var handler: android.os.Handler? = null
     private var debounceRunnable: Runnable? = null
     private var isHandlingEvent = false
-    
+
     // 插件操作时间戳
     private val pluginOperationTimestamp = java.util.concurrent.atomic.AtomicLong(0)
 
@@ -127,7 +127,7 @@ class WpsPasswordManagerApplication : Application() {
                         Log.d(TAG, "文件重命名(原文件): $fullPath")
                     }
                 }
-                
+
                 MOVED_TO -> {
                     // 处理文件重命名（新文件），可能是WPS的保存操作
                     Log.d(TAG, "监听到文件移动完成: $fullPath")
@@ -187,19 +187,14 @@ class WpsPasswordManagerApplication : Application() {
                     "文件状态 - 存在: ${file.exists()}, 可写: ${file.canWrite()}, 大小: ${file.length()} 字节"
                 )
 
-                var password = FileMetaFactory.getWritePassword(filePath)
-                Log.d(TAG, "应用执行getWritePassword结果: $password")
-
-                // 卫语句：如果密码为null，直接返回
-                if (password == null) {
-                    Log.d(TAG, "元数据中未找到文件密码: $filePath")
+                val fileMeta = FileMetaFactory.getFileMeta(filePath)
+                if (fileMeta == null) {
+                    Log.d(TAG, "未找到文件相关元数据: $filePath")
                     return@Runnable
                 }
 
-                Log.d(TAG, "准备将密码写入文件: $password")
-
                 // 写入密码到文件
-                writePasswordToFile(file, filePath, password)
+                FileMetaManager.getInstance().writeMetaDataToFile(file, fileMeta)
 
             } catch (e: Exception) {
                 Log.e(TAG, "处理文件写入事件失败", e)
@@ -220,30 +215,6 @@ class WpsPasswordManagerApplication : Application() {
     }
 
     /**
-     * 将密码写入文件
-     */
-    private fun writePasswordToFile(file: File, filePath: String, password: String) {
-        try {
-            if (!file.exists() || !file.canWrite()) {
-                Log.e(TAG, "文件不存在或不可写: $filePath")
-                return
-            }
-
-            Log.d(TAG, "开始写入密码到文件")
-            val success = ZipExtraFieldManager.getInstance()
-                .writePassword(filePath, password)
-            if (success) {
-                Log.d(TAG, "成功将密码写入文件: $filePath")
-                logFileTail(filePath)
-            } else {
-                Log.e(TAG, "密码写入失败: $filePath")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "处理文件写入完成事件失败", e)
-        }
-    }
-    
-    /**
      * 设置插件操作标志
      */
     fun setPluginOperation(operating: Boolean) {
@@ -252,7 +223,7 @@ class WpsPasswordManagerApplication : Application() {
             Log.d(TAG, "设置插件操作标志，时间戳: ${pluginOperationTimestamp.get()}")
         }
     }
-    
+
     /**
      * 检查是否为插件操作
      * @return true if the event was caused by a plugin operation within the timeout period
@@ -269,59 +240,6 @@ class WpsPasswordManagerApplication : Application() {
 
 
     /**
-     * 打印文件zip尾部最后1KB的内容，只输出WPPM标记相关的内容
-     */
-    private fun logFileTail(filePath: String?) {
-        try {
-            val file = File(filePath)
-            if (file.exists() && file.canRead()) {
-                val fileLength = file.length()
-                val startPos = if (fileLength > LOG_TAIL_SIZE) fileLength - LOG_TAIL_SIZE else 0
-                val buffer = ByteArray(LOG_TAIL_SIZE)
-
-                file.inputStream().use { inputStream ->
-                    inputStream.skip(startPos)
-                    val bytesRead = inputStream.read(buffer)
-                    if (bytesRead > 0) {
-                        // 查找WPPM标记
-                        val wppmSignature = "WPPM"
-                        val wppmBytes = wppmSignature.toByteArray()
-                        val bufferContent = buffer.sliceArray(0 until bytesRead)
-
-                        // 从后向前搜索WPPM标记
-                        var wppmIndex = -1
-                        for (i in bytesRead - wppmBytes.size downTo 0) {
-                            var match = true
-                            for (j in wppmBytes.indices) {
-                                if (buffer[i + j] != wppmBytes[j]) {
-                                    match = false
-                                    break
-                                }
-                            }
-                            if (match) {
-                                wppmIndex = i
-                                break
-                            }
-                        }
-
-                        if (wppmIndex != -1) {
-                            // 只输出WPPM标记及其后续内容
-                            val wppmContent = String(buffer, wppmIndex, bytesRead - wppmIndex)
-                            Log.d(TAG, "文件尾部WPPM标记内容: $wppmContent")
-                        } else {
-                            Log.d(TAG, "文件尾部未找到WPPM标记")
-                        }
-                    }
-                }
-            } else {
-                Log.e(TAG, "文件不存在或不可读，无法打印尾部内容")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "打印文件尾部内容失败", e)
-        }
-    }
-    
-    /**
      * 设置防抖延迟时间
      * @param delayMs 延迟时间，单位毫秒，范围：500ms-2000ms
      */
@@ -331,17 +249,19 @@ class WpsPasswordManagerApplication : Application() {
                 Log.w(TAG, "防抖延迟时间小于最小值，设置为最小值: ${MIN_DEBOUNCE_DELAY}ms")
                 MIN_DEBOUNCE_DELAY
             }
+
             delayMs > MAX_DEBOUNCE_DELAY -> {
                 Log.w(TAG, "防抖延迟时间大于最大值，设置为最大值: ${MAX_DEBOUNCE_DELAY}ms")
                 MAX_DEBOUNCE_DELAY
             }
+
             else -> {
                 Log.d(TAG, "设置防抖延迟时间: ${delayMs}ms")
                 delayMs
             }
         }
     }
-    
+
     /**
      * 获取当前防抖延迟时间
      * @return 当前防抖延迟时间，单位毫秒

@@ -11,21 +11,40 @@ object FileMetaFactory {
 
     private const val TAG = "FileMetaFactory"
 
+
+    fun getFileMeta(filePath: String): FileMeta? {
+        return map[filePath]
+    }
+
     /**
      * 文件打开时初始化
      */
-    fun initFileState(filePath: String, oldPass: String?) {
+    fun initFileMeta(filePath: String, oldPass: String?, uid: String?) {
+        val finalUid = if (uid.isNullOrEmpty()) createUid() else uid
         val fileMeta = FileMeta(
             filePath = filePath,
-            uid = null,
+            uid = finalUid,
             currentPassword = oldPass,
         )
         map[filePath] = fileMeta
         // 输出日志
         Log.d(
             TAG,
-            "[时间戳: ${System.currentTimeMillis()}] initFileState - FileCryptoState: filePath='$filePath', currentPassword='${oldPass ?: "null"}', pendingPasswordList='${fileMeta.pendingPasswordList?.toList() ?: "null"}'"
+            "[时间戳: ${System.currentTimeMillis()}] initFileState - FileCryptoState: filePath='$filePath', currentPassword='${oldPass ?: "null"}', uid='$finalUid', pendingPasswordList='${fileMeta.pendingPasswordList?.toList() ?: "null"}'"
         )
+    }
+
+    /**
+     * 创建唯一标识符uid
+     * 按照uid生成规则.md的要求：时间戳_guid
+     */
+    private fun createUid(): String {
+        // 获取当前时间戳（毫秒级）
+        val timestamp = System.currentTimeMillis()
+        // 生成GUID
+        val guid = java.util.UUID.randomUUID().toString()
+        // 组合时间戳和GUID，用下划线连接
+        return "${timestamp}_${guid}"
     }
 
     /**
@@ -51,9 +70,10 @@ object FileMetaFactory {
             // 如果状态不存在，自动初始化一个新的状态
             val pendingPasswordSet = OrderedSet<String>()
             pendingPasswordSet.add(newPassword)
+            val uid = createUid()
             fileMeta = FileMeta(
                 filePath = filePath,
-                uid = null,
+                uid = uid,
                 currentPassword = null,
                 pendingPasswordList = pendingPasswordSet
             )
@@ -61,7 +81,7 @@ object FileMetaFactory {
             // 输出日志
             Log.d(
                 TAG,
-                "[时间戳: ${System.currentTimeMillis()}] updatePendingPassword - FileCryptoState not found, created new state: filePath='$filePath', pendingPasswordList='${fileMeta.pendingPasswordList?.toList()}'"
+                "[时间戳: ${System.currentTimeMillis()}] updatePendingPassword - FileCryptoState not found, created new state: filePath='$filePath', uid='$uid', pendingPasswordList='${fileMeta.pendingPasswordList?.toList()}'"
             )
         }
     }
@@ -80,7 +100,7 @@ object FileMetaFactory {
     /**
      * 清理资源 (文件关闭时调用)
      */
-    fun getUid(filePath: String):String? {
+    fun getUid(filePath: String): String? {
         var fileMeta = map[filePath]
         if (fileMeta != null) {
             return fileMeta.uid
@@ -162,4 +182,6 @@ object FileMetaFactory {
         val fileMeta = map[filePath]
         return fileMeta?.currentPassword
     }
+
+
 }

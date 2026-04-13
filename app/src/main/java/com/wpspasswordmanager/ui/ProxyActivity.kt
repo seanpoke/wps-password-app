@@ -9,7 +9,7 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.wpspasswordmanager.R
 import com.wpspasswordmanager.WpsPasswordManagerApplication
-import com.wpspasswordmanager.business.PasswordHolder
+import com.wpspasswordmanager.business.FileMetaHolder
 import com.wpspasswordmanager.business.FileMetaManager
 import com.wpspasswordmanager.monitor.WpsAccessibilityService
 import java.io.File
@@ -52,15 +52,7 @@ class ProxyActivity : AppCompatActivity() {
             val fileName = getFileName(uri)
             Log.d(TAG, "文件名: $fileName")
             Log.d(TAG, "文件 URI: $uri")
-
-            // 策略分流
-            if (isEncryptedFile(fileName)) {
-                // 情况 B：文件已加密
-                handleEncryptedFile(uri, fileName)
-            } else {
-                // 情况 A：文件未加密，直接转发给 WPS
-                forwardToWps(null, uri)
-            }
+            handleFileUri(uri, fileName)
         } catch (e: Exception) {
             Log.e(TAG, "处理 Intent 失败", e)
             // 即使失败也转发给 WPS
@@ -113,7 +105,7 @@ class ProxyActivity : AppCompatActivity() {
         return true
     }
 
-    private fun handleEncryptedFile(uri: Uri, fileName: String) {
+    private fun handleFileUri(uri: Uri, fileName: String) {
         // 使用完整的URI字符串作为密码存储的键，确保唯一性
         val fileIdentifier = uri.toString()
         Log.d(TAG, "文件标识: $fileIdentifier")
@@ -159,6 +151,8 @@ class ProxyActivity : AppCompatActivity() {
                 Log.d(TAG, "文件已存在，直接使用本地副本: ${targetFile.absolutePath}")
                 // 立即读取密码并存储
                 readAndStorePassword(targetFile.absolutePath, originalFileName)
+                // 同时读取类型为2的uid并存储到缓存
+                readAndStoreUid(targetFile.absolutePath, originalFileName)
                 return targetFile
             }
 
@@ -167,6 +161,8 @@ class ProxyActivity : AppCompatActivity() {
                 Log.d(TAG, "文件拷贝成功: ${targetFile.absolutePath}")
                 // 立即读取密码并存储到缓存，供后续FileObserver使用
                 readAndStorePassword(targetFile.absolutePath, originalFileName)
+                // 同时读取类型为2的uid并存储到缓存
+                readAndStoreUid(targetFile.absolutePath, originalFileName)
                 // 不在这里写入密码，完全依赖FileObserver监听文件更新
                 return targetFile
             } else {
@@ -194,13 +190,35 @@ class ProxyActivity : AppCompatActivity() {
             if (password != null) {
                 Log.d(TAG, "从本地文件读取到密码: $password")
                 // 存储密码到PasswordHolder，供无障碍服务使用
-                PasswordHolder.storePassword(password, fileName)
+                FileMetaHolder.storePassword(password, fileName)
                 Log.d(TAG, "密码已存储到PasswordHolder")
             } else {
                 Log.d(TAG, "本地文件中未找到密码")
             }
         } catch (e: Exception) {
             Log.e(TAG, "读取本地文件密码失败", e)
+        }
+    }
+
+    private fun readAndStoreUid(filePath: String, fileName: String) {
+        Log.d(TAG, "开始读取uid并存储到缓存，文件路径: $filePath")
+        try {
+            val file = File(filePath)
+            Log.d(TAG, "文件存在: ${file.exists()}")
+            Log.d(TAG, "文件可读: ${file.canRead()}")
+            Log.d(TAG, "文件大小: ${file.length()} 字节")
+
+            val uid = FileMetaManager.getInstance().getUidFromFile(this, filePath)
+            if (uid != null) {
+                Log.d(TAG, "从本地文件读取到uid: $uid")
+                // 存储uid到PasswordHolder，供无障碍服务使用
+                FileMetaHolder.storeUid(uid, fileName)
+                Log.d(TAG, "uid已存储到PasswordHolder")
+            } else {
+                Log.d(TAG, "本地文件中未找到uid")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "读取本地文件uid失败", e)
         }
     }
 
