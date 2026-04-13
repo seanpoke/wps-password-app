@@ -121,7 +121,7 @@ class FileMetaManager private constructor() {
             // 从ZIP Extra Field读取密码（按照读数据.md文档要求）
             val zipPassword = ZipExtraFieldManager.getInstance().readPassword(file)
             if (zipPassword != null) {
-                Log.d(TAG, "从ZIP Extra Field读取密码成功")
+                Log.d(TAG, "从文件file对象读取密码成功")
                 return zipPassword
             }
 
@@ -152,7 +152,7 @@ class FileMetaManager private constructor() {
             val zipPassword =
                 ZipExtraFieldManager.getInstance().readPasswordFromInputStream(inputStream)
             if (zipPassword != null) {
-                Log.d(TAG, "从ZIP Extra Field读取密码成功")
+                Log.d(TAG, "从文件流InputStream读取密码成功")
                 return zipPassword
             }
 

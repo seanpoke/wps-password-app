@@ -37,4 +37,27 @@ object OfficeEncryptUtils {
             return false
         }
     }
+
+    /**
+     * 检查文件是否加密
+     * @param file 文件对象
+     * @return 文件是否加密
+     */
+    fun isFileEncrypted(file: File): Boolean {
+        try {
+            Log.d(TAG, "开始检查文件是否加密: ${file.absolutePath}")
+            val fis = FileInputStream(file)
+            POIFSFileSystem(fis).use { fs ->
+                // 尝试获取EncryptionInfo
+                EncryptionInfo(fs)
+                // 如果成功获取EncryptionInfo，说明文件是加密的
+                Log.d(TAG, "文件已加密")
+                return true
+            }
+        } catch (e: Exception) {
+            Log.d(TAG, "文件未加密: ${e.message}")
+            // 如果获取EncryptionInfo失败，说明文件未加密
+            return false
+        }
+    }
 }

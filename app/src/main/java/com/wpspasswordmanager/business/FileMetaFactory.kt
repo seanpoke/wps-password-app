@@ -133,6 +133,17 @@ object FileMetaFactory {
         if (!filePath.startsWith("content://")) {
             val file = File(filePath)
             if (file.exists() && file.canRead()) {
+                // 先检查文件是否加密
+                val isEncrypted = OfficeEncryptUtils.isFileEncrypted(file)
+                if (!isEncrypted) {
+                    Log.d(
+                        TAG,
+                        "[时间戳: ${System.currentTimeMillis()}] 当前文档无密码，直接返回null"
+                    )
+                    return null
+                }
+                
+                // 文件加密，遍历尝试打开文件
                 for (pendingPassword in pendingPasswords) {
                     Log.d(
                         TAG,
