@@ -27,6 +27,18 @@
         android:textColor="@color/white"
         android:padding="12dp"
         android:elevation="4dp"
+        android:radius="20dp"
+        android:layout_marginBottom="8dp" />
+
+    <Button
+        android:id="@+id/document_permission_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@color/green_500"
+        android:text="文档权限"
+        android:textColor="@color/white"
+        android:padding="12dp"
+        android:elevation="4dp"
         android:radius="20dp" />
 
 </LinearLayout>

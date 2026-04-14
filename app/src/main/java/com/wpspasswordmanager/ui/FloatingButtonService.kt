@@ -19,6 +19,8 @@ import com.wpspasswordmanager.business.FileMetaFactory
 import com.wpspasswordmanager.business.PasswordGenerator
 import com.wpspasswordmanager.monitor.AccessibilityServiceManager
 import com.wpspasswordmanager.monitor.WpsAccessibilityService
+import com.wpspasswordmanager.network.NetworkManager
+import com.wpspasswordmanager.storage.ConfigStorage
 
 class FloatingButtonService : Service() {
 
@@ -108,6 +110,9 @@ class FloatingButtonService : Service() {
                 Log.d(TAG, "悬浮按钮未初始化，无需移除")
                 isFloatingButtonVisible = false
             }
+            
+            // 移除权限面板
+            removePermissionPanel()
         } catch (e: Exception) {
             Log.e(TAG, "移除悬浮按钮时发生异常", e)
             isFloatingButtonVisible = false
@@ -159,6 +164,11 @@ class FloatingButtonService : Service() {
         val viewPasswordButton = floatingView.findViewById<Button>(R.id.view_password_button)
         viewPasswordButton.setOnClickListener {
             viewPassword()
+        }
+
+        val documentPermissionButton = floatingView.findViewById<Button>(R.id.document_permission_button)
+        documentPermissionButton.setOnClickListener {
+            showDocumentPermissionDialog()
         }
 
         // 添加触摸事件，实现悬浮按钮的拖动
@@ -345,5 +355,422 @@ class FloatingButtonService : Service() {
     fun showOperationNotification(title: String, content: String, autoCancel: Boolean = true) {
         AppNotificationManager.getInstance(this).showOperationNotification(title, content, autoCancel)
         Log.d(TAG, "显示操作通知: $title - $content")
+    }
+
+    private fun showDocumentPermissionDialog() {
+        // 显示加载提示
+        Toast.makeText(this, "加载文档权限数据...", Toast.LENGTH_SHORT).show()
+        
+        // 在后台线程中获取数据
+        Thread {
+            try {
+                val networkManager = NetworkManager.getInstance(this)
+                val userInfo = ConfigStorage.getInstance(this).getUserInfo()
+                val token = userInfo?.token
+                val response = networkManager.executeGetRequest("/ldap/tree", token)
+                
+                // 如果响应为null，使用模拟数据
+                val finalResponse = response ?: getMockResponse()
+                
+                // 解析LdapItem数据
+                val ldapItems = parseLdapItems(finalResponse)
+                
+                // 在主线程中显示对话框
+                runOnUiThread {
+                    showPermissionTreeDialog(ldapItems)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                runOnUiThread {
+                    Toast.makeText(this, "网络错误: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }.start()
+    }
+
+    private fun parseLdapItems(response: String): List<LdapItem> {
+        try {
+            val gson = com.google.gson.Gson()
+            val responseData = gson.fromJson(response, ResponseData::class.java)
+            return responseData.data ?: emptyList()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return emptyList()
+        }
+    }
+
+    // 响应数据类
+    data class ResponseData(
+        val date: String,
+        val message: String,
+        val status: Int,
+        val data: List<LdapItem>
+    )
+
+    private var permissionPanelView: android.view.View? = null
+    private var isPermissionPanelExpanded = false
+
+    private fun showPermissionTreeDialog(ldapItems: List<LdapItem>) {
+        // 在WPS应用界面内显示文档权限模块
+        if (permissionPanelView == null) {
+            // 创建权限面板视图
+            createPermissionPanel(ldapItems)
+        } else {
+            // 切换面板展开/收起状态
+            togglePermissionPanel()
+        }
+    }
+
+    private fun createPermissionPanel(ldapItems: List<LdapItem>) {
+        try {
+            // 检查权限
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (!Settings.canDrawOverlays(this)) {
+                    Log.e(TAG, "没有显示在其他应用之上的权限")
+                    showPermissionNotification()
+                    return
+                }
+            }
+
+            val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
+            permissionPanelView = inflater.inflate(R.layout.permission_panel, null)
+
+            val params = WindowManager.LayoutParams(
+                WindowManager.LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                } else {
+                    WindowManager.LayoutParams.TYPE_PHONE
+                },
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                PixelFormat.TRANSLUCENT
+            )
+
+            // 设置面板位置在屏幕底部
+            params.gravity = Gravity.BOTTOM
+            params.x = 0
+            params.y = 0
+
+            // 获取面板中的视图
+            val panelHeader = permissionPanelView?.findViewById<android.widget.LinearLayout>(R.id.panel_header)
+            val panelContent = permissionPanelView?.findViewById<android.widget.LinearLayout>(R.id.panel_content)
+            val treeContainer = permissionPanelView?.findViewById<android.widget.LinearLayout>(R.id.tree_container)
+            val btnClose = permissionPanelView?.findViewById<android.widget.Button>(R.id.btn_close)
+            val btnSelectAll = permissionPanelView?.findViewById<android.widget.Button>(R.id.btn_select_all)
+            val btnDeselectAll = permissionPanelView?.findViewById<android.widget.Button>(R.id.btn_deselect_all)
+            val btnSave = permissionPanelView?.findViewById<android.widget.Button>(R.id.btn_save)
+            val btnCancel = permissionPanelView?.findViewById<android.widget.Button>(R.id.btn_cancel)
+            val etSearch = permissionPanelView?.findViewById<android.widget.EditText>(R.id.et_search)
+            val btnSearch = permissionPanelView?.findViewById<android.widget.Button>(R.id.btn_search)
+
+            // 构建树形结构
+            treeContainer?.let {
+                buildPermissionTree(it, ldapItems, 0)
+            }
+
+            // 面板头部点击事件（展开/收起）
+            panelHeader?.setOnClickListener {
+                togglePermissionPanel()
+            }
+
+            // 关闭按钮点击事件
+            btnClose?.setOnClickListener {
+                removePermissionPanel()
+            }
+
+            // 全选按钮点击事件
+            btnSelectAll?.setOnClickListener {
+                treeContainer?.let {
+                    selectAllItems(it, true)
+                }
+            }
+
+            // 反选按钮点击事件
+            btnDeselectAll?.setOnClickListener {
+                treeContainer?.let {
+                    selectAllItems(it, false)
+                }
+            }
+
+            // 保存按钮点击事件
+            btnSave?.setOnClickListener {
+                // 处理保存逻辑
+                treeContainer?.let {
+                    val selectedItems = getSelectedItems(it)
+                    Toast.makeText(this, "保存选择的权限: ${selectedItems.size}", Toast.LENGTH_SHORT).show()
+                }
+                removePermissionPanel()
+            }
+
+            // 取消按钮点击事件
+            btnCancel?.setOnClickListener {
+                removePermissionPanel()
+            }
+
+            // 搜索按钮点击事件
+            btnSearch?.setOnClickListener {
+                val searchText = etSearch?.text?.toString() ?: ""
+                treeContainer?.let {
+                    filterTreeItems(it, searchText)
+                }
+            }
+
+            // 搜索框回车事件
+            etSearch?.setOnEditorActionListener { v, actionId, event ->
+                if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH) {
+                    val searchText = etSearch.text.toString()
+                    treeContainer?.let {
+                        filterTreeItems(it, searchText)
+                    }
+                    true
+                } else {
+                    false
+                }
+            }
+
+            // 添加面板到窗口
+            windowManager.addView(permissionPanelView, params)
+            isPermissionPanelExpanded = true
+            Log.d(TAG, "文档权限面板添加成功")
+        } catch (e: Exception) {
+            Log.e(TAG, "创建文档权限面板失败", e)
+        }
+    }
+
+    private fun togglePermissionPanel() {
+        permissionPanelView?.let {
+            val panelContent = it.findViewById<android.widget.LinearLayout>(R.id.panel_content)
+            if (isPermissionPanelExpanded) {
+                // 收起面板
+                panelContent.visibility = android.view.View.GONE
+                isPermissionPanelExpanded = false
+            } else {
+                // 展开面板
+                panelContent.visibility = android.view.View.VISIBLE
+                isPermissionPanelExpanded = true
+            }
+        }
+    }
+
+    private fun removePermissionPanel() {
+        try {
+            if (permissionPanelView != null && ::windowManager.isInitialized) {
+                windowManager.removeView(permissionPanelView)
+                permissionPanelView = null
+                isPermissionPanelExpanded = false
+                Log.d(TAG, "文档权限面板移除成功")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "移除文档权限面板失败", e)
+        }
+    }
+
+    private fun buildPermissionTree(container: android.widget.LinearLayout, ldapItems: List<LdapItem>, level: Int) {
+        for (item in ldapItems) {
+            // 创建部门节点
+            val deptView = createDeptView(item, level)
+            container.addView(deptView)
+
+            // 添加员工节点
+            for (employee in item.employeeList) {
+                val employeeView = createEmployeeView(employee.name, level + 1)
+                container.addView(employeeView)
+            }
+
+            // 递归处理子部门
+            if (item.deptList.isNotEmpty()) {
+                buildPermissionTree(container, item.deptList, level + 1)
+            }
+        }
+    }
+
+    private fun createDeptView(dept: LdapItem, level: Int): android.widget.LinearLayout {
+        val layout = android.widget.LinearLayout(this)
+        layout.orientation = android.widget.LinearLayout.HORIZONTAL
+        layout.setPadding(level * 40, 8, 8, 8)
+
+        // 展开/折叠按钮
+        val toggleButton = android.widget.Button(this)
+        toggleButton.text = if (dept.deptList.isNotEmpty()) "▼" else ""
+        toggleButton.setPadding(4, 0, 4, 0)
+        toggleButton.minWidth = 40
+        toggleButton.setOnClickListener {
+            toggleDeptVisibility(layout, dept)
+        }
+
+        // 勾选框
+        val checkBox = android.widget.CheckBox(this)
+        checkBox.text = dept.name
+        checkBox.textSize = 16f
+
+        // 添加到布局
+        layout.addView(toggleButton)
+        layout.addView(checkBox)
+
+        return layout
+    }
+
+    private fun createEmployeeView(account: String, level: Int): android.widget.LinearLayout {
+        val layout = android.widget.LinearLayout(this)
+        layout.orientation = android.widget.LinearLayout.HORIZONTAL
+        layout.setPadding(level * 40, 4, 8, 4)
+
+        // 占位视图
+        val space = android.widget.Space(this)
+        space.minimumWidth = 40
+
+        // 勾选框
+        val checkBox = android.widget.CheckBox(this)
+        checkBox.text = account
+        checkBox.textSize = 14f
+
+        // 添加到布局
+        layout.addView(space)
+        layout.addView(checkBox)
+
+        return layout
+    }
+
+    private fun toggleDeptVisibility(deptView: android.widget.LinearLayout, dept: LdapItem) {
+        // 这里需要实现部门的展开/折叠逻辑
+        // 暂时简单实现
+        val toggleButton = deptView.getChildAt(0) as android.widget.Button
+        toggleButton.text = if (toggleButton.text == "▼") "▶" else "▼"
+    }
+
+    private fun selectAllItems(container: android.widget.LinearLayout, select: Boolean) {
+        for (i in 0 until container.childCount) {
+            val child = container.getChildAt(i)
+            if (child is android.widget.LinearLayout) {
+                val checkBox = child.getChildAt(1) as android.widget.CheckBox
+                checkBox.isChecked = select
+            }
+        }
+    }
+
+    private fun getSelectedItems(container: android.widget.LinearLayout): List<String> {
+        val selectedItems = mutableListOf<String>()
+        for (i in 0 until container.childCount) {
+            val child = container.getChildAt(i)
+            if (child is android.widget.LinearLayout) {
+                val checkBox = child.getChildAt(1) as android.widget.CheckBox
+                if (checkBox.isChecked) {
+                    selectedItems.add(checkBox.text.toString())
+                }
+            }
+        }
+        return selectedItems
+    }
+
+    private fun filterTreeItems(container: android.widget.LinearLayout, searchText: String) {
+        for (i in 0 until container.childCount) {
+            val child = container.getChildAt(i)
+            if (child is android.widget.LinearLayout) {
+                val checkBox = child.getChildAt(1) as android.widget.CheckBox
+                val text = checkBox.text.toString()
+                child.visibility = if (text.contains(searchText, ignoreCase = true)) {
+                    android.view.View.VISIBLE
+                } else {
+                    android.view.View.GONE
+                }
+            }
+        }
+    }
+
+    // LdapItem数据类
+    data class LdapItem(
+        val name: String,
+        val fullPath: String,
+        val deptList: List<LdapItem>,
+        val employeeList: List<LdapItem>
+    )
+
+    // 获取模拟响应数据
+    private fun getMockResponse(): String {
+        return """
+        {
+          "date": "2026-04-14 10:30:00",
+          "message": "操作成功",
+          "status": 200,
+          "data": [
+            {
+              "name": "管理层",
+              "fullPath": "ou=管理层,dc=example,dc=com",
+              "deptList": [
+                {
+                  "name": "高级顾问委员会",
+                  "fullPath": "ou=高级顾问委员会,ou=管理层,dc=example,dc=com",
+                  "deptList": [],
+                  "employeeList": []
+                },
+                {
+                  "name": "总经理办公室",
+                  "fullPath": "ou=总经理办公室,ou=管理层,dc=example,dc=com",
+                  "deptList": [],
+                  "employeeList": [
+                    {
+                      "name": "孟春霞",
+                      "fullPath": "uid=user1,ou=总经理办公室,ou=管理层,dc=example,dc=com",
+                      "deptList": [],
+                      "employeeList": []
+                    },
+                    {
+                      "name": "余晓磊",
+                      "fullPath": "uid=user2,ou=总经理办公室,ou=管理层,dc=example,dc=com",
+                      "deptList": [],
+                      "employeeList": []
+                    }
+                  ]
+                },
+                {
+                  "name": "IT与流程部",
+                  "fullPath": "ou=IT与流程部,ou=管理层,dc=example,dc=com",
+                  "deptList": [],
+                  "employeeList": [
+                    {
+                      "name": "李亮",
+                      "fullPath": "uid=user3,ou=IT与流程部,ou=管理层,dc=example,dc=com",
+                      "deptList": [],
+                      "employeeList": []
+                    },
+                    {
+                      "name": "刘美洲",
+                      "fullPath": "uid=user4,ou=IT与流程部,ou=管理层,dc=example,dc=com",
+                      "deptList": [],
+                      "employeeList": []
+                    },
+                    {
+                      "name": "张伟 (IT)",
+                      "fullPath": "uid=user5,ou=IT与流程部,ou=管理层,dc=example,dc=com",
+                      "deptList": [],
+                      "employeeList": []
+                    }
+                  ]
+                },
+                {
+                  "name": "政府事务与资质部",
+                  "fullPath": "ou=政府事务与资质部,ou=管理层,dc=example,dc=com",
+                  "deptList": [],
+                  "employeeList": []
+                },
+                {
+                  "name": "行政部",
+                  "fullPath": "ou=行政部,ou=管理层,dc=example,dc=com",
+                  "deptList": [],
+                  "employeeList": []
+                }
+              ],
+              "employeeList": []
+            }
+          ]
+        }
+        """.trimIndent()
+    }
+
+    private fun runOnUiThread(action: () -> Unit) {
+        android.os.Handler(android.os.Looper.getMainLooper()).post(action)
     }
 }

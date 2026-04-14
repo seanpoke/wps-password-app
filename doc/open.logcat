@@ -1,0 +1,32 @@
+2026-04-14 15:31:37.490 16785-16785 BlockMonitor            com.wpspasswordmanager               I  dispatchingThrewException In MainThread msg = { when=-139ms callback=com.wpspasswordmanager.ui.FloatingButtonService$$ExternalSyntheticLambda11 target=android.os.Handler }
+2026-04-14 15:31:37.490 16785-16785 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewExceptionLooper (main, tid 1) {7d95bdc}
+2026-04-14 15:31:37.491 16785-16785 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  Message 0: { when=-16ms callback=android.view.ViewRootImpl$7 target=android.view.ViewRootImpl$ViewRootHandler }
+2026-04-14 15:31:37.491 16785-16785 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  Message 1: { when=-1ms callback=android.window.WindowOnBackInvokedDispatcher$$ExternalSyntheticLambda0 target=android.os.Handler }
+2026-04-14 15:31:37.491 16785-16785 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  Message 2: { when=+76ms what=3 target=android.view.GestureDetector$GestureHandler }
+2026-04-14 15:31:37.491 16785-16785 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  (Total messages: 3, polling=false, quitting=false)
+2026-04-14 15:31:37.491 16785-16785 AndroidRuntime          com.wpspasswordmanager               D  Shutting down VM
+2026-04-14 15:31:37.494 16785-16785 AndroidRuntime          com.wpspasswordmanager               E  FATAL EXCEPTION: main
+                                                                                                    Process: com.wpspasswordmanager, PID: 16785
+                                                                                                    android.view.WindowManager$BadTokenException: Unable to add window -- token null is not valid; is your activity running?
+                                                                                                    	at android.view.ViewRootImpl.setView(ViewRootImpl.java:2067)
+                                                                                                    	at android.view.WindowManagerGlobal.addView(WindowManagerGlobal.java:492)
+                                                                                                    	at android.view.WindowManagerImpl.addView(WindowManagerImpl.java:170)
+                                                                                                    	at android.app.Dialog.show(Dialog.java:566)
+                                                                                                    	at com.wpspasswordmanager.ui.FloatingButtonService.showPermissionTreeDialog(FloatingButtonService.kt:413)
+                                                                                                    	at com.wpspasswordmanager.ui.FloatingButtonService.access$showPermissionTreeDialog(FloatingButtonService.kt:25)
+                                                                                                    	at com.wpspasswordmanager.ui.FloatingButtonService$showDocumentPermissionDialog$1$1.invoke(FloatingButtonService.kt:377)
+                                                                                                    	at com.wpspasswordmanager.ui.FloatingButtonService$showDocumentPermissionDialog$1$1.invoke(FloatingButtonService.kt:376)
+                                                                                                    	at com.wpspasswordmanager.ui.FloatingButtonService.runOnUiThread$lambda$13(FloatingButtonService.kt:677)
+                                                                                                    	at com.wpspasswordmanager.ui.FloatingButtonService.$r8$lambda$iLvh-wH_3Bk4xpqdd6AxBbpbt68(Unknown Source:0)
+                                                                                                    	at com.wpspasswordmanager.ui.FloatingButtonService$$ExternalSyntheticLambda11.run(Unknown Source:2)
+                                                                                                    	at android.os.Handler.handleCallback(Handler.java:996)
+                                                                                                    	at android.os.Handler.dispatchMessage(Handler.java:110)
+                                                                                                    	at android.os.Looper.loopOnce(Looper.java:210)
+                                                                                                    	at android.os.Looper.loop(Looper.java:302)
+                                                                                                    	at android.app.ActivityThread.main(ActivityThread.java:9702)
+                                                                                                    	at java.lang.reflect.Method.invoke(Native Method)
+                                                                                                    	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:601)
+                                                                                                    	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:1062)
+2026-04-14 15:31:37.513 16785-16785 HiView                  com.wpspasswordmanager               I  Begin report 1002
+2026-04-14 15:31:37.513 16785-16785 HiEvent                 com.wpspasswordmanager               I  Flatten done: 1002
+2026-04-14 15:31:37.513 16785-16785 Process                 com.wpspasswordmanager               I  Sending signal. PID: 16785 SIG: 9
