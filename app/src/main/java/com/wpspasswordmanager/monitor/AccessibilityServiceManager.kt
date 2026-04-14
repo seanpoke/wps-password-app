@@ -53,7 +53,18 @@ class AccessibilityServiceManager private constructor() {
         if (floatingButtonService != null) {
             floatingButtonService?.showFloatingButton()
         } else {
-            Log.d(TAG, "悬浮按钮服务未初始化，无法显示")
+            Log.d(TAG, "悬浮按钮服务未初始化，尝试启动服务")
+            // 尝试启动悬浮按钮服务
+            val context = accessibilityService?.applicationContext
+            if (context != null) {
+                val intent = Intent(context, com.wpspasswordmanager.ui.FloatingButtonService::class.java)
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    context.startForegroundService(intent)
+                } else {
+                    context.startService(intent)
+                }
+                Log.d(TAG, "悬浮按钮服务已启动，等待初始化完成后显示")
+            }
         }
     }
 

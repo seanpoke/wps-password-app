@@ -46,13 +46,25 @@ class FloatingButtonService : Service() {
     
     private fun startForegroundService() {
         try {
-            // 使用AppNotificationManager中已创建的通知频道
+            // 使用AppNotificationManager创建通知，确保通知频道已创建
             val notification = androidx.core.app.NotificationCompat.Builder(this, "operation_channel")
                 .setContentTitle("WPS密码管理器")
                 .setContentText("悬浮按钮服务正在运行")
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setPriority(androidx.core.app.NotificationCompat.PRIORITY_LOW)
                 .build()
+            
+            // 确保通知频道已创建
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                val notificationManager = getSystemService(android.app.NotificationManager::class.java)
+                val channel = android.app.NotificationChannel(
+                    "operation_channel",
+                    "操作通知",
+                    android.app.NotificationManager.IMPORTANCE_LOW
+                )
+                channel.description = "显示应用操作状态"
+                notificationManager.createNotificationChannel(channel)
+            }
             
             startForeground(1, notification)
             Log.d(TAG, "前台服务启动成功")

@@ -1,8 +1,30 @@
-2026-04-07 13:46:11.047 26250-26250 OfficeEncryptUtils      com.wpspasswordmanager               D  找到EncryptionInfo流，开始读取...
-2026-04-07 13:46:11.048 26250-26250 OfficeEncryptUtils      com.wpspasswordmanager               D  EncryptionInfo流大小: 224 字节
-2026-04-07 13:46:11.069 26250-26250 OfficeEncryptUtils      com.wpspasswordmanager               D  EncryptionInfo前16字节: 04 00 02 00 24 00 00 00 8c 00 00 00 24 00 00 00
-2026-04-07 13:46:11.069 26250-26250 OfficeEncryptUtils      com.wpspasswordmanager               D  开始计算SHA-256哈希值...
-2026-04-07 13:46:11.077 26250-26250 OfficeEncryptUtils      com.wpspasswordmanager               D  计算完成，哈希值: 607ca0b82df09ab73a6280697575ba97a12ebb385d40bc7a9089a15d07cef284
-
-
-
+026-04-14 11:45:37.055 28227-28227 FloatingButtonService   com.wpspasswordmanager               D  悬浮按钮移除成功
+2026-04-14 11:45:37.055 28227-28227 Accessibil...iceManager com.wpspasswordmanager               D  悬浮按钮服务引用已清除
+2026-04-14 11:45:37.055 28227-28227 FloatingButtonService   com.wpspasswordmanager               D  已清除AccessibilityServiceManager中的悬浮按钮服务引用
+2026-04-14 11:45:37.057 28227-28227 BlockMonitor            com.wpspasswordmanager               I  dispatchingThrewException In MainThread msg = { when=-169ms what=134 arg1=2 obj=com.android.internal.os.SomeArgs@35a29e2 target=android.app.ActivityThread$H }
+2026-04-14 11:45:37.057 28227-28227 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewExceptionLooper (main, tid 1) {cf2e173}
+2026-04-14 11:45:37.057 28227-28227 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  Message 0: { when=-141ms callback=android.accessibilityservice.AccessibilityService$IAccessibilityServiceClientWrapper$$ExternalSyntheticLambda8 target=android.app.ActivityThread$H }
+2026-04-14 11:45:37.057 28227-28227 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  Message 1: { when=-140ms callback=android.accessibilityservice.AccessibilityService$IAccessibilityServiceClientWrapper$$ExternalSyntheticLambda8 target=android.app.ActivityThread$H }
+2026-04-14 11:45:37.057 28227-28227 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  Message 2: { when=-137ms callback=android.view.ViewRootImpl$7 target=android.view.ViewRootImpl$ViewRootHandler }
+2026-04-14 11:45:37.057 28227-28227 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  Message 3: { when=-86ms callback=android.view.InsetsController$$ExternalSyntheticLambda9 target=android.view.ViewRootImpl$ViewRootHandler }
+2026-04-14 11:45:37.058 28227-28227 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  Message 4: { when=-42ms callback=android.accessibilityservice.AccessibilityService$IAccessibilityServiceClientWrapper$$ExternalSyntheticLambda8 target=android.app.ActivityThread$H }
+2026-04-14 11:45:37.058 28227-28227 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  Message 5: { when=-2ms what=3 target=android.view.ViewRootImpl$ViewRootHandler }
+2026-04-14 11:45:37.058 28227-28227 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  Message 6: { when=-2ms what=119 obj=android.app.ActivityThread$ContextCleanupInfo@60d3830 target=android.app.ActivityThread$H }
+2026-04-14 11:45:37.058 28227-28227 BlockMonitor            com.wpspasswordmanager               E  dispatchingThrewException  (Total messages: 7, polling=false, quitting=false)
+2026-04-14 11:45:37.058 28227-28227 AndroidRuntime          com.wpspasswordmanager               D  Shutting down VM
+2026-04-14 11:45:37.065 28227-28227 AndroidRuntime          com.wpspasswordmanager               E  FATAL EXCEPTION: main
+                                                                                                    Process: com.wpspasswordmanager, PID: 28227
+                                                                                                    android.app.RemoteServiceException$CannotPostForegroundServiceNotificationException: Bad notification for startForeground
+                                                                                                    	at android.app.ActivityThread.throwRemoteServiceException(ActivityThread.java:2686)
+                                                                                                    	at android.app.ActivityThread.-$$Nest$mthrowRemoteServiceException(Unknown Source:0)
+                                                                                                    	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:3009)
+                                                                                                    	at android.os.Handler.dispatchMessage(Handler.java:117)
+                                                                                                    	at android.os.Looper.loopOnce(Looper.java:210)
+                                                                                                    	at android.os.Looper.loop(Looper.java:302)
+                                                                                                    	at android.app.ActivityThread.main(ActivityThread.java:9702)
+                                                                                                    	at java.lang.reflect.Method.invoke(Native Method)
+                                                                                                    	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:601)
+                                                                                                    	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:1062)
+2026-04-14 11:45:37.082 28227-28227 HiView                  com.wpspasswordmanager               I  Begin report 1002
+2026-04-14 11:45:37.082 28227-28227 HiEvent                 com.wpspasswordmanager               I  Flatten done: 1002
+2026-04-14 11:45:37.082 28227-28227 Process                 com.wpspasswordmanager               I  Sending signal. PID: 28227 SIG: 9
