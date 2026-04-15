@@ -367,7 +367,7 @@ class FloatingButtonService : Service() {
                 val networkManager = NetworkManager.getInstance(this)
                 val userInfo = ConfigStorage.getInstance(this).getUserInfo()
                 val token = userInfo?.token
-                val response = networkManager.executeGetRequest("/ldap/tree", token)
+                val response = networkManager.executeGetRequest("/doc/auth/tree", token)
                 
                 // 如果响应为null，使用模拟数据
                 val finalResponse = response ?: getMockResponse()
@@ -401,7 +401,6 @@ class FloatingButtonService : Service() {
 
     // 响应数据类
     data class ResponseData(
-        val date: String,
         val message: String,
         val status: Int,
         val data: List<LdapItem>
@@ -410,18 +409,84 @@ class FloatingButtonService : Service() {
     private var permissionPanelView: android.view.View? = null
     private var isPermissionPanelExpanded = false
 
+    private var treeAdapter: TreeAdapter? = null
+    private var rootNodes: List<TreeNode> = emptyList()
+
     private fun showPermissionTreeDialog(ldapItems: List<LdapItem>) {
         // 在WPS应用界面内显示文档权限模块
         if (permissionPanelView == null) {
+            // 解析LdapItem为TreeNode
+            rootNodes = parseLdapItemsToTreeNodes(ldapItems)
             // 创建权限面板视图
-            createPermissionPanel(ldapItems)
+            createPermissionPanel()
         } else {
             // 切换面板展开/收起状态
             togglePermissionPanel()
         }
     }
 
-    private fun createPermissionPanel(ldapItems: List<LdapItem>) {
+    private fun parseLdapItemsToTreeNodes(ldapItems: List<LdapItem>): List<TreeNode> {
+        val nodes = mutableListOf<TreeNode>()
+        for (item in ldapItems) {
+            val node = TreeNode(
+                dn = item.dn,
+                name = item.name,
+                account = item.account,
+                type = item.type,
+                hasAuth = item.hasAuth,
+                level = 0
+            )
+            // 递归添加子部门和员工
+            addChildren(node, item)
+            nodes.add(node)
+        }
+        return nodes
+    }
+
+    private fun addChildren(parent: TreeNode, ldapItem: LdapItem) {
+        // 添加子部门
+        for (dept in ldapItem.deptList ?: emptyList()) {
+            val deptNode = TreeNode(
+                dn = dept.dn,
+                name = dept.name,
+                account = dept.account,
+                type = dept.type,
+                hasAuth = dept.hasAuth,
+                level = parent.level + 1,
+                parent = parent
+            )
+            parent.children.add(deptNode)
+            addChildren(deptNode, dept)
+        }
+        
+        // 添加员工
+        for (employee in ldapItem.employList ?: emptyList()) {
+            val employeeNode = TreeNode(
+                dn = employee.dn,
+                name = employee.name,
+                account = employee.account,
+                type = employee.type,
+                hasAuth = employee.hasAuth,
+                level = parent.level + 1,
+                parent = parent
+            )
+            parent.children.add(employeeNode)
+        }
+    }
+
+    private fun flattenTree(nodes: List<TreeNode>): List<TreeNode> {
+        val result = mutableListOf<TreeNode>()
+        for (node in nodes) {
+            result.add(node)
+            // 如果是部门(type=0)、已展开、且有子节点，则递归添加子节点
+            if (node.type == 0 && node.isExpanded && node.children.isNotEmpty()) {
+                result.addAll(flattenTree(node.children))
+            }
+        }
+        return result
+    }
+
+    private fun createPermissionPanel() {
         try {
             // 检查权限
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -443,7 +508,6 @@ class FloatingButtonService : Service() {
                 } else {
                     WindowManager.LayoutParams.TYPE_PHONE
                 },
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
                 WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
                 PixelFormat.TRANSLUCENT
@@ -466,10 +530,30 @@ class FloatingButtonService : Service() {
             val etSearch = permissionPanelView?.findViewById<android.widget.EditText>(R.id.et_search)
             val btnSearch = permissionPanelView?.findViewById<android.widget.Button>(R.id.btn_search)
 
-            // 构建树形结构
-            treeContainer?.let {
-                buildPermissionTree(it, ldapItems, 0)
+            // 替换ScrollView和LinearLayout为RecyclerView
+            treeContainer?.removeAllViews()
+            val recyclerView = androidx.recyclerview.widget.RecyclerView(this)
+            recyclerView.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this)
+            treeAdapter = TreeAdapter {
+                node ->
+                if (node.type == 0 && node.children.isNotEmpty()) {
+                    // 切换展开状态
+                    node.isExpanded = !node.isExpanded
+                    // 重新计算扁平化列表并提交给RecyclerView
+                    val newList = flattenTree(rootNodes)
+                    treeAdapter?.submitList(newList)
+                }
             }
+            recyclerView.adapter = treeAdapter
+            
+            // 初始扁平化列表
+            val initialList = flattenTree(rootNodes)
+            treeAdapter?.submitList(initialList)
+            
+            treeContainer?.addView(recyclerView, android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT
+            ))
 
             // 面板头部点击事件（展开/收起）
             panelHeader?.setOnClickListener {
@@ -483,25 +567,23 @@ class FloatingButtonService : Service() {
 
             // 全选按钮点击事件
             btnSelectAll?.setOnClickListener {
-                treeContainer?.let {
-                    selectAllItems(it, true)
-                }
+                selectAllNodes(rootNodes, true)
+                val newList = flattenTree(rootNodes)
+                treeAdapter?.submitList(newList)
             }
 
             // 反选按钮点击事件
             btnDeselectAll?.setOnClickListener {
-                treeContainer?.let {
-                    selectAllItems(it, false)
-                }
+                selectAllNodes(rootNodes, false)
+                val newList = flattenTree(rootNodes)
+                treeAdapter?.submitList(newList)
             }
 
             // 保存按钮点击事件
             btnSave?.setOnClickListener {
                 // 处理保存逻辑
-                treeContainer?.let {
-                    val selectedItems = getSelectedItems(it)
-                    Toast.makeText(this, "保存选择的权限: ${selectedItems.size}", Toast.LENGTH_SHORT).show()
-                }
+                val selectedItems = getSelectedNodes(rootNodes)
+                Toast.makeText(this, "保存选择的权限: ${selectedItems.size}", Toast.LENGTH_SHORT).show()
                 removePermissionPanel()
             }
 
@@ -513,18 +595,16 @@ class FloatingButtonService : Service() {
             // 搜索按钮点击事件
             btnSearch?.setOnClickListener {
                 val searchText = etSearch?.text?.toString() ?: ""
-                treeContainer?.let {
-                    filterTreeItems(it, searchText)
-                }
+                val filteredNodes = filterNodes(rootNodes, searchText)
+                treeAdapter?.submitList(filteredNodes)
             }
 
             // 搜索框回车事件
             etSearch?.setOnEditorActionListener { v, actionId, event ->
                 if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH) {
                     val searchText = etSearch.text.toString()
-                    treeContainer?.let {
-                        filterTreeItems(it, searchText)
-                    }
+                    val filteredNodes = filterNodes(rootNodes, searchText)
+                    treeAdapter?.submitList(filteredNodes)
                     true
                 } else {
                     false
@@ -538,6 +618,49 @@ class FloatingButtonService : Service() {
         } catch (e: Exception) {
             Log.e(TAG, "创建文档权限面板失败", e)
         }
+    }
+
+    private fun selectAllNodes(nodes: List<TreeNode>, select: Boolean) {
+        for (node in nodes) {
+            node.hasAuth = select
+            if (node.children.isNotEmpty()) {
+                selectAllNodes(node.children, select)
+            }
+        }
+    }
+
+    private fun getSelectedNodes(nodes: List<TreeNode>): List<TreeNode> {
+        val selected = mutableListOf<TreeNode>()
+        for (node in nodes) {
+            if (node.hasAuth) {
+                selected.add(node)
+            }
+            if (node.children.isNotEmpty()) {
+                selected.addAll(getSelectedNodes(node.children))
+            }
+        }
+        return selected
+    }
+
+    private fun filterNodes(nodes: List<TreeNode>, searchText: String): List<TreeNode> {
+        val result = mutableListOf<TreeNode>()
+        for (node in nodes) {
+            if (node.name.contains(searchText, ignoreCase = true)) {
+                result.add(node)
+                // 如果是部门且已展开，添加所有子节点
+                if (node.type == 0 && node.isExpanded && node.children.isNotEmpty()) {
+                    result.addAll(filterNodes(node.children, searchText))
+                }
+            } else if (node.type == 0 && node.isExpanded && node.children.isNotEmpty()) {
+                // 如果当前节点不匹配，但子节点可能匹配
+                val filteredChildren = filterNodes(node.children, searchText)
+                if (filteredChildren.isNotEmpty()) {
+                    result.add(node)
+                    result.addAll(filteredChildren)
+                }
+            }
+        }
+        return result
     }
 
     private fun togglePermissionPanel() {
@@ -568,202 +691,169 @@ class FloatingButtonService : Service() {
         }
     }
 
-    private fun buildPermissionTree(container: android.widget.LinearLayout, ldapItems: List<LdapItem>, level: Int) {
-        for (item in ldapItems) {
-            // 创建部门节点
-            val deptView = createDeptView(item, level)
-            container.addView(deptView)
 
-            // 添加员工节点
-            for (employee in item.employeeList) {
-                val employeeView = createEmployeeView(employee.name, level + 1)
-                container.addView(employeeView)
-            }
-
-            // 递归处理子部门
-            if (item.deptList.isNotEmpty()) {
-                buildPermissionTree(container, item.deptList, level + 1)
-            }
-        }
-    }
-
-    private fun createDeptView(dept: LdapItem, level: Int): android.widget.LinearLayout {
-        val layout = android.widget.LinearLayout(this)
-        layout.orientation = android.widget.LinearLayout.HORIZONTAL
-        layout.setPadding(level * 40, 8, 8, 8)
-
-        // 展开/折叠按钮
-        val toggleButton = android.widget.Button(this)
-        toggleButton.text = if (dept.deptList.isNotEmpty()) "▼" else ""
-        toggleButton.setPadding(4, 0, 4, 0)
-        toggleButton.minWidth = 40
-        toggleButton.setOnClickListener {
-            toggleDeptVisibility(layout, dept)
-        }
-
-        // 勾选框
-        val checkBox = android.widget.CheckBox(this)
-        checkBox.text = dept.name
-        checkBox.textSize = 16f
-
-        // 添加到布局
-        layout.addView(toggleButton)
-        layout.addView(checkBox)
-
-        return layout
-    }
-
-    private fun createEmployeeView(account: String, level: Int): android.widget.LinearLayout {
-        val layout = android.widget.LinearLayout(this)
-        layout.orientation = android.widget.LinearLayout.HORIZONTAL
-        layout.setPadding(level * 40, 4, 8, 4)
-
-        // 占位视图
-        val space = android.widget.Space(this)
-        space.minimumWidth = 40
-
-        // 勾选框
-        val checkBox = android.widget.CheckBox(this)
-        checkBox.text = account
-        checkBox.textSize = 14f
-
-        // 添加到布局
-        layout.addView(space)
-        layout.addView(checkBox)
-
-        return layout
-    }
-
-    private fun toggleDeptVisibility(deptView: android.widget.LinearLayout, dept: LdapItem) {
-        // 这里需要实现部门的展开/折叠逻辑
-        // 暂时简单实现
-        val toggleButton = deptView.getChildAt(0) as android.widget.Button
-        toggleButton.text = if (toggleButton.text == "▼") "▶" else "▼"
-    }
-
-    private fun selectAllItems(container: android.widget.LinearLayout, select: Boolean) {
-        for (i in 0 until container.childCount) {
-            val child = container.getChildAt(i)
-            if (child is android.widget.LinearLayout) {
-                val checkBox = child.getChildAt(1) as android.widget.CheckBox
-                checkBox.isChecked = select
-            }
-        }
-    }
-
-    private fun getSelectedItems(container: android.widget.LinearLayout): List<String> {
-        val selectedItems = mutableListOf<String>()
-        for (i in 0 until container.childCount) {
-            val child = container.getChildAt(i)
-            if (child is android.widget.LinearLayout) {
-                val checkBox = child.getChildAt(1) as android.widget.CheckBox
-                if (checkBox.isChecked) {
-                    selectedItems.add(checkBox.text.toString())
-                }
-            }
-        }
-        return selectedItems
-    }
-
-    private fun filterTreeItems(container: android.widget.LinearLayout, searchText: String) {
-        for (i in 0 until container.childCount) {
-            val child = container.getChildAt(i)
-            if (child is android.widget.LinearLayout) {
-                val checkBox = child.getChildAt(1) as android.widget.CheckBox
-                val text = checkBox.text.toString()
-                child.visibility = if (text.contains(searchText, ignoreCase = true)) {
-                    android.view.View.VISIBLE
-                } else {
-                    android.view.View.GONE
-                }
-            }
-        }
-    }
 
     // LdapItem数据类
     data class LdapItem(
-        val name: String,
-        val fullPath: String,
-        val deptList: List<LdapItem>,
-        val employeeList: List<LdapItem>
+        val type: Int, // 节点类型 0 部门 1员工
+        val name: String, // 节点名称
+        val dn: String, // LDAP完整路径
+        val account: String?, // 账号名（用户专属）
+        val hasAuth: Boolean, // 是否有权限
+        val deptList: List<LdapItem>?, // 子部门列表
+        val employList: List<LdapItem>? // 子员工列表
     )
 
     // 获取模拟响应数据
     private fun getMockResponse(): String {
         return """
         {
-          "date": "2026-04-14 10:30:00",
           "message": "操作成功",
           "status": 200,
           "data": [
             {
-              "name": "管理层",
-              "fullPath": "ou=管理层,dc=example,dc=com",
+              "dn": "OU=武汉绿网,OU=绿色网络,DC=greenet,DC=com,DC=cn",
+              "type": 0,
+              "name": "武汉绿网",
+              "account": null,
+              "hasAuth": false,
               "deptList": [
                 {
-                  "name": "高级顾问委员会",
-                  "fullPath": "ou=高级顾问委员会,ou=管理层,dc=example,dc=com",
-                  "deptList": [],
-                  "employeeList": []
-                },
-                {
+                  "dn": "OU=总经理办公室,OU=武汉绿网,OU=绿色网络,DC=greenet,DC=com,DC=cn",
+                  "type": 0,
                   "name": "总经理办公室",
-                  "fullPath": "ou=总经理办公室,ou=管理层,dc=example,dc=com",
-                  "deptList": [],
-                  "employeeList": [
+                  "account": null,
+                  "hasAuth": false,
+                  "deptList": [
                     {
+                      "dn": "OU=行政部,OU=总经理办公室,OU=武汉绿网,OU=绿色网络,DC=greenet,DC=com,DC=cn",
+                      "type": 0,
+                      "name": "行政部",
+                      "account": null,
+                      "hasAuth": false,
+                      "deptList": null,
+                      "employList": null
+                    },
+                    {
+                      "dn": "OU=政府事务与资质部,OU=总经理办公室,OU=武汉绿网,OU=绿色网络,DC=greenet,DC=com,DC=cn",
+                      "type": 0,
+                      "name": "政府事务与资质部",
+                      "account": null,
+                      "hasAuth": true,
+                      "deptList": null,
+                      "employList": [
+                        {
+                          "dn": "CN=张贵丽,OU=政府事务与资质部,OU=总经理办公室,OU=武汉绿网,OU=绿色网络,DC=greenet,DC=com,DC=cn",
+                          "type": 1,
+                          "name": "张贵丽",
+                          "account": "zhanggl",
+                          "deptList": null,
+                          "employList": null,
+                          "hasAuth": false
+                        },
+                        {
+                          "dn": "CN=周丹,OU=政府事务与资质部,OU=总经理办公室,OU=武汉绿网,OU=绿色网络,DC=greenet,DC=com,DC=cn",
+                          "type": 1,
+                          "name": "周丹",
+                          "account": "zhoudan",
+                          "deptList": null,
+                          "employList": null,
+                          "hasAuth": false
+                        }
+                      ]
+                    }
+                  ],
+                  "employList": [
+                    {
+                      "dn": "CN=孟春霞,OU=总经理办公室,OU=武汉绿网,OU=绿色网络,DC=greenet,DC=com,DC=cn",
+                      "type": 1,
                       "name": "孟春霞",
-                      "fullPath": "uid=user1,ou=总经理办公室,ou=管理层,dc=example,dc=com",
-                      "deptList": [],
-                      "employeeList": []
-                    },
-                    {
-                      "name": "余晓磊",
-                      "fullPath": "uid=user2,ou=总经理办公室,ou=管理层,dc=example,dc=com",
-                      "deptList": [],
-                      "employeeList": []
+                      "account": "mengcx",
+                      "deptList": null,
+                      "employList": null,
+                      "hasAuth": false
                     }
                   ]
                 },
                 {
-                  "name": "IT与流程部",
-                  "fullPath": "ou=IT与流程部,ou=管理层,dc=example,dc=com",
-                  "deptList": [],
-                  "employeeList": [
+                  "dn": "OU=研发中心,OU=武汉绿网,OU=绿色网络,DC=greenet,DC=com,DC=cn",
+                  "type": 0,
+                  "name": "研发中心",
+                  "account": null,
+                  "hasAuth": false,
+                  "deptList": [
                     {
-                      "name": "李亮",
-                      "fullPath": "uid=user3,ou=IT与流程部,ou=管理层,dc=example,dc=com",
-                      "deptList": [],
-                      "employeeList": []
-                    },
+                      "dn": "OU=系统软件研发部,OU=研发中心,OU=武汉绿网,OU=绿色网络,DC=greenet,DC=com,DC=cn",
+                      "type": 0,
+                      "name": "系统软件研发部",
+                      "account": null,
+                      "hasAuth": false,
+                      "deptList": [
+                        {
+                          "dn": "OU=大数据技术组,OU=系统软件研发部,OU=研发中心,OU=武汉绿网,OU=绿色网络,DC=greenet,DC=com,DC=cn",
+                          "type": 0,
+                          "name": "大数据技术组",
+                          "account": null,
+                          "hasAuth": false,
+                          "deptList": null,
+                          "employList": [
+                            {
+                              "dn": "CN=张鹏,OU=大数据技术组,OU=系统软件研发部,OU=研发中心,OU=武汉绿网,OU=绿色网络,DC=greenet,DC=com,DC=cn",
+                              "type": 1,
+                              "name": "张鹏",
+                              "account": "zhangpeng",
+                              "deptList": null,
+                              "employList": null,
+                              "hasAuth": true
+                            },
+                            {
+                              "dn": "CN=王志杰,OU=大数据技术组,OU=系统软件研发部,OU=研发中心,OU=武汉绿网,OU=绿色网络,DC=greenet,DC=com,DC=cn",
+                              "type": 1,
+                              "name": "王志杰",
+                              "account": "wangzj",
+                              "deptList": null,
+                              "employList": null,
+                              "hasAuth": false
+                            }
+                          ]
+                        },
+                        {
+                          "dn": "OU=云宽带系统研发组,OU=系统软件研发部,OU=研发中心,OU=武汉绿网,OU=绿色网络,DC=greenet,DC=com,DC=cn",
+                          "type": 0,
+                          "name": "云宽带系统研发组",
+                          "account": null,
+                          "hasAuth": false,
+                          "deptList": null,
+                          "employList": null
+                        }
+                      ],
+                      "employList": [
+                        {
+                          "dn": "CN=孙昌燕,OU=系统软件研发部,OU=研发中心,OU=武汉绿网,OU=绿色网络,DC=greenet,DC=com,DC=cn",
+                          "type": 1,
+                          "name": "孙昌燕",
+                          "account": "suncy",
+                          "deptList": null,
+                          "employList": null,
+                          "hasAuth": true
+                        }
+                      ]
+                    }
+                  ],
+                  "employList": [
                     {
-                      "name": "刘美洲",
-                      "fullPath": "uid=user4,ou=IT与流程部,ou=管理层,dc=example,dc=com",
-                      "deptList": [],
-                      "employeeList": []
-                    },
-                    {
-                      "name": "张伟 (IT)",
-                      "fullPath": "uid=user5,ou=IT与流程部,ou=管理层,dc=example,dc=com",
-                      "deptList": [],
-                      "employeeList": []
+                      "dn": "CN=牛晨光,OU=研发中心,OU=武汉绿网,OU=绿色网络,DC=greenet,DC=com,DC=cn",
+                      "type": 1,
+                      "name": "牛晨光",
+                      "account": "niucg",
+                      "deptList": null,
+                      "employList": null,
+                      "hasAuth": false
                     }
                   ]
-                },
-                {
-                  "name": "政府事务与资质部",
-                  "fullPath": "ou=政府事务与资质部,ou=管理层,dc=example,dc=com",
-                  "deptList": [],
-                  "employeeList": []
-                },
-                {
-                  "name": "行政部",
-                  "fullPath": "ou=行政部,ou=管理层,dc=example,dc=com",
-                  "deptList": [],
-                  "employeeList": []
                 }
               ],
-              "employeeList": []
+              "employList": null
             }
           ]
         }

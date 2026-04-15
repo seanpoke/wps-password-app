@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="8dp"
+    android:gravity="center_vertical">
+
+    <!-- 展开/折叠箭头 -->
+    <ImageView
+        android:id="@+id/iv_arrow"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:src="@drawable/ic_collapsed"
+        android:contentDescription="展开/折叠" />
+
+    <!-- 图标（部门或员工） -->
+    <ImageView
+        android:id="@+id/iv_icon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:src="@drawable/ic_dept"
+        android:contentDescription="部门/员工图标" />
+
+    <!-- 名称 -->
+    <TextView
+        android:id="@+id/tv_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="8dp"
+        android:textSize="16sp" />
+
+    <!-- 权限标识 -->
+    <ImageView
+        android:id="@+id/iv_auth"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:src="@drawable/ic_auth"
+        android:contentDescription="权限标识"
+        android:visibility="gone" />
+
+    <!-- 勾选框 -->
+    <CheckBox
+        android:id="@+id/cb_select"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp" />
+
+</LinearLayout>
