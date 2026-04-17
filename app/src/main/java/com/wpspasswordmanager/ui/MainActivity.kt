@@ -61,6 +61,7 @@ class MainActivity : AppCompatActivity() {
 
     // 登录状态管理
     private var isLoggedIn = false
+    private lateinit var sessionExpiredReceiver: android.content.BroadcastReceiver
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -86,14 +87,48 @@ class MainActivity : AppCompatActivity() {
         // 加载已保存的配置
         loadSavedConfig()
 
+        // 初始化会话过期广播接收器
+        sessionExpiredReceiver = object : android.content.BroadcastReceiver() {
+            override fun onReceive(context: android.content.Context, intent: android.content.Intent) {
+                Log.d(TAG, "收到会话过期广播")
+                handle401Error()
+            }
+        }
+
         // 检查是否已登录，如果已登录则启动心跳服务
         val userInfo = configStorage.getUserInfo()
         if (userInfo != null) {
-            isLoggedIn = true
-            disableConfigInputs()
-            updateLoginButton()
-            userInfoTextView.text = "你好，${userInfo.name}"
-            userInfoTextView.visibility = TextView.VISIBLE
+            // 立即检查token有效性
+            networkManager.refreshToken(userInfo.token, object : NetworkCallback {
+                override fun onSuccess(response: String) {
+                    // Token有效，保持登录状态
+                    runOnUiThread {
+                        isLoggedIn = true
+                        disableConfigInputs()
+                        updateLoginButton()
+                        userInfoTextView.text = "你好，${userInfo.name}"
+                        userInfoTextView.visibility = TextView.VISIBLE
+                    }
+                }
+
+                override fun onError(error: String) {
+                    // Token无效（401），清理登录状态
+                    if (error.contains("401")) {
+                        runOnUiThread {
+                            handle401Error()
+                        }
+                    } else {
+                        // 其他错误，暂时保持登录状态
+                        runOnUiThread {
+                            isLoggedIn = true
+                            disableConfigInputs()
+                            updateLoginButton()
+                            userInfoTextView.text = "你好，${userInfo.name}"
+                            userInfoTextView.visibility = TextView.VISIBLE
+                        }
+                    }
+                }
+            })
         }
     }
 
@@ -346,7 +381,11 @@ class MainActivity : AppCompatActivity() {
                 Log.e(TAG, "登录请求失败: $error")
                 // 在主线程更新UI
                 runOnUiThread {
-                    Toast.makeText(this@MainActivity, "登录失败：$error", Toast.LENGTH_SHORT).show()
+                    if (error.contains("401")) {
+                        handle401Error()
+                    } else {
+                        Toast.makeText(this@MainActivity, "登录失败：$error", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
         })
@@ -535,6 +574,69 @@ class MainActivity : AppCompatActivity() {
         val logMessage = "[${timestamp}] 注销成功 - 账号: $account"
         println(logMessage)
         // 在实际应用中，这里可以使用更专业的日志库，如Logcat或第三方日志库
+    }
+
+    // 处理401错误
+    private fun handle401Error() {
+        Log.d(TAG, "处理401错误")
+        // 清理用户信息和状态
+        configStorage.clearUserInfo()
+        isLoggedIn = false
+        enableConfigInputs()
+        updateLoginButton()
+        userInfoTextView.visibility = TextView.GONE
+        
+        // 显示居中较小的提示弹窗
+        val builder = android.app.AlertDialog.Builder(this)
+        builder.setTitle("登录过期")
+        builder.setMessage("您的登录已过期，请重新登录")
+        builder.setPositiveButton("确定") { dialog, which ->
+            dialog.dismiss()
+        }
+        val dialog = builder.create()
+        dialog.show()
+        
+        // 设置弹窗大小
+        val window = dialog.window
+        window?.setLayout(600, 400) // 设置弹窗宽度为600px，高度为400px
+        window?.setGravity(android.view.Gravity.CENTER) // 设置弹窗居中
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // 注册会话过期广播接收器
+        val filter = android.content.IntentFilter("com.wpspasswordmanager.ACTION_SESSION_EXPIRED")
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(sessionExpiredReceiver, filter, android.content.Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(sessionExpiredReceiver, filter)
+        }
+        
+        // 再次检查用户信息状态
+        val userInfo = configStorage.getUserInfo()
+        if (userInfo != null && isLoggedIn) {
+            // 检查token有效性
+            networkManager.refreshToken(userInfo.token, object : NetworkCallback {
+                override fun onSuccess(response: String) {
+                    // Token有效，保持登录状态
+                }
+
+                override fun onError(error: String) {
+                    // Token无效（401），清理登录状态
+                    if (error.contains("401")) {
+                        runOnUiThread {
+                            handle401Error()
+                        }
+                    }
+                }
+            })
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        // 注销会话过期广播接收器
+        unregisterReceiver(sessionExpiredReceiver)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

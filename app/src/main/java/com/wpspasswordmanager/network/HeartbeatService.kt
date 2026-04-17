@@ -87,7 +87,19 @@ class HeartbeatService : Service() {
 
                 override fun onError(error: String) {
                     println("[Heartbeat] Network error: $error")
-                    // 网络错误，继续尝试
+                    // 401错误处理
+                    if (error.contains("401")) {
+                        println("[Heartbeat] 401 error, clearing user info and stopping heartbeat")
+                        // 清理用户信息
+                        configStorage.clearUserInfo()
+                        // 停止心跳服务
+                        stopHeartbeat()
+                        // 发送广播通知MainActivity更新UI
+                        val intent = Intent("com.wpspasswordmanager.ACTION_SESSION_EXPIRED")
+                        sendBroadcast(intent)
+                    } else {
+                        // 其他网络错误，继续尝试
+                    }
                 }
             })
         }

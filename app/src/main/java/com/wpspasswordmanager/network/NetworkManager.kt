@@ -138,7 +138,12 @@ class NetworkManager private constructor(context: Context) {
                 } else {
                     val errorMessage = "HTTP ${response.code}: ${response.message}"
                     Log.e(TAG, "响应失败: $errorMessage")
-                    callback.onError(errorMessage)
+                    // 401错误特殊处理
+                    if (response.code == 401) {
+                        callback.onError("401: Unauthorized")
+                    } else {
+                        callback.onError(errorMessage)
+                    }
                 }
             }
         })

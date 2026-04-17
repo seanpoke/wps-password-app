@@ -1,13 +1,48 @@
-2026-04-17 15:20:10.468 31804-31804 NetworkManager          com.wpspasswordmanager               D  执行POST请求: path=/account/refresh-token
-2026-04-17 15:20:10.468 31804-31804 NetworkManager          com.wpspasswordmanager               D  请求URL: http://10.8.8.200:8081/account/refresh-token
-2026-04-17 15:20:10.474 31804-31804 NetworkManager          com.wpspasswordmanager               D  请求准备完成，开始发送
-2026-04-17 15:20:10.484 31804-31871 TrafficStats            com.wpspasswordmanager               D  tagSocket(171) with statsTag=0xffffffff, statsUid=-1
-2026-04-17 15:20:10.489 31804-31804 InputMethodManager      com.wpspasswordmanager               I  handleMessage: MSG_SET_ACTIVE true, was false
-2026-04-17 15:20:10.489 31804-31804 InputMethodManager      com.wpspasswordmanager               I  handleMessage: MSG_BIND 11243,com.tencent.wetype/.plugin.hld.WxHldService
-2026-04-17 15:20:10.489 31804-31804 InputMethodManager      com.wpspasswordmanager               W  startInputReason = 6
-2026-04-17 15:20:10.490 31804-31804 InputMethodManager      com.wpspasswordmanager               V  Starting input: editorInfo=android.view.inputmethod.EditorInfo@1dec31e ic=null
-2026-04-17 15:20:10.490 31804-31804 InputMethodManager      com.wpspasswordmanager               V  Starting input: finished by someone else. view=DecorView@1ae0834[MainActivity],focus=false,windowFocus=true,window=android.view.ViewRootImpl$W@9d1865d,displayId=0,temporaryDetach=false,hasImeFocus=true servedView=DecorView@1ae0834[MainActivity],focus=false,windowFocus=true,window=android.view.ViewRootImpl$W@9d1865d,displayId=0,temporaryDetach=false,hasImeFocus=true mServedConnecting=false
-2026-04-17 15:20:10.532 31804-31871 NetworkManager          com.wpspasswordmanager               D  请求响应: code=401, message=
-2026-04-17 15:20:10.532 31804-31871 NetworkManager          com.wpspasswordmanager               E  响应失败: HTTP 401: 
-2026-04-17 15:20:10.532 31804-31871 System.out              com.wpspasswordmanager               I  [Heartbeat] Network error: HTTP 401: 
-2026-04-17 15:20:12.067 31804-31804 Hwaps                   com.wpspasswordmanager               I  APS: EventAnalyzed: initAPS: version is 11.0.0.4
+-04-17 16:09:59.162  5467-5467  PhoneWindow             com.wpspasswordmanager               D  onViewRootImplSet activityToken android.os.BinderProxy@b8b0f3c,activityClientRecord ActivityRecord{d41f4c5 token=android.os.BinderProxy@b8b0f3c {com.wpspasswordmanager/com.wpspasswordmanager.ui.MainActivity}},isHnNavigationHide false isHidePrivateFlag = false
+2026-04-17 16:09:59.162  5467-5467  HwPhoneWindow           com.wpspasswordmanager               D  onViewRootImplSet activityToken android.os.BinderProxy@b8b0f3c,activityClientRecord ActivityRecord{d41f4c5 token=android.os.BinderProxy@b8b0f3c {com.wpspasswordmanager/com.wpspasswordmanager.ui.MainActivity}},isHwNavigationHide false
+2026-04-17 16:09:59.162  5467-5467  HiTouch_Pr...reDetector com.wpspasswordmanager               D  onAttached:1
+2026-04-17 16:09:59.229  5467-5467  SurfaceControl          com.wpspasswordmanager               I  SurfaceControl 0xb4000076198b31b0 com.wpspasswordmanager/com.wpspasswordmanager.ui.MainActivity#133329
+2026-04-17 16:09:59.232  5467-5467  BufferQueueConsumer     com.wpspasswordmanager               I  [](id:155b00000000,api:0,p:-1,c:5467) connect: controlledByApp=false
+2026-04-17 16:09:59.232  5467-5467  BufferQueueCore         com.wpspasswordmanager               I  BLASTBufferQueue : comm:passwordmanager isTargetApp:0
+2026-04-17 16:09:59.232  5467-5482  SurfaceControl          com.wpspasswordmanager               I  SurfaceControl 0xb4000076198b5670 Surface(name=347cee1 StatusBar)/@0x46769df - animation-leash of insets_animation#133330
+2026-04-17 16:09:59.232  5467-5467  RenderService           com.wpspasswordmanager               D  RCS is disable
+2026-04-17 16:09:59.232  5467-5482  SurfaceControl          com.wpspasswordmanager               I  SurfaceControl 0xb4000076198b5d70 Surface(name=dac9631 NavigationBar0)/@0x3c4362c - animation-leash of insets_animation#133331
+2026-04-17 16:09:59.237  5467-5507  BufferQueueProducer     com.wpspasswordmanager               I  [VRI[MainActivity]#0(BLAST Consumer)0](id:155b00000000,api:0,p:-1,c:5467) connect: api=1 producerControlledByApp=true
+2026-04-17 16:09:59.237  5467-5507  OpenGLRenderer          com.wpspasswordmanager               E  Unable to match the desired swap behavior.
+2026-04-17 16:09:59.269  5467-5467  HwForceDarkManager      com.wpspasswordmanager               I  setAllowedHwForceDark:false package:com.wpspasswordmanager mCurrProcessState:0 mIsPackageNameChange:false hwForceDarkState:0 isViewAllowedForceDark:true isLastHonorForceDark:false
+2026-04-17 16:09:59.321  5467-5467  HwViewRootImpl          com.wpspasswordmanager               I  removeInvalidNode jank list is null
+2026-04-17 16:09:59.333  5467-5467  VRI[MainActivity]       com.wpspasswordmanager               I  send MSG_WINDOW_FOCUS_CHANGED msg
+2026-04-17 16:09:59.347  5467-5507  OpenGLRenderer          com.wpspasswordmanager               D  disableOutlineDraw is true
+2026-04-17 16:09:59.348  5467-5467  RtgSchedIpcFile         com.wpspasswordmanager               E  RtgSchedIpcFile xxx success to open /proc/5467/rtg
+2026-04-17 16:09:59.348  5467-5467  RmeSchedManager         com.wpspasswordmanager               I  init Rme, version is: v1.0
+2026-04-17 16:09:59.348  5467-5467  RmeSchedManager         com.wpspasswordmanager               I  init Rme, version is: v1.0
+2026-04-17 16:09:59.348  5467-5467  RtgSched                com.wpspasswordmanager               D  resetRtgSchedHandle failed enable:1
+2026-04-17 16:09:59.385  5467-5467  ImeFocusController      com.wpspasswordmanager               V  onWindowFocus: DecorView@9d1865d[MainActivity] softInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE
+2026-04-17 16:09:59.385  5467-5467  InputMethodManager      com.wpspasswordmanager               D  onViewFocusChangedInternal, view=DecorView@9d1865d[MainActivity],focus=false,windowFocus=true,window=android.view.ViewRootImpl$W@e14bbd2,displayId=0,temporaryDetach=false,hasImeFocus=true
+2026-04-17 16:09:59.385  5467-5467  InputMethodManager      com.wpspasswordmanager               V  Restarting due to mRestartOnNextWindowFocus as true
+2026-04-17 16:09:59.385  5467-5467  InputMethodManager      com.wpspasswordmanager               V  checkFocus: view=null next=DecorView@9d1865d[MainActivity] force=true package=<none>
+2026-04-17 16:09:59.386  5467-5467  InputMethodManager      com.wpspasswordmanager               W  startInputReason = 1
+2026-04-17 16:09:59.386  5467-5467  InputMethodManager      com.wpspasswordmanager               V  Starting input: editorInfo=android.view.inputmethod.EditorInfo@67a24a3 ic=null
+2026-04-17 16:09:59.386  5467-5467  InputMethodManager      com.wpspasswordmanager               V  START INPUT: view=DecorView@9d1865d[MainActivity],focus=false,windowFocus=true,window=android.view.ViewRootImpl$W@e14bbd2,displayId=0,temporaryDetach=false,hasImeFocus=true ic=null editorInfo=android.view.inputmethod.EditorInfo@67a24a3 startInputFlags=VIEW_HAS_FOCUS|INITIAL_CONNECTION
+2026-04-17 16:09:59.390  5467-5467  InputMethodManager      com.wpspasswordmanager               I  Starting input: Bind result=InputBindResult{result=SUCCESS_WAITING_IME_SESSION method=null id=com.tencent.wetype/.plugin.hld.WxHldService sequence=11319 virtualDisplayToScreenMatrix=null isInputMethodSuppressingSpellChecker=false}
+2026-04-17 16:09:59.391  5467-5467  NetworkManager          com.wpspasswordmanager               D  执行POST请求: path=/account/refresh-token
+2026-04-17 16:09:59.391  5467-5467  NetworkManager          com.wpspasswordmanager               D  请求URL: http://10.8.8.200:8081/account/refresh-token
+2026-04-17 16:09:59.396  5467-5467  NetworkManager          com.wpspasswordmanager               D  请求准备完成，开始发送
+2026-04-17 16:09:59.397  5467-5502  SurfaceControl          com.wpspasswordmanager               I  SurfaceControl 0xb4000076198ba0d0 Surface(name=347cee1 StatusBar)/@0x46769df - animation-leash of insets_animation#133330
+2026-04-17 16:09:59.398  5467-5502  SurfaceControl          com.wpspasswordmanager               I  SurfaceControl 0xb4000076198bfa10 Surface(name=dac9631 NavigationBar0)/@0x3c4362c - animation-leash of insets_animation#133331
+2026-04-17 16:09:59.398  5467-5502  SurfaceControl          com.wpspasswordmanager               I  SurfaceControl 0xb4000076198bea50 Surface(name=371a97 InputMethod)/@0x3d64f0 - animation-leash of insets_animation#133333
+2026-04-17 16:09:59.408  5467-5557  TrafficStats            com.wpspasswordmanager               D  tagSocket(165) with statsTag=0xffffffff, statsUid=-1
+2026-04-17 16:09:59.412  5467-5467  InputMethodManager      com.wpspasswordmanager               I  handleMessage: MSG_SET_ACTIVE true, was false
+2026-04-17 16:09:59.413  5467-5467  InputMethodManager      com.wpspasswordmanager               I  handleMessage: MSG_BIND 11319,com.tencent.wetype/.plugin.hld.WxHldService
+2026-04-17 16:09:59.413  5467-5467  InputMethodManager      com.wpspasswordmanager               W  startInputReason = 6
+2026-04-17 16:09:59.413  5467-5467  InputMethodManager      com.wpspasswordmanager               V  Starting input: editorInfo=android.view.inputmethod.EditorInfo@28067ff ic=null
+2026-04-17 16:09:59.414  5467-5467  InputMethodManager      com.wpspasswordmanager               V  Starting input: finished by someone else. view=DecorView@9d1865d[MainActivity],focus=false,windowFocus=true,window=android.view.ViewRootImpl$W@e14bbd2,displayId=0,temporaryDetach=false,hasImeFocus=true servedView=DecorView@9d1865d[MainActivity],focus=false,windowFocus=true,window=android.view.ViewRootImpl$W@e14bbd2,displayId=0,temporaryDetach=false,hasImeFocus=true mServedConnecting=false
+2026-04-17 16:09:59.414  5467-5467  SurfaceControl          com.wpspasswordmanager               I  nativeRelease 0xb4000076198b5670 count: 1 name: Surface(name=347cee1 StatusBar)/@0x46769df - animation-leash of insets_animation#133330
+2026-04-17 16:09:59.414  5467-5467  SurfaceControl          com.wpspasswordmanager               I  ~SurfaceControl 0xb4000076198b5670 Surface(name=347cee1 StatusBar)/@0x46769df - animation-leash of insets_animation#133330
+2026-04-17 16:09:59.414  5467-5467  SurfaceControl          com.wpspasswordmanager               I  nativeRelease 0xb4000076198b5d70 count: 1 name: Surface(name=dac9631 NavigationBar0)/@0x3c4362c - animation-leash of insets_animation#133331
+2026-04-17 16:09:59.414  5467-5467  SurfaceControl          com.wpspasswordmanager               I  ~SurfaceControl 0xb4000076198b5d70 Surface(name=dac9631 NavigationBar0)/@0x3c4362c - animation-leash of insets_animation#133331
+2026-04-17 16:09:59.456  5467-5557  NetworkManager          com.wpspasswordmanager               D  请求响应: code=401, message=
+2026-04-17 16:09:59.456  5467-5557  NetworkManager          com.wpspasswordmanager               E  响应失败: HTTP 401: 
+2026-04-17 16:09:59.456  5467-5557  System.out              com.wpspasswordmanager               I  [Heartbeat] Network error: 401: Unauthorized
+2026-04-17 16:09:59.456  5467-5557  System.out              com.wpspasswordmanager               I  [Heartbeat] 401 error, clearing user info and stopping heartbeat
+2026-04-17 16:10:03.077  5467-5467  Hwaps                   com.wpspasswordmanager               I  APS: EventAnalyzed: initAPS: version is 11.0.0.4
