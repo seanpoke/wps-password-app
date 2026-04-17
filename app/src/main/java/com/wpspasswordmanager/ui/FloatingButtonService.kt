@@ -529,6 +529,7 @@ class FloatingButtonService : Service() {
             val btnCancel = permissionPanelView?.findViewById<android.widget.Button>(R.id.btn_cancel)
             val etSearch = permissionPanelView?.findViewById<android.widget.EditText>(R.id.et_search)
             val btnSearch = permissionPanelView?.findViewById<android.widget.Button>(R.id.btn_search)
+            val btnClear = permissionPanelView?.findViewById<android.widget.Button>(R.id.btn_clear)
 
             // 替换ScrollView和LinearLayout为RecyclerView
             treeContainer?.removeAllViews()
@@ -611,6 +612,17 @@ class FloatingButtonService : Service() {
                 }
             }
 
+            // 清理按钮点击事件
+            btnClear?.setOnClickListener {
+                // 清除搜索框内容
+                etSearch?.text?.clear()
+                // 清除搜索结果，返回默认列表
+                val initialList = flattenTree(rootNodes)
+                treeAdapter?.submitList(initialList)
+                // 给予用户视觉反馈
+                Toast.makeText(this, "已清理搜索内容", Toast.LENGTH_SHORT).show()
+            }
+
             // 添加面板到窗口
             windowManager.addView(permissionPanelView, params)
             isPermissionPanelExpanded = true
@@ -647,12 +659,12 @@ class FloatingButtonService : Service() {
         for (node in nodes) {
             if (node.name.contains(searchText, ignoreCase = true)) {
                 result.add(node)
-                // 如果是部门且已展开，添加所有子节点
-                if (node.type == 0 && node.isExpanded && node.children.isNotEmpty()) {
+                // 无论部门是否展开，都添加所有子节点
+                if (node.type == 0 && node.children.isNotEmpty()) {
                     result.addAll(filterNodes(node.children, searchText))
                 }
-            } else if (node.type == 0 && node.isExpanded && node.children.isNotEmpty()) {
-                // 如果当前节点不匹配，但子节点可能匹配
+            } else if (node.type == 0 && node.children.isNotEmpty()) {
+                // 无论部门是否展开，都搜索子节点
                 val filteredChildren = filterNodes(node.children, searchText)
                 if (filteredChildren.isNotEmpty()) {
                     result.add(node)

@@ -69,6 +69,15 @@
                 android:background="@color/purple_500"
                 android:textColor="@color/white" />
 
+            <Button
+                android:id="@+id/btn_clear"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="清理"
+                android:layout_marginLeft="8dp"
+                android:background="@color/purple_500"
+                android:textColor="@color/white" />
+
         </LinearLayout>
 
         <!-- 操作栏 -->
