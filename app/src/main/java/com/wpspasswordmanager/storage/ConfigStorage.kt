@@ -94,6 +94,17 @@ class ConfigStorage private constructor(context: Context) {
         editor.apply()
     }
 
+    // 清除用户信息和密码缓存（保留服务器配置）
+    fun clearUserInfo() {
+        val editor = sharedPreferences.edit()
+        editor.remove(KEY_USER_INFO)
+        // 只有当记住密码为false时才清除密码
+        if (!getRememberPassword()) {
+            editor.remove(KEY_PASSWORD)
+        }
+        editor.apply()
+    }
+
     // 清除密码缓存
     fun clearPassword() {
         val editor = sharedPreferences.edit()
@@ -111,7 +122,7 @@ data class ServerConfig(
 
 // 用户信息数据类
 data class UserInfo(
-    val userId: String,
-    val username: String,
+    val account: String,
+    val name: String,
     val token: String
 )

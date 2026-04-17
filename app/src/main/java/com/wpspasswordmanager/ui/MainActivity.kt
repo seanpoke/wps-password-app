@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.util.Log
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
@@ -14,7 +15,11 @@ import com.wpspasswordmanager.R
 import com.wpspasswordmanager.business.PasswordGenerator
 import com.wpspasswordmanager.business.FileMetaManager
 import com.wpspasswordmanager.monitor.AccessibilityServiceManager
+import com.wpspasswordmanager.network.NetworkCallback
 import com.wpspasswordmanager.network.NetworkManager
+import com.wpspasswordmanager.network.HeartbeatService
+import com.wpspasswordmanager.network.LoginResponse
+import com.wpspasswordmanager.network.ErrorResponse
 import com.wpspasswordmanager.storage.ConfigStorage
 import com.wpspasswordmanager.storage.ServerConfig
 import com.wpspasswordmanager.storage.UserInfo
@@ -22,6 +27,7 @@ import com.google.gson.Gson
 
 class MainActivity : AppCompatActivity() {
     private val OVERLAY_PERMISSION_REQUEST_CODE = 100
+    private val TAG = "MainActivity"
 
     private lateinit var accessibilityStatus: TextView
     private lateinit var overlayStatus: TextView
@@ -38,6 +44,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var passwordInput: EditText
     private lateinit var rememberPasswordCheckbox: CheckBox
     private lateinit var loginButton: Button
+    private lateinit var userInfoTextView: TextView
 
     // 错误提示文本框
     private lateinit var ipAddressError: TextView
@@ -48,6 +55,9 @@ class MainActivity : AppCompatActivity() {
     // 存储和网络管理
     private lateinit var configStorage: ConfigStorage
     private lateinit var networkManager: NetworkManager
+
+    // 心跳服务
+    private var heartbeatService: HeartbeatService? = null
 
     // 登录状态管理
     private var isLoggedIn = false
@@ -60,6 +70,10 @@ class MainActivity : AppCompatActivity() {
         configStorage = ConfigStorage.getInstance(this)
         networkManager = NetworkManager.getInstance(this)
 
+        // 初始化心跳服务
+        val heartbeatIntent = Intent(this, HeartbeatService::class.java)
+        startService(heartbeatIntent)
+
         // 初始化 UI 元素
         initUI()
 
@@ -71,6 +85,16 @@ class MainActivity : AppCompatActivity() {
 
         // 加载已保存的配置
         loadSavedConfig()
+
+        // 检查是否已登录，如果已登录则启动心跳服务
+        val userInfo = configStorage.getUserInfo()
+        if (userInfo != null) {
+            isLoggedIn = true
+            disableConfigInputs()
+            updateLoginButton()
+            userInfoTextView.text = "你好，${userInfo.name}"
+            userInfoTextView.visibility = TextView.VISIBLE
+        }
     }
 
     private fun initUI() {
@@ -89,6 +113,7 @@ class MainActivity : AppCompatActivity() {
         passwordInput = findViewById(R.id.password_input)
         rememberPasswordCheckbox = findViewById(R.id.remember_password_checkbox)
         loginButton = findViewById(R.id.login_button)
+        userInfoTextView = findViewById(R.id.user_info_text_view)
 
         // 初始化错误提示文本框
         ipAddressError = findViewById(R.id.ip_address_error)
@@ -111,7 +136,7 @@ class MainActivity : AppCompatActivity() {
             // 生成12位随机密码
             val password = PasswordGenerator.getInstance().generatePassword()
             Toast.makeText(this, "生成的密码: $password", Toast.LENGTH_LONG).show()
-            
+
             // 填充密码到WPS
             AccessibilityServiceManager.getInstance().fillPassword(password)
         }
@@ -212,6 +237,7 @@ class MainActivity : AppCompatActivity() {
 
     // 处理登录逻辑
     private fun handleLogin() {
+        Log.d(TAG, "开始处理登录")
         // 清除之前的错误提示
         clearErrorMessages()
 
@@ -222,6 +248,8 @@ class MainActivity : AppCompatActivity() {
         val password = passwordInput.text.toString().trim()
         val rememberPassword = rememberPasswordCheckbox.isChecked
 
+        Log.d(TAG, "登录参数: IP=$ipAddress, Port=$port, Username=$username, RememberPassword=$rememberPassword")
+
         // 数据校验
         var isValid = true
 
@@ -230,6 +258,7 @@ class MainActivity : AppCompatActivity() {
             ipAddressError.text = "IP地址不能为空"
             ipAddressError.visibility = TextView.VISIBLE
             isValid = false
+            Log.d(TAG, "IP地址为空")
         }
 
         // 校验端口号
@@ -237,10 +266,12 @@ class MainActivity : AppCompatActivity() {
             portError.text = "端口号不能为空"
             portError.visibility = TextView.VISIBLE
             isValid = false
+            Log.d(TAG, "端口号为空")
         } else if (!port.matches("\\d+".toRegex()) || port.toInt() !in 1..65535) {
             portError.text = "请输入有效的端口号（1-65535）"
             portError.visibility = TextView.VISIBLE
             isValid = false
+            Log.d(TAG, "端口号无效: $port")
         }
 
         // 校验用户名
@@ -248,6 +279,7 @@ class MainActivity : AppCompatActivity() {
             usernameError.text = "用户名不能为空"
             usernameError.visibility = TextView.VISIBLE
             isValid = false
+            Log.d(TAG, "用户名为空")
         }
 
         // 校验密码
@@ -255,14 +287,18 @@ class MainActivity : AppCompatActivity() {
             passwordError.text = "密码不能为空"
             passwordError.visibility = TextView.VISIBLE
             isValid = false
+            Log.d(TAG, "密码为空")
         }
 
         if (isValid) {
+            Log.d(TAG, "参数校验通过，准备保存配置并执行登录")
             // 保存配置信息
             saveConfig(ipAddress, port, username, password, rememberPassword)
 
             // 执行登录请求
             performLogin(username, password)
+        } else {
+            Log.d(TAG, "参数校验失败")
         }
     }
 
@@ -295,31 +331,81 @@ class MainActivity : AppCompatActivity() {
 
     // 执行登录请求
     private fun performLogin(username: String, password: String) {
-        // 在实际应用中，这里应该使用NetworkManager执行网络请求
-        // 这里为了演示，我们模拟一个登录成功的响应
-        val mockResponse = "{ \"username\": \"$username\", \"token\": \"mock_token_123\"}"
-        
-        // 解析登录响应
+        Log.d(TAG, "开始执行登录请求: Username=$username")
+        // 执行真实的网络请求（异步）
+        networkManager.login(username, password, object : NetworkCallback {
+            override fun onSuccess(response: String) {
+                Log.d(TAG, "登录请求成功，响应: $response")
+                // 在主线程更新UI
+                runOnUiThread {
+                    processLoginResponse(response)
+                }
+            }
+
+            override fun onError(error: String) {
+                Log.e(TAG, "登录请求失败: $error")
+                // 在主线程更新UI
+                runOnUiThread {
+                    Toast.makeText(this@MainActivity, "登录失败：$error", Toast.LENGTH_SHORT).show()
+                }
+            }
+        })
+    }
+
+    // 处理登录响应
+    private fun processLoginResponse(response: String) {
+        Log.d(TAG, "开始处理登录响应")
         val gson = Gson()
-        val userInfo = gson.fromJson(mockResponse, UserInfo::class.java)
-        
-        // 保存用户信息
-        configStorage.saveUserInfo(userInfo)
-        
-        // 更新登录状态
-        isLoggedIn = true
-        
-        // 禁用配置管理页面的所有输入框
-        disableConfigInputs()
-        
-        // 变更登录按钮为注销按钮
-        updateLoginButton()
-        
-        // 记录登录日志
-        logLoginSuccess(username)
-        
-        // 显示登录成功提示
-        Toast.makeText(this, "登录成功", Toast.LENGTH_SHORT).show()
+        try {
+            // 尝试解析为成功响应
+            val loginResponse = gson.fromJson(response, LoginResponse::class.java)
+            Log.d(TAG, "解析登录响应成功: status=${loginResponse.status}, message=${loginResponse.message}")
+
+            if (loginResponse.status == 200) {
+                Log.d(TAG, "登录成功: account=${loginResponse.data.account}, name=${loginResponse.data.name}")
+                // 保存用户信息
+                configStorage.saveUserInfo(loginResponse.data)
+
+                // 更新登录状态
+                isLoggedIn = true
+
+                // 禁用配置管理页面的所有输入框
+                disableConfigInputs()
+
+                // 变更登录按钮为注销按钮
+                updateLoginButton()
+
+                // 显示用户信息
+                userInfoTextView.text = "你好，${loginResponse.data.name}"
+                userInfoTextView.visibility = TextView.VISIBLE
+
+                // 记录登录日志
+                logLoginSuccess(loginResponse.data.account)
+
+                // 显示登录成功提示
+                Toast.makeText(this, "登录成功", Toast.LENGTH_SHORT).show()
+
+                // 启动心跳服务
+                val heartbeatIntent = Intent(this, HeartbeatService::class.java)
+                startService(heartbeatIntent)
+            } else {
+                // 处理错误状态
+                Log.e(TAG, "登录失败: ${loginResponse.message}")
+                Toast.makeText(this, loginResponse.message, Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "解析登录响应失败: ${e.message}")
+            // 尝试解析为错误响应
+            try {
+                val errorResponse = gson.fromJson(response, ErrorResponse::class.java)
+                Log.d(TAG, "解析错误响应成功: message=${errorResponse.message}")
+                Toast.makeText(this, errorResponse.message, Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Log.e(TAG, "解析错误响应失败: ${e.message}")
+                // 解析失败
+                Toast.makeText(this, "登录失败：响应格式错误", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     // 禁用配置管理页面的所有输入框
@@ -328,22 +414,22 @@ class MainActivity : AppCompatActivity() {
         ipAddressInput.isClickable = false
         ipAddressInput.isFocusable = false
         ipAddressInput.isFocusableInTouchMode = false
-        
+
         portInput.isEnabled = false
         portInput.isClickable = false
         portInput.isFocusable = false
         portInput.isFocusableInTouchMode = false
-        
+
         usernameInput.isEnabled = false
         usernameInput.isClickable = false
         usernameInput.isFocusable = false
         usernameInput.isFocusableInTouchMode = false
-        
+
         passwordInput.isEnabled = false
         passwordInput.isClickable = false
         passwordInput.isFocusable = false
         passwordInput.isFocusableInTouchMode = false
-        
+
         rememberPasswordCheckbox.isEnabled = false
     }
 
@@ -359,39 +445,63 @@ class MainActivity : AppCompatActivity() {
     }
 
     // 记录登录成功日志
-    private fun logLoginSuccess(username: String) {
+    private fun logLoginSuccess(account: String) {
         val timestamp = System.currentTimeMillis()
-        val logMessage = "[${timestamp}] 登录成功 - 用户名: $username"
+        val logMessage = "[${timestamp}] 登录成功 - 账号: $account"
         println(logMessage)
         // 在实际应用中，这里可以使用更专业的日志库，如Logcat或第三方日志库
     }
 
     // 处理注销逻辑
     private fun handleLogout() {
-        // 获取当前用户名用于日志记录
+        // 获取当前用户信息用于日志记录和登出请求
         val userInfo = configStorage.getUserInfo()
-        val username = userInfo?.username ?: "未知用户"
-        
-        // 清理所有用户信息缓存
-        configStorage.clearAll()
-        
+        val username = userInfo?.account ?: "未知用户"
+        val token = userInfo?.token
+
+        Log.d(TAG, "开始处理注销: username=$username, token=$token")
+
+        // 调用登出接口（如果有token）
+        if (token != null) {
+            networkManager.logout(token, object : NetworkCallback {
+                override fun onSuccess(response: String) {
+                    Log.d(TAG, "登出接口调用成功: $response")
+                }
+
+                override fun onError(error: String) {
+                    Log.e(TAG, "登出接口调用失败: $error")
+                    // 登出请求失败不影响界面正常跳转
+                }
+            })
+        }
+
+        // 清理用户信息和密码缓存（保留服务器配置）
+        configStorage.clearUserInfo()
+
         // 更新登录状态
         isLoggedIn = false
-        
+
         // 启用配置管理页面的所有输入框
         enableConfigInputs()
-        
+
         // 变更注销按钮为登录按钮
         updateLoginButton()
-        
+
+        // 隐藏用户信息
+        userInfoTextView.visibility = TextView.GONE
+
         // 重新加载配置信息
         loadSavedConfig()
-        
+
         // 记录注销日志
         logLogoutSuccess(username)
-        
+
         // 显示注销成功提示
         Toast.makeText(this, "注销成功", Toast.LENGTH_SHORT).show()
+
+        // 停止心跳服务
+        val heartbeatIntent = Intent(this, HeartbeatService::class.java)
+        stopService(heartbeatIntent)
     }
 
     // 启用配置管理页面的所有输入框
@@ -400,29 +510,29 @@ class MainActivity : AppCompatActivity() {
         ipAddressInput.isClickable = true
         ipAddressInput.isFocusable = true
         ipAddressInput.isFocusableInTouchMode = true
-        
+
         portInput.isEnabled = true
         portInput.isClickable = true
         portInput.isFocusable = true
         portInput.isFocusableInTouchMode = true
-        
+
         usernameInput.isEnabled = true
         usernameInput.isClickable = true
         usernameInput.isFocusable = true
         usernameInput.isFocusableInTouchMode = true
-        
+
         passwordInput.isEnabled = true
         passwordInput.isClickable = true
         passwordInput.isFocusable = true
         passwordInput.isFocusableInTouchMode = true
-        
+
         rememberPasswordCheckbox.isEnabled = true
     }
 
     // 记录注销成功日志
-    private fun logLogoutSuccess(username: String) {
+    private fun logLogoutSuccess(account: String) {
         val timestamp = System.currentTimeMillis()
-        val logMessage = "[${timestamp}] 注销成功 - 用户名: $username"
+        val logMessage = "[${timestamp}] 注销成功 - 账号: $account"
         println(logMessage)
         // 在实际应用中，这里可以使用更专业的日志库，如Logcat或第三方日志库
     }
@@ -432,7 +542,7 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == OVERLAY_PERMISSION_REQUEST_CODE) {
             // 更新权限状态
             updatePermissionStatus()
-            
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 if (Settings.canDrawOverlays(this)) {
                     Toast.makeText(this, "已获得显示在其他应用之上的权限", Toast.LENGTH_SHORT).show()

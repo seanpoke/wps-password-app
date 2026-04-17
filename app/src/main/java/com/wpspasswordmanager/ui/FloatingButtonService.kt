@@ -19,6 +19,7 @@ import com.wpspasswordmanager.business.FileMetaFactory
 import com.wpspasswordmanager.business.PasswordGenerator
 import com.wpspasswordmanager.monitor.AccessibilityServiceManager
 import com.wpspasswordmanager.monitor.WpsAccessibilityService
+import com.wpspasswordmanager.network.NetworkCallback
 import com.wpspasswordmanager.network.NetworkManager
 import com.wpspasswordmanager.storage.ConfigStorage
 
@@ -45,7 +46,7 @@ class FloatingButtonService : Service() {
         startForegroundService()
         // 不自动初始化悬浮按钮，只在需要时通过showFloatingButton方法显示
     }
-    
+
     private fun startForegroundService() {
         try {
             // 使用AppNotificationManager创建通知，确保通知频道已创建
@@ -55,7 +56,7 @@ class FloatingButtonService : Service() {
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setPriority(androidx.core.app.NotificationCompat.PRIORITY_LOW)
                 .build()
-            
+
             // 确保通知频道已创建
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                 val notificationManager = getSystemService(android.app.NotificationManager::class.java)
@@ -67,7 +68,7 @@ class FloatingButtonService : Service() {
                 channel.description = "显示应用操作状态"
                 notificationManager.createNotificationChannel(channel)
             }
-            
+
             startForeground(1, notification)
             Log.d(TAG, "前台服务启动成功")
         } catch (e: Exception) {
@@ -78,12 +79,12 @@ class FloatingButtonService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(TAG, "悬浮按钮服务启动")
-        
+
         // 确保前台服务已启动
         startForegroundService()
-        
+
         // 不自动初始化悬浮按钮，只在需要时通过showFloatingButton方法显示
-        
+
         return START_STICKY
     }
 
@@ -110,7 +111,7 @@ class FloatingButtonService : Service() {
                 Log.d(TAG, "悬浮按钮未初始化，无需移除")
                 isFloatingButtonVisible = false
             }
-            
+
             // 移除权限面板
             removePermissionPanel()
         } catch (e: Exception) {
@@ -172,8 +173,7 @@ class FloatingButtonService : Service() {
         }
 
         // 添加触摸事件，实现悬浮按钮的拖动
-        floatingView.setOnTouchListener {
-            v, event ->
+        floatingView.setOnTouchListener { v, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     // 开始拖动
@@ -269,7 +269,7 @@ class FloatingButtonService : Service() {
             Log.e(TAG, "未找到存储的密码，文件路径: $documentPath")
         }
     }
-    
+
     /**
      * 将文本复制到剪贴板
      */
@@ -295,7 +295,7 @@ class FloatingButtonService : Service() {
                     return
                 }
             }
-            
+
             if (!isFloatingButtonVisible) {
                 Log.d(TAG, "开始初始化悬浮按钮")
                 initFloatingButton()
@@ -348,7 +348,7 @@ class FloatingButtonService : Service() {
         )
         Log.d(TAG, "显示权限通知")
     }
-    
+
     /**
      * 显示操作状态通知
      */
@@ -360,32 +360,35 @@ class FloatingButtonService : Service() {
     private fun showDocumentPermissionDialog() {
         // 显示加载提示
         Toast.makeText(this, "加载文档权限数据...", Toast.LENGTH_SHORT).show()
-        
-        // 在后台线程中获取数据
-        Thread {
-            try {
-                val networkManager = NetworkManager.getInstance(this)
-                val userInfo = ConfigStorage.getInstance(this).getUserInfo()
-                val token = userInfo?.token
-                val response = networkManager.executeGetRequest("/doc/auth/tree", token)
-                
-                // 如果响应为null，使用模拟数据
-                val finalResponse = response ?: getMockResponse()
-                
+
+        val networkManager = NetworkManager.getInstance(this)
+        val userInfo = ConfigStorage.getInstance(this).getUserInfo()
+        val token = userInfo?.token
+
+        // 使用异步方式获取数据
+        networkManager.executeGetRequest("/doc/auth/tree", token, object : NetworkCallback {
+            override fun onSuccess(response: String) {
                 // 解析LdapItem数据
-                val ldapItems = parseLdapItems(finalResponse)
-                
+                val ldapItems = parseLdapItems(response)
+
                 // 在主线程中显示对话框
                 runOnUiThread {
                     showPermissionTreeDialog(ldapItems)
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
+            }
+
+            override fun onError(error: String) {
+                // 如果响应为null，使用模拟数据
+                val mockResponse = getMockResponse()
+                val ldapItems = parseLdapItems(mockResponse)
+
+                // 在主线程中显示对话框
                 runOnUiThread {
-                    Toast.makeText(this, "网络错误: ${e.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@FloatingButtonService, "网络错误，使用模拟数据", Toast.LENGTH_SHORT).show()
+                    showPermissionTreeDialog(ldapItems)
                 }
             }
-        }.start()
+        })
     }
 
     private fun parseLdapItems(response: String): List<LdapItem> {
@@ -458,7 +461,7 @@ class FloatingButtonService : Service() {
             parent.children.add(deptNode)
             addChildren(deptNode, dept)
         }
-        
+
         // 添加员工
         for (employee in ldapItem.employList ?: emptyList()) {
             val employeeNode = TreeNode(
@@ -535,8 +538,7 @@ class FloatingButtonService : Service() {
             treeContainer?.removeAllViews()
             val recyclerView = androidx.recyclerview.widget.RecyclerView(this)
             recyclerView.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this)
-            treeAdapter = TreeAdapter {
-                node ->
+            treeAdapter = TreeAdapter { node ->
                 if (node.type == 0 && node.children.isNotEmpty()) {
                     // 切换展开状态
                     node.isExpanded = !node.isExpanded
@@ -546,11 +548,11 @@ class FloatingButtonService : Service() {
                 }
             }
             recyclerView.adapter = treeAdapter
-            
+
             // 初始扁平化列表
             val initialList = flattenTree(rootNodes)
             treeAdapter?.submitList(initialList)
-            
+
             treeContainer?.addView(recyclerView, android.widget.LinearLayout.LayoutParams(
                 android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
                 android.widget.LinearLayout.LayoutParams.MATCH_PARENT

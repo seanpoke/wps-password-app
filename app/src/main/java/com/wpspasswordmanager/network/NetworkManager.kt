@@ -1,17 +1,19 @@
 package com.wpspasswordmanager.network
 
 import android.content.Context
+import android.util.Log
 import com.wpspasswordmanager.storage.ConfigStorage
 import com.wpspasswordmanager.storage.ServerConfig
+import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
+import java.util.concurrent.TimeUnit
 
 class NetworkManager private constructor(context: Context) {
-    private val okHttpClient = OkHttpClient()
-    private val configStorage = ConfigStorage.getInstance(context)
+    private val TAG = "NetworkManager"
+    private val okHttpClient: OkHttpClient
+    private val configStorage: ConfigStorage
 
     companion object {
         @Volatile
@@ -22,6 +24,15 @@ class NetworkManager private constructor(context: Context) {
                 instance ?: NetworkManager(context).also { instance = it }
             }
         }
+    }
+
+    init {
+        okHttpClient = OkHttpClient.Builder()
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+            .build()
+        configStorage = ConfigStorage.getInstance(context)
     }
 
     // 获取基础URL
@@ -53,36 +64,49 @@ class NetworkManager private constructor(context: Context) {
         }
     }
 
-    // 执行GET请求
-    fun executeGetRequest(path: String, token: String? = null): String? {
-        val url = buildUrl(path) ?: return null
+    // 执行GET请求（异步）
+    fun executeGetRequest(path: String, token: String? = null, callback: NetworkCallback) {
+        val url = buildUrl(path)
+        if (url == null) {
+            callback.onError("Invalid URL")
+            return
+        }
 
         val requestBuilder = Request.Builder()
             .url(url)
             .get()
 
-        // 添加认证token
         token?.let {
-            requestBuilder.addHeader("Authorization", "Bearer $it")
+            requestBuilder.addHeader("token", it)
         }
 
         val request = requestBuilder.build()
 
-        try {
-            val response = okHttpClient.newCall(request).execute()
-            if (response.isSuccessful) {
-                return response.body?.string()
+        okHttpClient.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                callback.onError(e.message ?: "Network error")
             }
-        } catch (e: IOException) {
-            e.printStackTrace()
-        }
 
-        return null
+            override fun onResponse(call: Call, response: Response) {
+                if (response.isSuccessful) {
+                    callback.onSuccess(response.body?.string() ?: "")
+                } else {
+                    callback.onError("HTTP ${response.code}: ${response.message}")
+                }
+            }
+        })
     }
 
-    // 执行POST请求
-    fun executePostRequest(path: String, jsonBody: String, token: String? = null): String? {
-        val url = buildUrl(path) ?: return null
+    // 执行POST请求（异步）
+    fun executePostRequest(path: String, jsonBody: String, token: String? = null, callback: NetworkCallback) {
+        Log.d(TAG, "执行POST请求: path=$path")
+        val url = buildUrl(path)
+        if (url == null) {
+            Log.e(TAG, "构建URL失败")
+            callback.onError("Invalid URL")
+            return
+        }
+        Log.d(TAG, "请求URL: $url")
 
         val mediaType = "application/json".toMediaType()
         val requestBody = jsonBody.toRequestBody(mediaType)
@@ -92,37 +116,65 @@ class NetworkManager private constructor(context: Context) {
             .post(requestBody)
             .addHeader("Content-Type", "application/json")
 
-        // 添加认证token
         token?.let {
-            requestBuilder.addHeader("Authorization", "Bearer $it")
+            requestBuilder.addHeader("token", it)
         }
 
         val request = requestBuilder.build()
+        Log.d(TAG, "请求准备完成，开始发送")
 
-        try {
-            val response = okHttpClient.newCall(request).execute()
-            if (response.isSuccessful) {
-                return response.body?.string()
+        okHttpClient.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                Log.e(TAG, "请求失败: ${e.message}")
+                callback.onError(e.message ?: "Network error")
             }
-        } catch (e: IOException) {
-            e.printStackTrace()
+
+            override fun onResponse(call: Call, response: Response) {
+                Log.d(TAG, "请求响应: code=${response.code}, message=${response.message}")
+                if (response.isSuccessful) {
+                    val responseBody = response.body?.string() ?: ""
+                    Log.d(TAG, "响应成功: $responseBody")
+                    callback.onSuccess(responseBody)
+                } else {
+                    val errorMessage = "HTTP ${response.code}: ${response.message}"
+                    Log.e(TAG, "响应失败: $errorMessage")
+                    callback.onError(errorMessage)
+                }
+            }
+        })
+    }
+
+    // 执行登录请求（异步）
+    fun login(account: String, password: String, callback: NetworkCallback) {
+        Log.d(TAG, "执行登录请求: account=$account")
+        val jsonBody = "{\"account\": \"$account\", \"password\": \"$password\"}"
+        Log.d(TAG, "登录请求体: $jsonBody")
+        executePostRequest("/account/login", jsonBody, null, callback)
+    }
+
+    // 执行刷新token请求（异步）
+    fun refreshToken(token: String, callback: NetworkCallback) {
+        executePostRequest("/account/refresh-token", "{}", token, callback)
+    }
+
+    // 执行登出请求（异步）
+    fun logout(token: String, callback: NetworkCallback) {
+        Log.d(TAG, "执行登出请求")
+        executePostRequest("/account/logout", "{}", token, callback)
+    }
+
+    // 执行其他API请求（异步）
+    fun executeApiRequest(method: String, path: String, body: String? = null, token: String? = null, callback: NetworkCallback) {
+        when (method.toUpperCase()) {
+            "GET" -> executeGetRequest(path, token, callback)
+            "POST" -> if (body != null) executePostRequest(path, body, token, callback) else callback.onError("Body required for POST")
+            else -> callback.onError("Unsupported method")
         }
-
-        return null
     }
+}
 
-    // 执行登录请求
-    fun login(username: String, password: String): String? {
-        val jsonBody = "{\"username\": \"$username\", \"password\": \"$password\"}"
-        return executePostRequest("/api/login", jsonBody)
-    }
-
-    // 执行其他API请求
-    fun executeApiRequest(method: String, path: String, body: String? = null, token: String? = null): String? {
-        return when (method.toUpperCase()) {
-            "GET" -> executeGetRequest(path, token)
-            "POST" -> if (body != null) executePostRequest(path, body, token) else null
-            else -> null
-        }
-    }
+// 网络回调接口
+interface NetworkCallback {
+    fun onSuccess(response: String)
+    fun onError(error: String)
 }
