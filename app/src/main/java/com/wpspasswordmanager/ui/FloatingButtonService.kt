@@ -378,8 +378,29 @@ class FloatingButtonService : Service() {
         val userInfo = ConfigStorage.getInstance(this).getUserInfo()
         val token = userInfo?.token
 
-        // 使用异步方式获取数据
-        networkManager.executeGetRequest("/doc/auth/tree", token, object : NetworkCallback {
+        // 获取文档路径
+        val documentPath = WpsAccessibilityService.stableDocumentPath
+        if (documentPath.isNullOrEmpty()) {
+            Toast.makeText(this, "未找到文档路径", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // 获取FileMeta对象
+        val fileMeta = FileMetaFactory.getFileMeta(documentPath)
+        if (fileMeta == null) {
+            Toast.makeText(this, "未找到文档元数据", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // 获取docId参数
+        val docId = fileMeta.uid
+        if (docId.isNullOrEmpty()) {
+            Toast.makeText(this, "未找到文档唯一标识", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // 使用异步方式获取数据，添加docId参数
+        networkManager.executeGetRequest("/doc/auth/tree?docId=$docId", token, object : NetworkCallback {
             override fun onSuccess(response: String) {
                 // 解析LdapItem数据
                 val ldapItems = parseLdapItems(response)
