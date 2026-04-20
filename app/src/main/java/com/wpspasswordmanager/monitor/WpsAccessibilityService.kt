@@ -1132,8 +1132,8 @@ class WpsAccessibilityService : AccessibilityService() {
             }
 
             if (filePath != null) {
-                FileMetaFactory.initFileMeta(filePath, password, uid)
-                Log.d(TAG, "初始化文件[ $filePath ]的元数据")
+                // FileMeta对象已经在ProxyActivity中初始化
+                Log.d(TAG, "文件[ $filePath ]的元数据已在ProxyActivity中初始化")
             }
         } catch (e: Exception) {
             Log.e(TAG, "自动填充密码失败", e)

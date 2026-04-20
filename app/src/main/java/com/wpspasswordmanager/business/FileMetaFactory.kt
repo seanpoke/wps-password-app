@@ -25,12 +25,37 @@ object FileMetaFactory {
             filePath = filePath,
             uid = finalUid,
             currentPassword = oldPass,
+            // 权限信息默认值
+            readAuth = false,
+            writeAuth = false
         )
         map[filePath] = fileMeta
         // 输出日志
         Log.d(
             TAG,
-            "[时间戳: ${System.currentTimeMillis()}] initFileState - FileCryptoState: filePath='$filePath', currentPassword='${oldPass ?: "null"}', uid='$finalUid', pendingPasswordList='${fileMeta.pendingPasswordList?.toList() ?: "null"}'"
+            "[时间戳: ${System.currentTimeMillis()}] initFileState - FileMeta: filePath='$filePath', currentPassword='${oldPass ?: "null"}', uid='$finalUid', readAuth=${fileMeta.readAuth}, writeAuth=${fileMeta.writeAuth}, pendingPasswordList='${fileMeta.pendingPasswordList?.toList() ?: "null"}'"
+        )
+    }
+    
+    /**
+     * 带权限信息的初始化
+     */
+    fun initFileMetaWithPermissions(filePath: String, oldPass: String?, uid: String?, ownerAccount: String?, ownerName: String?, readAuth: Boolean, writeAuth: Boolean) {
+        val finalUid = if (uid.isNullOrEmpty()) createUid() else uid
+        val fileMeta = FileMeta(
+            filePath = filePath,
+            uid = finalUid,
+            currentPassword = oldPass,
+            ownerAccount = ownerAccount,
+            ownerName = ownerName,
+            readAuth = readAuth,
+            writeAuth = writeAuth
+        )
+        map[filePath] = fileMeta
+        // 输出日志
+        Log.d(
+            TAG,
+            "initFileStateWithPermissions - FileMeta: filePath='$filePath', currentPassword='${oldPass ?: "null"}', uid='$finalUid', ownerAccount='${ownerAccount ?: "null"}', ownerName='${ownerName ?: "null"}', readAuth=$readAuth, writeAuth=$writeAuth"
         )
     }
 
@@ -38,7 +63,7 @@ object FileMetaFactory {
      * 创建唯一标识符uid
      * 按照uid生成规则.md的要求：时间戳_guid
      */
-    private fun createUid(): String {
+    fun createUid(): String {
         // 获取当前时间戳（毫秒级）
         val timestamp = System.currentTimeMillis()
         // 生成GUID
