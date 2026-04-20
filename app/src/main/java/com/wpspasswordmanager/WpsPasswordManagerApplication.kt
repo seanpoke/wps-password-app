@@ -5,6 +5,8 @@ import android.os.FileObserver
 import android.util.Log
 import com.wpspasswordmanager.business.FileMetaFactory
 import com.wpspasswordmanager.business.FileMetaManager
+import com.wpspasswordmanager.network.NetworkManager
+import com.wpspasswordmanager.storage.ConfigStorage
 import java.io.File
 
 class WpsPasswordManagerApplication : Application() {
@@ -198,6 +200,45 @@ class WpsPasswordManagerApplication : Application() {
             } finally {
                 isHandlingEvent = false
                 Log.d(TAG, "文件写入事件处理完成: $filePath")
+                
+                // 上报保存记录到服务器
+                try {
+                    val fileMeta = FileMetaFactory.getFileMeta(filePath)
+                    if (fileMeta != null && fileMeta.uid != null) {
+                        val configStorage = ConfigStorage.getInstance(this)
+                        val userInfo = configStorage.getUserInfo()
+                        val token = userInfo?.token
+                        
+                        val docId = fileMeta.uid
+                        val beforePassword = fileMeta.currentPassword
+                        val afterPassword = FileMetaFactory.getWritePassword(filePath)
+                        val possiblePassword = fileMeta.pendingPasswordList?.toList()
+                        
+                        Log.d(TAG, "准备上报保存记录: docId=$docId, path=$filePath, beforePassword=$beforePassword, afterPassword=$afterPassword, possiblePassword=$possiblePassword")
+                        
+                        NetworkManager.getInstance(this).reportSaveLog(
+                            docId = docId!!,
+                            path = filePath,
+                            beforePassword = beforePassword,
+                            afterPassword = afterPassword,
+                            possiblePassword = possiblePassword,
+                            token = token,
+                            callback = object : com.wpspasswordmanager.network.NetworkCallback {
+                                override fun onSuccess(response: String) {
+                                    Log.d(TAG, "保存记录上报成功: $response")
+                                }
+                                
+                                override fun onError(error: String) {
+                                    Log.e(TAG, "保存记录上报失败: $error")
+                                }
+                            }
+                        )
+                    } else {
+                        Log.d(TAG, "文件元数据不存在或无uid，跳过保存记录上报")
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "上报保存记录失败", e)
+                }
             }
         }
 

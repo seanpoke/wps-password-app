@@ -182,6 +182,29 @@ class NetworkManager private constructor(context: Context) {
             else -> callback.onError("Unsupported method")
         }
     }
+
+    // 执行保存记录上报请求（异步）
+    fun reportSaveLog(docId: String, path: String, beforePassword: String? = null, afterPassword: String? = null, possiblePassword: List<String>? = null, token: String? = null, callback: NetworkCallback) {
+        Log.d(TAG, "执行保存记录上报请求: docId=$docId, path=$path")
+        val jsonBody = buildString {
+            append("{")
+            append("\"docId\": \"$docId\",")
+            append("\"path\": \"$path\"")
+            beforePassword?.let { append(", \"beforePassword\": \"$it\"") }
+            afterPassword?.let { append(", \"afterPassword\": \"$it\"") }
+            possiblePassword?.let {
+                append(", \"possiblePasword\": [")
+                it.forEachIndexed { index, password ->
+                    if (index > 0) append(", ")
+                    append("\"$password\"")
+                }
+                append("]")
+            }
+            append("}")
+        }
+        Log.d(TAG, "保存记录上报请求体: $jsonBody")
+        executePostRequest("/doc/save/log", jsonBody, token, callback)
+    }
 }
 
 // 网络回调接口
