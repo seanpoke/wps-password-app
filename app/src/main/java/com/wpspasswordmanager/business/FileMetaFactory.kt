@@ -122,16 +122,6 @@ object FileMetaFactory {
         map.remove(filePath)
     }
 
-    /**
-     * 清理资源 (文件关闭时调用)
-     */
-    fun getUid(filePath: String): String? {
-        var fileMeta = map[filePath]
-        if (fileMeta != null) {
-            return fileMeta.uid
-        }
-        return null;
-    }
 
     /**
      * 获取有效的密码

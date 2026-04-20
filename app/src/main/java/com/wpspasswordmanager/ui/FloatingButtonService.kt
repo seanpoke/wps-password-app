@@ -172,6 +172,19 @@ class FloatingButtonService : Service() {
             showDocumentPermissionDialog()
         }
 
+        // 控制【显示文档权限】按钮的显示逻辑
+        val documentPath = com.wpspasswordmanager.monitor.WpsAccessibilityService.stableDocumentPath
+        if (documentPath != null && documentPath.isNotEmpty()) {
+            val fileMeta = com.wpspasswordmanager.business.FileMetaFactory.getFileMeta(documentPath)
+            if (fileMeta?.writeAuth != true) {
+                documentPermissionButton.visibility = android.view.View.GONE
+            } else {
+                documentPermissionButton.visibility = android.view.View.VISIBLE
+            }
+        } else {
+            documentPermissionButton.visibility = android.view.View.GONE
+        }
+
         // 添加触摸事件，实现悬浮按钮的拖动
         floatingView.setOnTouchListener { v, event ->
             when (event.action) {
