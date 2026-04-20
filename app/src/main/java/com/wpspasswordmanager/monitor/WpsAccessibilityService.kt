@@ -8,7 +8,6 @@ import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import com.wpspasswordmanager.business.FileMetaFactory
-import com.wpspasswordmanager.business.FileMetaHolder
 
 class WpsAccessibilityService : AccessibilityService() {
 
@@ -602,13 +601,13 @@ class WpsAccessibilityService : AccessibilityService() {
             while (queue.isNotEmpty()) {
                 val node = queue.removeAt(0)
 
-                Log.d(TAG, "遍历节点: ${node.className}, 子节点数量: ${node.childCount}")
+//                Log.d(TAG, "遍历节点: ${node.className}, 子节点数量: ${node.childCount}")
 
                 // 检查是否是【显示密码】选项的容器
                 val text = node.text?.toString() ?: ""
                 val contentDescription = node.contentDescription?.toString() ?: ""
 
-                Log.d(TAG, "节点文本: '$text', 内容描述: '$contentDescription'")
+//                Log.d(TAG, "节点文本: '$text', 内容描述: '$contentDescription'")
 
                 val hasShowPasswordText =
                     text.contains("显示密码") || text.contains("show password") ||
@@ -739,7 +738,7 @@ class WpsAccessibilityService : AccessibilityService() {
                 for (i in 0 until node.childCount) {
                     val child = node.getChild(i)
                     if (child != null) {
-                        Log.d(TAG, "添加子节点到队列: ${child.className}")
+//                        Log.d(TAG, "添加子节点到队列: ${child.className}")
                         queue.add(child)
                     }
                 }
@@ -895,7 +894,7 @@ class WpsAccessibilityService : AccessibilityService() {
                 for (i in 0 until node.childCount) {
                     val child = node.getChild(i)
                     if (child != null) {
-                        Log.d(TAG, "添加子节点到队列: ${child.className}")
+//                        Log.d(TAG, "添加子节点到队列: ${child.className}")
                         queue.add(child)
                     }
                 }
@@ -1044,96 +1043,109 @@ class WpsAccessibilityService : AccessibilityService() {
             // 检测文档路径（减少日志输出）
             detectDocumentPath(rootNode, false)
 
-            // 从PasswordHolder中获取fileMeta
-            var password = FileMetaHolder.cachedPassword
-            Log.i(TAG, "从FileMetaHolder读取密码: $password")
-            var uid = FileMetaHolder.cachedUid
-            Log.i(TAG, "从FileMetaHolder读取uid: $uid")
+            // 从FileMeta中获取密码和uid
+            var password: String? = null
+            val filePath = currentFileUri ?: stableDocumentPath
+            if (filePath != null) {
+                val fileMeta = FileMetaFactory.getFileMeta(filePath)
+                if (fileMeta != null) {
+                    password = fileMeta.currentPassword
+                    Log.i(TAG, "从FileMeta读取密码: $password")
+                }
+            }
 
             // 初始化密码状态
-            val filePath = currentFileUri ?: stableDocumentPath
             // 如果找到密码，自动填充
             if (password != null && password.isNotEmpty()) {
-                Log.i(TAG, "开始自动填充密码")
+                // 检查是否需要根据权限属性决定是否执行自动填充
+                var shouldAutoFill = false
+                if (currentDialogType == DialogType.OPEN_ENCRYPTED_DOCUMENT && filePath != null) {
+                    val fileMeta = FileMetaFactory.getFileMeta(filePath)
+                    if (fileMeta != null) {
+                        // 根据readAuth和writeAuth权限属性决定是否执行自动填充
+                        shouldAutoFill = fileMeta.readAuth || fileMeta.writeAuth
+                        Log.i(TAG, "文件权限检查: readAuth=${fileMeta.readAuth}, writeAuth=${fileMeta.writeAuth}, 应自动填充=$shouldAutoFill")
+                    } else {
+                        Log.d(TAG, "未找到文件元数据，无法判断权限")
+                    }
+                }
 
-                val passwordInputNodes = findPasswordInputNodes(rootNode)
-                if (passwordInputNodes.isNotEmpty()) {
-                    isFillingPassword = true
-                    try {
-                        // 对于其他窗口，填充所有密码输入框
-                        for (node in passwordInputNodes) {
-                            try {
-                                // 填充密码
-                                val arguments = android.os.Bundle()
-                                arguments.putCharSequence(
-                                    AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,
-                                    password
-                                )
-                                val success = node.performAction(
-                                    AccessibilityNodeInfo.ACTION_SET_TEXT,
-                                    arguments
-                                )
-                                if (success) {
-                                    Log.i(TAG, "密码填充成功")
+                if (shouldAutoFill) {
+                    Log.i(TAG, "开始自动填充密码")
 
-                                    // 检查是否需要自动点击确认按钮
-                                    // 只有在首次打开加密文件的场景中才自动提交
-                                    val shouldAutoSubmit =
-                                        !hasClickedGeneratePassword && (currentDialogType == DialogType.OPEN_ENCRYPTED_DOCUMENT)
-
-                                    Log.i(
-                                        TAG,
-                                        "是否自动提交: $shouldAutoSubmit, 场景类型: ${if (hasClickedGeneratePassword) "生成密码" else if (currentDialogType == DialogType.OPEN_ENCRYPTED_DOCUMENT) "首次打开" else "修改密码"}"
+                    val passwordInputNodes = findPasswordInputNodes(rootNode)
+                    if (passwordInputNodes.isNotEmpty()) {
+                        isFillingPassword = true
+                        try {
+                            // 对于其他窗口，填充所有密码输入框
+                            for (node in passwordInputNodes) {
+                                try {
+                                    // 填充密码
+                                    val arguments = android.os.Bundle()
+                                    arguments.putCharSequence(
+                                        AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,
+                                        password
                                     )
+                                    val success = node.performAction(
+                                        AccessibilityNodeInfo.ACTION_SET_TEXT,
+                                        arguments
+                                    )
+                                    if (success) {
+                                        Log.i(TAG, "密码填充成功")
 
-                                    if (shouldAutoSubmit) {
-                                        // 场景1：首次打开加密文件，自动点击确认按钮
-                                        Log.i(TAG, "尝试自动点击确认按钮")
-                                        val confirmButton = findConfirmButton(rootNode)
-                                        if (confirmButton != null) {
-                                            Log.i(TAG, "找到确认按钮，尝试点击")
-                                            val clickSuccess =
-                                                confirmButton.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-                                            if (clickSuccess) {
-                                                Log.i(TAG, "autoFillPassword-成功点击确认按钮")
-                                                isDocumentOpened = true // 标记文档已打开
+                                        // 检查是否需要自动点击确认按钮
+                                        // 只有在首次打开加密文件的场景中才自动提交
+                                        val shouldAutoSubmit =
+                                            !hasClickedGeneratePassword && (currentDialogType == DialogType.OPEN_ENCRYPTED_DOCUMENT)
+
+                                        Log.i(
+                                            TAG,
+                                            "是否自动提交: $shouldAutoSubmit, 场景类型: ${if (hasClickedGeneratePassword) "生成密码" else if (currentDialogType == DialogType.OPEN_ENCRYPTED_DOCUMENT) "首次打开" else "修改密码"}"
+                                        )
+
+                                        if (shouldAutoSubmit) {
+                                            // 场景1：首次打开加密文件，自动点击确认按钮
+                                            Log.i(TAG, "尝试自动点击确认按钮")
+                                            val confirmButton = findConfirmButton(rootNode)
+                                            if (confirmButton != null) {
+                                                Log.i(TAG, "找到确认按钮，尝试点击")
+                                                val clickSuccess =
+                                                    confirmButton.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                                                if (clickSuccess) {
+                                                    Log.i(TAG, "autoFillPassword-成功点击确认按钮")
+                                                    isDocumentOpened = true // 标记文档已打开
+                                                } else {
+                                                    Log.e(TAG, "点击确认按钮失败")
+                                                }
                                             } else {
-                                                Log.e(TAG, "点击确认按钮失败")
+                                                Log.d(TAG, "未找到确认按钮")
                                             }
                                         } else {
-                                            Log.d(TAG, "未找到确认按钮")
+                                            Log.i(TAG, "此场景不自动提交，保持窗口打开")
+                                        }
+
+                                        // 重置生成密码标志
+                                        if (hasClickedGeneratePassword) {
+                                            hasClickedGeneratePassword = false
                                         }
                                     } else {
-                                        Log.i(TAG, "此场景不自动提交，保持窗口打开")
+                                        Log.e(TAG, "密码填充失败")
                                     }
-
-                                    // 填充后清除PasswordHolder缓存
-                                    FileMetaHolder.clear()
-
-                                    // 重置生成密码标志
-                                    if (hasClickedGeneratePassword) {
-                                        hasClickedGeneratePassword = false
-                                    }
-                                } else {
-                                    Log.e(TAG, "密码填充失败")
+                                } catch (e: Exception) {
+                                    Log.e(TAG, "填充密码时发生异常", e)
                                 }
-                            } catch (e: Exception) {
-                                Log.e(TAG, "填充密码时发生异常", e)
                             }
+                        } finally {
+                            isFillingPassword = false
                         }
-                    } finally {
-                        isFillingPassword = false
+                    } else {
+                        Log.e(TAG, "未找到密码输入框")
                     }
                 } else {
-                    Log.e(TAG, "未找到密码输入框")
+                    Log.i(TAG, "权限不足，不执行自动填充，等待用户手动输入密码")
                 }
             } else {
                 Log.d(TAG, "未找到密码，等待用户手动输入")
-            }
-
-            if (filePath != null) {
-                // FileMeta对象已经在ProxyActivity中初始化
-                Log.d(TAG, "文件[ $filePath ]的元数据已在ProxyActivity中初始化")
             }
         } catch (e: Exception) {
             Log.e(TAG, "自动填充密码失败", e)

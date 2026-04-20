@@ -9,7 +9,6 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.wpspasswordmanager.R
 import com.wpspasswordmanager.WpsPasswordManagerApplication
-import com.wpspasswordmanager.business.FileMetaHolder
 import com.wpspasswordmanager.business.FileMetaManager
 import com.wpspasswordmanager.monitor.WpsAccessibilityService
 import com.wpspasswordmanager.network.NetworkManager
@@ -153,11 +152,11 @@ class ProxyActivity : AppCompatActivity() {
             if (targetFile.exists() && targetFile.length() > 0) {
                 Log.d(TAG, "文件已存在，直接使用本地副本: ${targetFile.absolutePath}")
                 // 立即读取密码并存储
-                readAndStorePassword(targetFile.absolutePath, originalFileName)
+                val password = readAndStorePassword(targetFile.absolutePath, originalFileName)
                 // 同时读取类型为2的uid并存储到缓存
-                readAndStoreUid(targetFile.absolutePath, originalFileName)
+                val uid = readAndStoreUid(targetFile.absolutePath, originalFileName)
                 // 初始化FileMeta对象并获取权限信息
-                initFileMetaWithPermissions(targetFile.absolutePath)
+                initFileMetaWithPermissions(targetFile.absolutePath, password, uid)
                 return targetFile
             }
 
@@ -165,11 +164,11 @@ class ProxyActivity : AppCompatActivity() {
             if (copyFileFromContentUri(uri, targetFile)) {
                 Log.d(TAG, "文件拷贝成功: ${targetFile.absolutePath}")
                 // 立即读取密码并存储到缓存，供后续FileObserver使用
-                readAndStorePassword(targetFile.absolutePath, originalFileName)
+                val password = readAndStorePassword(targetFile.absolutePath, originalFileName)
                 // 同时读取类型为2的uid并存储到缓存
-                readAndStoreUid(targetFile.absolutePath, originalFileName)
+                val uid = readAndStoreUid(targetFile.absolutePath, originalFileName)
                 // 初始化FileMeta对象并获取权限信息
-                initFileMetaWithPermissions(targetFile.absolutePath)
+                initFileMetaWithPermissions(targetFile.absolutePath, password, uid)
                 // 不在这里写入密码，完全依赖FileObserver监听文件更新
                 return targetFile
             } else {
@@ -185,7 +184,7 @@ class ProxyActivity : AppCompatActivity() {
     /**
      * 读取密码并存储到缓存
      */
-    private fun readAndStorePassword(filePath: String, fileName: String) {
+    private fun readAndStorePassword(filePath: String, fileName: String): String? {
         Log.d(TAG, "开始读取密码并存储到缓存，文件路径: $filePath")
         try {
             val file = File(filePath)
@@ -196,18 +195,17 @@ class ProxyActivity : AppCompatActivity() {
             val password = FileMetaManager.getInstance().getPasswordFromFile(this, filePath)
             if (password != null) {
                 Log.d(TAG, "从本地文件读取到密码: $password")
-                // 存储密码到PasswordHolder，供无障碍服务使用
-                FileMetaHolder.storePassword(password, fileName)
-                Log.d(TAG, "密码已存储到PasswordHolder")
             } else {
                 Log.d(TAG, "本地文件中未找到密码")
             }
+            return password
         } catch (e: Exception) {
             Log.e(TAG, "读取本地文件密码失败", e)
+            return null
         }
     }
 
-    private fun readAndStoreUid(filePath: String, fileName: String) {
+    private fun readAndStoreUid(filePath: String, fileName: String): String? {
         Log.d(TAG, "开始读取uid并存储到缓存，文件路径: $filePath")
         try {
             val file = File(filePath)
@@ -218,24 +216,21 @@ class ProxyActivity : AppCompatActivity() {
             val uid = FileMetaManager.getInstance().getUidFromFile(this, filePath)
             if (uid != null) {
                 Log.d(TAG, "从本地文件读取到uid: $uid")
-                // 存储uid到PasswordHolder，供无障碍服务使用
-                FileMetaHolder.storeUid(uid, fileName)
-                Log.d(TAG, "uid已存储到PasswordHolder")
             } else {
                 Log.d(TAG, "本地文件中未找到uid")
             }
+            return uid
         } catch (e: Exception) {
             Log.e(TAG, "读取本地文件uid失败", e)
+            return null
         }
     }
 
     /**
      * 初始化FileMeta对象并获取权限信息
      */
-    private fun initFileMetaWithPermissions(filePath: String) {
+    private fun initFileMetaWithPermissions(filePath: String, password: String?, uid: String?) {
         Log.d(TAG, "开始初始化FileMeta对象并获取权限信息，文件路径: $filePath")
-        val password = FileMetaHolder.cachedPassword
-        val uid = FileMetaHolder.cachedUid
         val finalUid = uid ?: com.wpspasswordmanager.business.FileMetaFactory.createUid()
         try {
 
