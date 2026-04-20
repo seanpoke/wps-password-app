@@ -620,8 +620,63 @@ class FloatingButtonService : Service() {
             btnSave?.setOnClickListener {
                 // 处理保存逻辑
                 val selectedItems = getSelectedNodes(rootNodes)
-                Toast.makeText(this, "保存选择的权限: ${selectedItems.size}", Toast.LENGTH_SHORT).show()
-                removePermissionPanel()
+                
+                // 提取选中的账号和部门DN
+                val accountDnList = mutableListOf<String>()
+                val deptDnList = mutableListOf<String>()
+                
+                for (node in selectedItems) {
+                    if (node.type == 1) { // 员工
+                        accountDnList.add(node.dn)
+                    } else if (node.type == 0) { // 部门
+                        deptDnList.add(node.dn)
+                    }
+                }
+                
+                // 获取文档路径
+                val documentPath = WpsAccessibilityService.stableDocumentPath
+                if (documentPath.isNullOrEmpty()) {
+                    Toast.makeText(this, "未找到文档路径", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+                
+                // 获取FileMeta对象
+                val fileMeta = FileMetaFactory.getFileMeta(documentPath)
+                if (fileMeta == null) {
+                    Toast.makeText(this, "未找到文档元数据", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+                
+                // 获取docId参数
+                val docId = fileMeta.uid
+                if (docId.isNullOrEmpty()) {
+                    Toast.makeText(this, "未找到文档唯一标识", Toast.LENGTH_SHORT).show()
+                    return@setOnClickListener
+                }
+                
+                // 构建请求体
+                val jsonBody = "{\"docId\": \"$docId\", \"accountDnList\": [${accountDnList.joinToString { "\"$it\"" }}], \"deptDnList\": [${deptDnList.joinToString { "\"$it\"" }}]}"
+                
+                // 获取token
+                val userInfo = ConfigStorage.getInstance(this).getUserInfo()
+                val token = userInfo?.token
+                
+                // 发送请求
+                val networkManager = NetworkManager.getInstance(this)
+                networkManager.executePostRequest("/doc/auth/update", jsonBody, token, object : NetworkCallback {
+                    override fun onSuccess(response: String) {
+                        runOnUiThread {
+                            Toast.makeText(this@FloatingButtonService, "权限更新成功", Toast.LENGTH_SHORT).show()
+                            removePermissionPanel()
+                        }
+                    }
+                    
+                    override fun onError(error: String) {
+                        runOnUiThread {
+                            Toast.makeText(this@FloatingButtonService, "权限更新失败: $error", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                })
             }
 
             // 取消按钮点击事件
@@ -682,6 +737,10 @@ class FloatingButtonService : Service() {
         for (node in nodes) {
             if (node.hasAuth) {
                 selected.add(node)
+                // 如果是部门类型且已被勾选，跳过子节点处理
+                if (node.type == 0) {
+                    continue
+                }
             }
             if (node.children.isNotEmpty()) {
                 selected.addAll(getSelectedNodes(node.children))
