@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.view.accessibility.AccessibilityManager
 
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
@@ -39,8 +40,75 @@ class ProxyActivity : AppCompatActivity() {
             return
         }
 
+        // 检查应用权限状态
+        if (!checkAppPermissions()) {
+            // 权限不足，跳转到主页面
+            val mainIntent = Intent(this, MainActivity::class.java)
+            mainIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            startActivity(mainIntent)
+            finish()
+            return
+        }
+
         // 处理传入的 Intent
         handleIntent(intent)
+    }
+
+    /**
+     * 检查应用权限状态
+     * @return true if all required permissions are granted, false otherwise
+     */
+    private fun checkAppPermissions(): Boolean {
+        // 检查无障碍服务权限
+        val isAccessibilityServiceEnabled = isAccessibilityServiceEnabled()
+        Log.d(TAG, "无障碍服务状态: $isAccessibilityServiceEnabled")
+
+        // 检查悬浮窗权限
+        val isOverlayPermissionGranted = isOverlayPermissionGranted()
+        Log.d(TAG, "悬浮窗权限状态: $isOverlayPermissionGranted")
+
+        // 若任意一项权限未启用，则返回false
+        return isAccessibilityServiceEnabled && isOverlayPermissionGranted
+    }
+
+    /**
+     * 检查无障碍服务是否启用
+     * @return true if accessibility service is enabled, false otherwise
+     */
+    private fun isAccessibilityServiceEnabled(): Boolean {
+        try {
+            val accessibilityManager = getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager
+            val enabledServices = accessibilityManager.getEnabledAccessibilityServiceList(android.accessibilityservice.AccessibilityServiceInfo.FEEDBACK_GENERIC)
+            
+            for (service in enabledServices) {
+                if (service.id.contains("WpsAccessibilityService")) {
+                    return true
+                }
+            }
+            return false
+        } catch (e: Exception) {
+            Log.e(TAG, "检查无障碍服务状态失败", e)
+            return false
+        }
+    }
+
+    /**
+     * 检查悬浮窗权限是否授予
+     * @return true if overlay permission is granted, false otherwise
+     */
+    private fun isOverlayPermissionGranted(): Boolean {
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                // Android 6.0及以上需要动态申请权限
+                return android.provider.Settings.canDrawOverlays(this)
+            } else {
+                // Android 6.0以下默认授予
+                return true
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "检查悬浮窗权限失败", e)
+            return false
+        }
     }
 
     /**
