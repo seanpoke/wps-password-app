@@ -112,22 +112,11 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 override fun onError(error: String) {
-                    // Token无效（401），清理登录状态
-                    if (error.contains("401")) {
-                        runOnUiThread {
-                            handle401Error()
-                        }
-                    } else {
-                        // 其他错误，暂时保持登录状态
-                        runOnUiThread {
-                            isLoggedIn = true
-                            disableConfigInputs()
-                            updateLoginButton()
-                            userInfoTextView.text = "你好，${userInfo.name}"
-                            userInfoTextView.visibility = TextView.VISIBLE
-                        }
-                    }
+                // Token无效（401）或网络错误，清理登录状态
+                runOnUiThread {
+                    handle401Error()
                 }
+            }
             })
         }
     }
@@ -622,11 +611,9 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 override fun onError(error: String) {
-                    // Token无效（401），清理登录状态
-                    if (error.contains("401")) {
-                        runOnUiThread {
-                            handle401Error()
-                        }
+                    // Token无效（401）或网络错误，清理登录状态
+                    runOnUiThread {
+                        handle401Error()
                     }
                 }
             })
