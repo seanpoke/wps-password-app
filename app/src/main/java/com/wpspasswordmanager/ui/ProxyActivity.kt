@@ -9,6 +9,7 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.wpspasswordmanager.R
 import com.wpspasswordmanager.WpsPasswordManagerApplication
+import com.wpspasswordmanager.business.FileMetaFactory
 import com.wpspasswordmanager.business.FileMetaManager
 import com.wpspasswordmanager.monitor.WpsAccessibilityService
 import com.wpspasswordmanager.network.NetworkManager
@@ -151,30 +152,18 @@ class ProxyActivity : AppCompatActivity() {
             val targetFile = File(wpsManagementDir, originalFileName)
             if (targetFile.exists() && targetFile.length() > 0) {
                 Log.d(TAG, "文件已存在，直接使用本地副本: ${targetFile.absolutePath}")
-                // 立即读取密码并存储
-                val password = readAndStorePassword(targetFile.absolutePath, originalFileName)
-                // 同时读取类型为2的uid并存储到缓存
-                val uid = readAndStoreUid(targetFile.absolutePath, originalFileName)
-                // 初始化FileMeta对象并获取权限信息
-                initFileMetaWithPermissions(targetFile.absolutePath, password, uid)
-                return targetFile
-            }
-
-            // 3. 从原始ContentURI拷贝文件到目标路径
-            if (copyFileFromContentUri(uri, targetFile)) {
-                Log.d(TAG, "文件拷贝成功: ${targetFile.absolutePath}")
-                // 立即读取密码并存储到缓存，供后续FileObserver使用
-                val password = readAndStorePassword(targetFile.absolutePath, originalFileName)
-                // 同时读取类型为2的uid并存储到缓存
-                val uid = readAndStoreUid(targetFile.absolutePath, originalFileName)
-                // 初始化FileMeta对象并获取权限信息
-                initFileMetaWithPermissions(targetFile.absolutePath, password, uid)
-                // 不在这里写入密码，完全依赖FileObserver监听文件更新
-                return targetFile
-            } else {
-                Log.e(TAG, "文件拷贝失败")
+            } else if (!copyFileFromContentUri(uri, targetFile)) {
+                Log.d(TAG, "文件拷贝失败: ${targetFile.absolutePath}")
                 return null
             }
+            // 读取uid
+            val uid =  readUidFromFile(targetFile.absolutePath)
+                ?: FileMetaFactory.createUid()
+            // 读取密码
+            val password = readAndParsePassword(targetFile.absolutePath, uid)
+            // 初始化FileMeta对象并获取权限信息
+            initFileMetaWithPermissions(targetFile.absolutePath, password, uid)
+            return targetFile
         } catch (e: Exception) {
             Log.e(TAG, "处理ContentURI失败", e)
             return null
@@ -184,7 +173,7 @@ class ProxyActivity : AppCompatActivity() {
     /**
      * 读取密码并存储到缓存
      */
-    private fun readAndStorePassword(filePath: String, fileName: String): String? {
+    private fun readAndParsePassword(filePath: String, uid: String): String? {
         Log.d(TAG, "开始读取密码并存储到缓存，文件路径: $filePath")
         try {
             val file = File(filePath)
@@ -192,20 +181,67 @@ class ProxyActivity : AppCompatActivity() {
             Log.d(TAG, "文件可读: ${file.canRead()}")
             Log.d(TAG, "文件大小: ${file.length()} 字节")
 
-            val password = FileMetaManager.getInstance().getPasswordFromFile(this, filePath)
-            if (password != null) {
-                Log.d(TAG, "从本地文件读取到密码: $password")
+            val localPassword = FileMetaManager.getInstance().getPasswordFromFile(this, filePath)
+            if (localPassword != null) {
+                Log.d(TAG, "从本地文件读取到密码: $localPassword")
+                // 从ConfigStorage获取token
+                val token = getTokenFromStorage()
+                Log.d(TAG, "获取到token: ${if (token.isNullOrEmpty()) "空" else "已获取"}")
+
+                // 使用CountDownLatch等待网络请求完成
+                val latch = java.util.concurrent.CountDownLatch(1)
+                var resultPassword: String? = null
+
+                // 调用获取文档密码接口
+                Log.d(TAG, "开始调用获取文档密码接口")
+                NetworkManager.getInstance(this).getDocumentPassword(
+                    docId = uid,
+                    encryPassword = localPassword, // 这里直接使用从文件读取的密码，实际应用中可能需要加密
+                    token = token,
+                    callback = object : com.wpspasswordmanager.network.NetworkCallback {
+                        override fun onSuccess(response: String) {
+                            Log.d(TAG, "获取文档密码响应: $response")
+                            try {
+                                val json = org.json.JSONObject(response)
+                                if (json.getInt("status") == 200) {
+                                    val data = json.getJSONObject("data")
+                                    val documentPassword = data.optString("password")
+                                    Log.d(TAG, "从接口获取到文档密码: $documentPassword")
+                                    resultPassword = documentPassword
+                                } else {
+                                    Log.e(TAG, "获取文档密码失败，响应状态码不是200")
+                                    resultPassword = null
+                                }
+                            } catch (e: Exception) {
+                                Log.e(TAG, "解析获取文档密码响应失败", e)
+                                resultPassword = null
+                            } finally {
+                                latch.countDown()
+                            }
+                        }
+
+                        override fun onError(error: String) {
+                            Log.e(TAG, "获取文档密码失败: $error")
+                            resultPassword = null
+                            latch.countDown()
+                        }
+                    }
+                )
+
+                // 等待网络请求完成，最多等待10秒
+                latch.await(10, java.util.concurrent.TimeUnit.SECONDS)
+                return resultPassword
             } else {
                 Log.d(TAG, "本地文件中未找到密码")
+                return null
             }
-            return password
         } catch (e: Exception) {
             Log.e(TAG, "读取本地文件密码失败", e)
             return null
         }
     }
 
-    private fun readAndStoreUid(filePath: String, fileName: String): String? {
+    private fun readUidFromFile(filePath: String): String? {
         Log.d(TAG, "开始读取uid并存储到缓存，文件路径: $filePath")
         try {
             val file = File(filePath)
@@ -229,21 +265,20 @@ class ProxyActivity : AppCompatActivity() {
     /**
      * 初始化FileMeta对象并获取权限信息
      */
-    private fun initFileMetaWithPermissions(filePath: String, password: String?, uid: String?) {
+    private fun initFileMetaWithPermissions(filePath: String, password: String?, uid: String) {
         Log.d(TAG, "开始初始化FileMeta对象并获取权限信息，文件路径: $filePath")
-        val finalUid = uid ?: com.wpspasswordmanager.business.FileMetaFactory.createUid()
-        try {
 
+        try {
             // 从ConfigStorage获取token
             val token = getTokenFromStorage()
             Log.d(TAG, "获取到token: ${if (token.isNullOrEmpty()) "空" else "已获取"}")
-            
+
             // 尝试获取权限信息
             Log.d(TAG, "开始获取文档权限信息")
-            
+
             // 使用NetworkManager获取文档权限信息
             NetworkManager.getInstance(this).getDocumentOwner(
-                docId = finalUid,
+                docId = uid,
                 token = token,
                 callback = object : com.wpspasswordmanager.network.NetworkCallback {
                     override fun onSuccess(response: String) {
@@ -256,43 +291,46 @@ class ProxyActivity : AppCompatActivity() {
                                 val ownerName = data.optString("ownerName")
                                 val readAuth = data.optBoolean("readAuth", false)
                                 val writeAuth = data.optBoolean("writeAuth", false)
-                                
+
                                 // 存储到FileMetaFactory
-                                com.wpspasswordmanager.business.FileMetaFactory.initFileMetaWithPermissions(
+                                FileMetaFactory.initFileMetaWithPermissions(
                                     filePath = filePath,
                                     oldPass = password,
-                                    uid = finalUid,
+                                    uid = uid,
                                     ownerAccount = ownerAccount,
                                     ownerName = ownerName,
                                     readAuth = readAuth,
                                     writeAuth = writeAuth
                                 )
-                                
-                                Log.d(TAG, "FileMeta对象初始化成功，权限信息: readAuth=$readAuth, writeAuth=$writeAuth, ownerAccount=$ownerAccount, ownerName=$ownerName")
+
+                                Log.d(
+                                    TAG,
+                                    "FileMeta对象初始化成功，权限信息: readAuth=$readAuth, writeAuth=$writeAuth, ownerAccount=$ownerAccount, ownerName=$ownerName"
+                                )
                             } else {
                                 // 响应状态码不是200，使用默认权限
-                                initFileMetaWithDefaultPermissions(filePath, password, finalUid)
+                                initFileMetaWithDefaultPermissions(filePath, password, uid)
                             }
                         } catch (e: Exception) {
                             Log.e(TAG, "解析权限响应失败", e)
                             // 解析失败时使用默认权限
-                            initFileMetaWithDefaultPermissions(filePath, password, finalUid)
+                            initFileMetaWithDefaultPermissions(filePath, password, uid)
                         }
                     }
-                    
+
                     override fun onError(error: String) {
                         Log.e(TAG, "获取文档权限失败: $error")
                         // 网络请求失败时使用默认权限
-                        initFileMetaWithDefaultPermissions(filePath, password, finalUid)
+                        initFileMetaWithDefaultPermissions(filePath, password, uid)
                     }
                 }
             )
         } catch (e: Exception) {
             Log.e(TAG, "初始化FileMeta对象失败", e)
-            initFileMetaWithDefaultPermissions(filePath, password, finalUid)
+            initFileMetaWithDefaultPermissions(filePath, password, uid)
         }
     }
-    
+
     /**
      * 从ConfigStorage获取token
      */
@@ -305,13 +343,17 @@ class ProxyActivity : AppCompatActivity() {
             return null
         }
     }
-    
+
     /**
      * 使用默认权限初始化FileMeta对象
      */
-    private fun initFileMetaWithDefaultPermissions(filePath: String, password: String?, uid: String) {
+    private fun initFileMetaWithDefaultPermissions(
+        filePath: String,
+        password: String?,
+        uid: String
+    ) {
         Log.d(TAG, "使用默认权限初始化FileMeta对象")
-        com.wpspasswordmanager.business.FileMetaFactory.initFileMetaWithPermissions(
+        FileMetaFactory.initFileMetaWithPermissions(
             filePath = filePath,
             oldPass = password,
             uid = uid,
@@ -331,7 +373,7 @@ class ProxyActivity : AppCompatActivity() {
         try {
             // 设置插件操作标志，避免触发文件事件监听器
             WpsPasswordManagerApplication.instance.setPluginOperation(true)
-            
+
             val inputStream = contentResolver.openInputStream(uri)
             inputStream?.use { input ->
                 FileOutputStream(targetFile).use { output ->

@@ -174,6 +174,14 @@ class NetworkManager private constructor(context: Context) {
         executeGetRequest("/doc/owner?docId=$docId", token, callback)
     }
 
+    // 执行获取文档密码请求（异步）
+    fun getDocumentPassword(docId: String, encryPassword: String, token: String?, callback: NetworkCallback) {
+        Log.d(TAG, "执行获取文档密码请求: docId=$docId")
+        val jsonBody = "{\"docId\": \"$docId\", \"encryPassword\": \"$encryPassword\"}"
+        Log.d(TAG, "获取文档密码请求体: $jsonBody")
+        executePostRequest("/doc/password", jsonBody, token, callback)
+    }
+
     // 执行其他API请求（异步）
     fun executeApiRequest(method: String, path: String, body: String? = null, token: String? = null, callback: NetworkCallback) {
         when (method.toUpperCase()) {

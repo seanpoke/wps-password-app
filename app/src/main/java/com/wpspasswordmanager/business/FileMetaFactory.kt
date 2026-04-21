@@ -69,7 +69,12 @@ object FileMetaFactory {
         // 生成GUID
         val guid = java.util.UUID.randomUUID().toString()
         // 组合时间戳和GUID，用下划线连接
-        return "${timestamp}_${guid}"
+       var uid = "${timestamp}_${guid}"
+        Log.i(
+            TAG,
+            "创建新的uid: '$uid'"
+        )
+        return uid
     }
 
     /**

@@ -3,6 +3,125 @@ package com.wpspasswordmanager.business
 import android.util.Log
 import com.wpspasswordmanager.WpsPasswordManagerApplication
 import java.io.*
+import java.security.*
+import javax.crypto.Cipher
+import javax.crypto.KeyAgreement
+import javax.crypto.spec.IvParameterSpec
+import javax.crypto.spec.SecretKeySpec
+import java.security.spec.X509EncodedKeySpec
+import java.nio.ByteBuffer
+import java.util.Base64
+
+object EccEncryptor {
+    
+    private const val ALGORITHM = "EC"
+    private const val CURVE_NAME = "secp256r1"
+    private const val PROVIDER = "BC"
+    private const val AES_ALGORITHM = "AES/CBC/PKCS5Padding"
+    // 固定的服务器公钥
+    private const val SERVER_PUBLIC_KEY = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEuY2/Hz7c7gM0O8P/8VYjDasWhdW4jyS99+Xwyghe+CVFko7KPeamzaOsUffIHQz0VAA8RH9MV1BYyuZAJ7X05Q=="
+    
+    init {
+        // 添加BouncyCastle Provider
+        try {
+            val provider = org.bouncycastle.jce.provider.BouncyCastleProvider()
+            Security.addProvider(provider)
+            Log.d("EccEncryptor", "添加BouncyCastle Provider成功")
+        } catch (e: Exception) {
+            Log.e("EccEncryptor", "添加BouncyCastle Provider失败", e)
+        }
+    }
+    
+    /**
+     * 使用服务器公钥加密密码
+     * @param password 原始密码字符串
+     * @return Base64编码的加密数据，失败返回null
+     */
+    fun encryptPassword(password: String): String? {
+        try {
+            // 1. 解析服务器公钥
+            val publicKeyBytes = Base64.getDecoder().decode(SERVER_PUBLIC_KEY)
+            
+            // 尝试使用BouncyCastle Provider
+            var keyFactory: KeyFactory
+            var keyPairGenerator: KeyPairGenerator
+            var keyAgreement: KeyAgreement
+            
+            try {
+                keyFactory = KeyFactory.getInstance(ALGORITHM, PROVIDER)
+                keyPairGenerator = KeyPairGenerator.getInstance(ALGORITHM, PROVIDER)
+                keyAgreement = KeyAgreement.getInstance("ECDH", PROVIDER)
+                Log.d("EccEncryptor", "使用BouncyCastle Provider成功")
+            } catch (e: Exception) {
+                // 如果BouncyCastle失败，尝试使用默认Provider
+                Log.w("EccEncryptor", "BouncyCastle Provider失败，尝试使用默认Provider: ${e.message}")
+                keyFactory = KeyFactory.getInstance(ALGORITHM)
+                keyPairGenerator = KeyPairGenerator.getInstance(ALGORITHM)
+                keyAgreement = KeyAgreement.getInstance("ECDH")
+                Log.d("EccEncryptor", "使用默认Provider成功")
+            }
+            
+            val publicKey = keyFactory.generatePublic(X509EncodedKeySpec(publicKeyBytes))
+            
+            // 2. 生成临时密钥对
+            val ecSpec = java.security.spec.ECGenParameterSpec(CURVE_NAME)
+            keyPairGenerator.initialize(ecSpec, SecureRandom())
+            val tempKeyPair = keyPairGenerator.generateKeyPair()
+            
+            // 3. ECDH 密钥协商
+            keyAgreement.init(tempKeyPair.private)
+            keyAgreement.doPhase(publicKey, true)
+            val sharedSecret = keyAgreement.generateSecret()
+            
+            // 4. 密钥派生 (SHA-256)
+            val sha256 = MessageDigest.getInstance("SHA-256")
+            val aesKeyBytes = sha256.digest(sharedSecret)
+            
+            // 5. 生成随机 IV
+            val iv = ByteArray(16)
+            SecureRandom().nextBytes(iv)
+            
+            // 6. AES-CBC 加密
+            val aesCipher = Cipher.getInstance(AES_ALGORITHM)
+            val aesKeySpec = SecretKeySpec(aesKeyBytes, "AES")
+            val ivSpec = IvParameterSpec(iv)
+            aesCipher.init(Cipher.ENCRYPT_MODE, aesKeySpec, ivSpec)
+            val ciphertext = aesCipher.doFinal(password.toByteArray(Charsets.UTF_8))
+            
+            // 7. 组合数据
+            val tempPubKeyBytes = tempKeyPair.public.encoded
+            val totalLength = 4 + tempPubKeyBytes.size + iv.size + ciphertext.size
+            val result = ByteArray(totalLength)
+            
+            // 写入临时公钥长度（大端序）
+            result[0] = (tempPubKeyBytes.size shr 24).toByte()
+            result[1] = (tempPubKeyBytes.size shr 16).toByte()
+            result[2] = (tempPubKeyBytes.size shr 8).toByte()
+            result[3] = tempPubKeyBytes.size.toByte()
+            
+            // 写入临时公钥
+            System.arraycopy(tempPubKeyBytes, 0, result, 4, tempPubKeyBytes.size)
+            
+            // 写入 IV
+            System.arraycopy(iv, 0, result, 4 + tempPubKeyBytes.size, iv.size)
+            
+            // 写入密文
+            System.arraycopy(ciphertext, 0, result, 4 + tempPubKeyBytes.size + iv.size, ciphertext.size)
+            
+            // 8. Base64 编码
+            val encryptedData = Base64.getEncoder().encodeToString(result)
+            // 确保Base64编码格式正确，移除可能的换行符和空格
+            val cleanEncryptedData = encryptedData.replace("\n", "").replace("\r", "").trim()
+            Log.d("EccEncryptor", "加密成功，密文长度: ${cleanEncryptedData.length}")
+            Log.d("EccEncryptor", "加密后的密码$cleanEncryptedData")
+            return cleanEncryptedData
+            
+        } catch (e: Exception) {
+            Log.e("EccEncryptor", "ECC加密失败: ${e.message}", e)
+            return null
+        }
+    }
+}
 
 class ZipExtraFieldManager private constructor() {
 
@@ -82,12 +201,26 @@ class ZipExtraFieldManager private constructor() {
             
             // 构建密码数据（如果存在）
             val passwordData = if (!password.isNullOrEmpty()) {
-                val passwordBytes = buildExtraFieldData(METADATA_TYPE_PASSWORD, password)
-                Log.d(
-                    TAG,
-                    "[时间戳: ${System.currentTimeMillis()}] 密码数据构建完成，长度: ${passwordBytes.size} bytes"
-                )
-                passwordBytes
+                // 对密码进行ECC加密
+                val encryptedPassword = EccEncryptor.encryptPassword(password)
+                if (encryptedPassword != null) {
+                    Log.d(
+                        TAG,
+                        "密码加密成，加密后的密码${encryptedPassword} "
+                    )
+                    val passwordBytes = buildExtraFieldData(METADATA_TYPE_PASSWORD, encryptedPassword)
+                    Log.d(
+                        TAG,
+                        "[时间戳: ${System.currentTimeMillis()}] 密码数据构建完成，长度: ${passwordBytes.size} bytes"
+                    )
+                    passwordBytes
+                } else {
+                    Log.e(
+                        TAG,
+                        "[时间戳: ${System.currentTimeMillis()}] 密码加密失败，无法写入密码数据"
+                    )
+                    ByteArray(0)
+                }
             } else {
                 ByteArray(0)
             }
