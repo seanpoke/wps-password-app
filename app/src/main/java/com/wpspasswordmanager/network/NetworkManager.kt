@@ -184,12 +184,13 @@ class NetworkManager private constructor(context: Context) {
     }
 
     // 执行保存记录上报请求（异步）
-    fun reportSaveLog(docId: String, path: String, beforePassword: String? = null, afterPassword: String? = null, possiblePassword: List<String>? = null, token: String? = null, callback: NetworkCallback) {
-        Log.d(TAG, "执行保存记录上报请求: docId=$docId, path=$path")
+    fun reportSaveLog(docId: String, path: String, beforePassword: String? = null, afterPassword: String? = null, possiblePassword: List<String>? = null, platform: String = "android", token: String? = null, callback: NetworkCallback) {
+        Log.d(TAG, "执行保存记录上报请求: docId=$docId, path=$path, platform=$platform")
         val jsonBody = buildString {
             append("{")
             append("\"docId\": \"$docId\",")
-            append("\"path\": \"$path\"")
+            append("\"path\": \"$path\",")
+            append("\"platform\": \"$platform\"")
             beforePassword?.let { append(", \"beforePassword\": \"$it\"") }
             afterPassword?.let { append(", \"afterPassword\": \"$it\"") }
             possiblePassword?.let {

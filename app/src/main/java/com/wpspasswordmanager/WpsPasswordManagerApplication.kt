@@ -222,6 +222,7 @@ class WpsPasswordManagerApplication : Application() {
                             beforePassword = beforePassword,
                             afterPassword = afterPassword,
                             possiblePassword = possiblePassword,
+                            platform = "android",
                             token = token,
                             callback = object : com.wpspasswordmanager.network.NetworkCallback {
                                 override fun onSuccess(response: String) {
