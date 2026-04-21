@@ -12,6 +12,7 @@ import com.wpspasswordmanager.WpsPasswordManagerApplication
 import com.wpspasswordmanager.business.FileMetaFactory
 import com.wpspasswordmanager.business.FileMetaManager
 import com.wpspasswordmanager.monitor.WpsAccessibilityService
+import com.wpspasswordmanager.network.NetworkCallback
 import com.wpspasswordmanager.network.NetworkManager
 import com.wpspasswordmanager.storage.ConfigStorage
 import org.json.JSONObject
@@ -28,8 +29,84 @@ class ProxyActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // 检查token存在性与有效性
+        if (!checkTokenValidity()) {
+            // token不存在或已失效，跳转到登录页面
+            val loginIntent = Intent(this, MainActivity::class.java)
+            loginIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            startActivity(loginIntent)
+            finish()
+            return
+        }
+
         // 处理传入的 Intent
         handleIntent(intent)
+    }
+
+    /**
+     * 检查token存在性与有效性
+     * @return true if token is valid, false otherwise
+     */
+    private fun checkTokenValidity(): Boolean {
+        try {
+            // 检查本地存储中是否存在token
+            val token = getTokenFromStorage()
+            if (token.isNullOrEmpty()) {
+                Log.d(TAG, "Token不存在")
+                return false
+            }
+
+            // 尝试刷新token以验证其有效性
+            val latch = java.util.concurrent.CountDownLatch(1)
+            var isTokenValid = false
+
+            NetworkManager.getInstance(this).refreshToken(token, object : NetworkCallback {
+                override fun onSuccess(response: String) {
+                    try {
+                        val json = JSONObject(response)
+                        if (json.getInt("status") == 200) {
+                            // token刷新成功，更新本地存储中的token
+                            val data = json.getJSONObject("data")
+                            val newToken = data.optString("token")
+                            if (!newToken.isNullOrEmpty()) {
+                                val userInfo = ConfigStorage.getInstance(this@ProxyActivity).getUserInfo()
+                                if (userInfo != null) {
+                                    Log.d(TAG, "Token刷新成功")
+                                    isTokenValid = true
+                                } else {
+                                    Log.e(TAG, "用户信息不存在")
+                                    isTokenValid = false
+                                }
+                            } else {
+                                Log.e(TAG, "Token刷新成功但返回的token为空")
+                                isTokenValid = false
+                            }
+                        } else {
+                            Log.e(TAG, "Token刷新失败，响应状态码不是200")
+                            isTokenValid = false
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "解析token刷新响应失败", e)
+                        isTokenValid = false
+                    } finally {
+                        latch.countDown()
+                    }
+                }
+
+                override fun onError(error: String) {
+                    Log.e(TAG, "Token刷新失败: $error")
+                    isTokenValid = false
+                    latch.countDown()
+                }
+            })
+
+            // 等待网络请求完成，最多等待5秒
+            latch.await(5, java.util.concurrent.TimeUnit.SECONDS)
+            return isTokenValid
+        } catch (e: Exception) {
+            Log.e(TAG, "检查token有效性失败", e)
+            return false
+        }
     }
 
     override fun onDestroy() {
