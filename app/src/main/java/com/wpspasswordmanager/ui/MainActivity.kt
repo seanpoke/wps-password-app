@@ -33,9 +33,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var overlayStatus: TextView
     private lateinit var enableAccessibilityButton: Button
     private lateinit var enableOverlayButton: Button
-    private lateinit var generatePasswordButton: Button
-    private lateinit var managePasswordsButton: Button
-    private lateinit var settingsButton: Button
 
     // 配置管理UI元素
     private lateinit var ipAddressInput: EditText
@@ -55,9 +52,6 @@ class MainActivity : AppCompatActivity() {
     // 存储和网络管理
     private lateinit var configStorage: ConfigStorage
     private lateinit var networkManager: NetworkManager
-
-    // 心跳服务
-    private var heartbeatService: HeartbeatService? = null
 
     // 登录状态管理
     private var isLoggedIn = false
@@ -126,9 +120,6 @@ class MainActivity : AppCompatActivity() {
         overlayStatus = findViewById(R.id.overlay_status)
         enableAccessibilityButton = findViewById(R.id.enable_accessibility_button)
         enableOverlayButton = findViewById(R.id.enable_overlay_button)
-        generatePasswordButton = findViewById(R.id.generate_password_button)
-        managePasswordsButton = findViewById(R.id.manage_passwords_button)
-        settingsButton = findViewById(R.id.settings_button)
 
         // 初始化配置管理UI元素
         ipAddressInput = findViewById(R.id.ip_address_input)
@@ -154,31 +145,6 @@ class MainActivity : AppCompatActivity() {
 
         enableOverlayButton.setOnClickListener {
             requestOverlayPermission()
-        }
-
-        generatePasswordButton.setOnClickListener {
-            // 生成12位随机密码
-            val password = PasswordGenerator.getInstance().generatePassword()
-            Toast.makeText(this, "生成的密码: $password", Toast.LENGTH_LONG).show()
-
-            // 填充密码到WPS
-            AccessibilityServiceManager.getInstance().fillPassword(password)
-        }
-
-        managePasswordsButton.setOnClickListener {
-            // 示例：读取存储的密码
-            val key = "password_1234567890" // 示例key
-            val password = FileMetaManager.getInstance().getPasswordFromFile(this, key)
-            if (password != null) {
-                Toast.makeText(this, "读取的密码: $password", Toast.LENGTH_LONG).show()
-            } else {
-                Toast.makeText(this, "未找到密码", Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        settingsButton.setOnClickListener {
-            val intent = Intent(this, SettingsActivity::class.java)
-            startActivity(intent)
         }
 
         loginButton.setOnClickListener {
