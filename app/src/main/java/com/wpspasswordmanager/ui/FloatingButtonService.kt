@@ -572,20 +572,26 @@ class FloatingButtonService : Service() {
             treeContainer?.removeAllViews()
             val recyclerView = androidx.recyclerview.widget.RecyclerView(this)
             recyclerView.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this)
-            treeAdapter = TreeAdapter { node ->
-                if (node.type == 0 && node.children.isNotEmpty()) {
-                    // 切换展开状态
-                    node.isExpanded = !node.isExpanded
-                    // 重新计算扁平化列表并提交给RecyclerView
-                    val newList = flattenTree(rootNodes)
-                    treeAdapter?.submitList(newList)
-                }
-            }
-            recyclerView.adapter = treeAdapter
-
             // 初始扁平化列表
-            val initialList = flattenTree(rootNodes)
-            treeAdapter?.submitList(initialList)
+            val initialList = flattenTree(rootNodes).toMutableList()
+            treeAdapter = TreeAdapter(
+                nodes = initialList,
+                onItemClicked = { node ->
+                    if (node.type == 0 && node.children.isNotEmpty()) {
+                        // 切换展开状态
+                        node.isExpanded = !node.isExpanded
+                        // 重新计算扁平化列表并通知适配器更新
+                        val newList = flattenTree(rootNodes).toMutableList()
+                        treeAdapter?.nodes?.clear()
+                        treeAdapter?.nodes?.addAll(newList)
+                        treeAdapter?.notifyDataSetChanged()
+                    }
+                },
+                onAuthStateChanged = { node, hasAuth ->
+                    // 这里可以添加状态保存逻辑
+                }
+            )
+            recyclerView.adapter = treeAdapter
 
             treeContainer?.addView(recyclerView, android.widget.LinearLayout.LayoutParams(
                 android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
@@ -605,15 +611,19 @@ class FloatingButtonService : Service() {
             // 全选按钮点击事件
             btnSelectAll?.setOnClickListener {
                 selectAllNodes(rootNodes, true)
-                val newList = flattenTree(rootNodes)
-                treeAdapter?.submitList(newList)
+                val newList = flattenTree(rootNodes).toMutableList()
+                treeAdapter?.nodes?.clear()
+                treeAdapter?.nodes?.addAll(newList)
+                treeAdapter?.notifyDataSetChanged()
             }
 
             // 反选按钮点击事件
             btnDeselectAll?.setOnClickListener {
                 selectAllNodes(rootNodes, false)
-                val newList = flattenTree(rootNodes)
-                treeAdapter?.submitList(newList)
+                val newList = flattenTree(rootNodes).toMutableList()
+                treeAdapter?.nodes?.clear()
+                treeAdapter?.nodes?.addAll(newList)
+                treeAdapter?.notifyDataSetChanged()
             }
 
             // 保存按钮点击事件
@@ -687,16 +697,20 @@ class FloatingButtonService : Service() {
             // 搜索按钮点击事件
             btnSearch?.setOnClickListener {
                 val searchText = etSearch?.text?.toString() ?: ""
-                val filteredNodes = filterNodes(rootNodes, searchText)
-                treeAdapter?.submitList(filteredNodes)
+                val filteredNodes = filterNodes(rootNodes, searchText).toMutableList()
+                treeAdapter?.nodes?.clear()
+                treeAdapter?.nodes?.addAll(filteredNodes)
+                treeAdapter?.notifyDataSetChanged()
             }
 
             // 搜索框回车事件
             etSearch?.setOnEditorActionListener { v, actionId, event ->
                 if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH) {
                     val searchText = etSearch.text.toString()
-                    val filteredNodes = filterNodes(rootNodes, searchText)
-                    treeAdapter?.submitList(filteredNodes)
+                    val filteredNodes = filterNodes(rootNodes, searchText).toMutableList()
+                    treeAdapter?.nodes?.clear()
+                    treeAdapter?.nodes?.addAll(filteredNodes)
+                    treeAdapter?.notifyDataSetChanged()
                     true
                 } else {
                     false
@@ -708,8 +722,10 @@ class FloatingButtonService : Service() {
                 // 清除搜索框内容
                 etSearch?.text?.clear()
                 // 清除搜索结果，返回默认列表
-                val initialList = flattenTree(rootNodes)
-                treeAdapter?.submitList(initialList)
+                val initialList = flattenTree(rootNodes).toMutableList()
+                treeAdapter?.nodes?.clear()
+                treeAdapter?.nodes?.addAll(initialList)
+                treeAdapter?.notifyDataSetChanged()
                 // 给予用户视觉反馈
                 Toast.makeText(this, "已清理搜索内容", Toast.LENGTH_SHORT).show()
             }

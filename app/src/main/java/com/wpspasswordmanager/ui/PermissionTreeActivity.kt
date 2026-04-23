@@ -4,10 +4,10 @@ import android.app.Activity
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
-import android.widget.CheckBox
 import android.widget.EditText
-import android.widget.LinearLayout
 import android.widget.Toast
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.wpspasswordmanager.R
 
 class PermissionTreeActivity : Activity() {
@@ -16,7 +16,7 @@ class PermissionTreeActivity : Activity() {
         const val EXTRA_LDAP_ITEMS = "ldap_items"
     }
 
-    private lateinit var treeContainer: LinearLayout
+    private lateinit var treeRecyclerView: RecyclerView
     private lateinit var btnClose: Button
     private lateinit var btnSelectAll: Button
     private lateinit var btnDeselectAll: Button
@@ -25,16 +25,15 @@ class PermissionTreeActivity : Activity() {
     private lateinit var etSearch: EditText
     private lateinit var btnSearch: Button
     private lateinit var ldapItems: List<LdapItem>
-
-    // 存储部门与其子项的映射关系
-    private val deptChildrenMap = mutableMapOf<LinearLayout, MutableList<LinearLayout>>()
+    private lateinit var treeAdapter: TreeAdapter
+    private val flattenedNodes = mutableListOf<TreeNode>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.dialog_permission_tree)
 
         // 获取视图
-        treeContainer = findViewById(R.id.tree_container)
+        treeRecyclerView = findViewById(R.id.tree_recycler_view)
         btnClose = findViewById(R.id.btn_close)
         btnSelectAll = findViewById(R.id.btn_select_all)
         btnDeselectAll = findViewById(R.id.btn_deselect_all)
@@ -53,8 +52,22 @@ class PermissionTreeActivity : Activity() {
             emptyList<LdapItem>()
         }
 
-        // 构建树形结构
-        buildTreeStructure(treeContainer, this.ldapItems, 0)
+        // 转换为TreeNode并扁平化
+        val rootNodes = convertToTreeNodes(ldapItems, 0)
+        flattenTreeNodes(rootNodes, flattenedNodes)
+
+        // 初始化RecyclerView
+        treeAdapter = TreeAdapter(
+            nodes = flattenedNodes,
+            onItemClicked = { node ->
+                toggleNodeExpansion(node)
+            },
+            onAuthStateChanged = { node, isChecked ->
+                handleAuthStateChanged(node, isChecked)
+            }
+        )
+        treeRecyclerView.layoutManager = LinearLayoutManager(this)
+        treeRecyclerView.adapter = treeAdapter
 
         // 关闭按钮点击事件
         btnClose.setOnClickListener {
@@ -63,18 +76,18 @@ class PermissionTreeActivity : Activity() {
 
         // 全选按钮点击事件
         btnSelectAll.setOnClickListener {
-            selectAllItems(treeContainer, true)
+            selectAllItems(true)
         }
 
         // 反选按钮点击事件
         btnDeselectAll.setOnClickListener {
-            selectAllItems(treeContainer, false)
+            selectAllItems(false)
         }
 
         // 保存按钮点击事件
         btnSave.setOnClickListener {
             // 处理保存逻辑
-            val selectedItems = getSelectedItems(treeContainer)
+            val selectedItems = getSelectedItems()
             Toast.makeText(this, "保存选择的权限: ${selectedItems.size}", Toast.LENGTH_SHORT).show()
             finish()
         }
@@ -120,308 +133,164 @@ class PermissionTreeActivity : Activity() {
     private fun performSearch() {
         val searchText = etSearch.text.toString()
         android.util.Log.d("PermissionTree", "执行搜索: $searchText")
-        filterTreeItems(treeContainer, searchText)
-    }
-
-    private fun buildTreeStructure(container: LinearLayout, ldapItems: List<LdapItem>, level: Int) {
-        android.util.Log.d("PermissionTree", "开始构建树形结构，项目数量: ${ldapItems.size}")
-        for (item in ldapItems) {
-            // 创建部门节点
-            val deptView = createDeptView(item, level)
-            container.addView(deptView)
-
-            // 存储部门的子项
-            val children = mutableListOf<LinearLayout>()
-
-            // 添加员工节点
-            for (employee in item.employeeList) {
-                val employeeView = createEmployeeView(employee.name, level + 1)
-                container.addView(employeeView)
-                children.add(employeeView)
-                android.util.Log.d("PermissionTree", "添加员工: ${employee.name} 到部门: ${item.name}")
-            }
-
-            // 递归处理子部门
-            if (item.deptList.isNotEmpty()) {
-                val childDepts = mutableListOf<LinearLayout>()
-                buildTreeStructureWithChildren(childDepts, container, item.deptList, level + 1)
-                children.addAll(childDepts)
-                android.util.Log.d("PermissionTree", "添加子部门到部门: ${item.name}")
-            }
-
-            deptChildrenMap[deptView] = children
-            android.util.Log.d("PermissionTree", "部门 ${item.name} 的子项数量: ${children.size}")
-            // 默认折叠部门
-            toggleDeptVisibility(deptView, item, true)
-        }
-        android.util.Log.d("PermissionTree", "构建完成，deptChildrenMap大小: ${deptChildrenMap.size}")
-    }
-
-    private fun buildTreeStructureWithChildren(childDepts: MutableList<LinearLayout>, container: LinearLayout, ldapItems: List<LdapItem>, level: Int) {
-        android.util.Log.d("PermissionTree", "开始构建子部门树形结构，项目数量: ${ldapItems.size}")
-        for (item in ldapItems) {
-            // 创建部门节点
-            val deptView = createDeptView(item, level)
-            container.addView(deptView)
-            childDepts.add(deptView)
-
-            // 存储部门的子项
-            val children = mutableListOf<LinearLayout>()
-
-            // 添加员工节点
-            for (employee in item.employeeList) {
-                val employeeView = createEmployeeView(employee.name, level + 1)
-                container.addView(employeeView)
-                children.add(employeeView)
-                android.util.Log.d("PermissionTree", "添加员工: ${employee.name} 到部门: ${item.name}")
-            }
-
-            // 递归处理子部门
-            if (item.deptList.isNotEmpty()) {
-                val subChildDepts = mutableListOf<LinearLayout>()
-                buildTreeStructureWithChildren(subChildDepts, container, item.deptList, level + 1)
-                children.addAll(subChildDepts)
-                childDepts.addAll(subChildDepts)
-                android.util.Log.d("PermissionTree", "添加子部门到部门: ${item.name}")
-            }
-
-            deptChildrenMap[deptView] = children
-            android.util.Log.d("PermissionTree", "部门 ${item.name} 的子项数量: ${children.size}")
-            // 默认折叠部门
-            toggleDeptVisibility(deptView, item, true)
-        }
-    }
-
-    private fun createDeptView(dept: LdapItem, level: Int): LinearLayout {
-        val layout = LinearLayout(this)
-        layout.orientation = LinearLayout.HORIZONTAL
-        layout.setPadding(level * 40, 8, 8, 8)
-
-        // 展开/折叠按钮
-        val toggleButton = Button(this)
-        toggleButton.text = if (dept.deptList.isNotEmpty()) "▼" else ""
-        toggleButton.setPadding(4, 0, 4, 0)
-        toggleButton.minWidth = 40
-        toggleButton.setOnClickListener {
-            toggleDeptVisibility(layout, dept)
-        }
-
-        // 勾选框
-        val checkBox = CheckBox(this)
-        checkBox.text = dept.name
-        checkBox.textSize = 16f
-
-        // 添加到布局
-        layout.addView(toggleButton)
-        layout.addView(checkBox)
-
-        return layout
-    }
-
-    private fun createEmployeeView(account: String, level: Int): LinearLayout {
-        val layout = LinearLayout(this)
-        layout.orientation = LinearLayout.HORIZONTAL
-        layout.setPadding(level * 40, 4, 8, 4)
-
-        // 占位视图
-        val space = android.widget.Space(this)
-        space.minimumWidth = 40
-
-        // 勾选框
-        val checkBox = CheckBox(this)
-        checkBox.text = account
-        checkBox.textSize = 14f
-
-        // 添加到布局
-        layout.addView(space)
-        layout.addView(checkBox)
-
-        return layout
-    }
-
-    private fun toggleDeptVisibility(deptView: LinearLayout, dept: LdapItem, initialCollapse: Boolean = false) {
-        val toggleButton = deptView.getChildAt(0) as Button
-        val isExpanded = toggleButton.text == "▼"
-        val targetExpanded = if (initialCollapse) false else !isExpanded
-        
-        toggleButton.text = if (targetExpanded) "▼" else "▶"
-        
-        // 显示或隐藏子项
-        val children = deptChildrenMap[deptView]
-        children?.forEach { child ->
-            child.visibility = if (targetExpanded) View.VISIBLE else View.GONE
-        }
-    }
-
-    private fun selectAllItems(container: LinearLayout, select: Boolean) {
-        for (i in 0 until container.childCount) {
-            val child = container.getChildAt(i)
-            if (child is LinearLayout) {
-                val checkBox = child.getChildAt(1) as CheckBox
-                checkBox.isChecked = select
-            }
-        }
-    }
-
-    private fun getSelectedItems(container: LinearLayout): List<String> {
-        val selectedItems = mutableListOf<String>()
-        for (i in 0 until container.childCount) {
-            val child = container.getChildAt(i)
-            if (child is LinearLayout) {
-                val checkBox = child.getChildAt(1) as CheckBox
-                if (checkBox.isChecked) {
-                    selectedItems.add(checkBox.text.toString())
-                }
-            }
-        }
-        return selectedItems
-    }
-
-    private fun filterTreeItems(container: LinearLayout, searchText: String) {
-        android.util.Log.d("PermissionTree", "开始搜索: $searchText")
         if (searchText.isEmpty()) {
-            // 如果搜索文本为空，恢复默认状态（折叠所有部门）
-            deptChildrenMap.forEach { (deptView, _) ->
-                val toggleButton = deptView.getChildAt(0) as Button
-                if (toggleButton.text == "▼") {
-                    val deptName = (deptView.getChildAt(1) as CheckBox).text.toString()
-                    // 找到对应的LdapItem
-                    val ldapItem = findLdapItemByName(deptName)
-                    if (ldapItem != null) {
-                        toggleDeptVisibility(deptView, ldapItem, true)
-                    }
-                }
-            }
-            android.util.Log.d("PermissionTree", "搜索文本为空，恢复默认状态")
+            // 恢复完整树
+            flattenedNodes.clear()
+            val rootNodes = convertToTreeNodes(ldapItems, 0)
+            flattenTreeNodes(rootNodes, flattenedNodes)
+            treeAdapter.notifyDataSetChanged()
             return
         }
+
+        // 搜索匹配的节点
+        val matchingNodes = mutableListOf<TreeNode>()
+        findMatchingNodes(convertToTreeNodes(ldapItems, 0), searchText, matchingNodes)
         
-        // 搜索所有项目
-        val matchingItems = mutableListOf<LinearLayout>()
-        android.util.Log.d("PermissionTree", "deptChildrenMap大小: ${deptChildrenMap.size}")
+        // 显示匹配的节点及其父节点
+        val nodesToShow = mutableListOf<TreeNode>()
+        matchingNodes.forEach { node ->
+            addNodeAndParents(node, nodesToShow)
+        }
         
-        // 遍历所有部门视图
-        deptChildrenMap.forEach { (deptView, children) ->
-            val deptCheckBox = deptView.getChildAt(1) as CheckBox
-            val deptText = deptCheckBox.text.toString()
-            android.util.Log.d("PermissionTree", "检查部门: $deptText")
-            if (deptText.contains(searchText, ignoreCase = true)) {
-                matchingItems.add(deptView)
-                android.util.Log.d("PermissionTree", "匹配部门: $deptText")
-            }
-            
-            // 遍历部门的所有子项，包括被折叠的员工
-            android.util.Log.d("PermissionTree", "部门 $deptText 的子项数量: ${children.size}")
-            children.forEach { child ->
-                val childCheckBox = child.getChildAt(1) as CheckBox
-                val childText = childCheckBox.text.toString()
-                android.util.Log.d("PermissionTree", "检查员工: $childText")
-                if (childText.contains(searchText, ignoreCase = true)) {
-                    matchingItems.add(child)
-                    android.util.Log.d("PermissionTree", "匹配员工: $childText")
-                }
+        // 去重并排序
+        val uniqueNodes = nodesToShow.distinctBy { it.dn }.sortedBy { it.level }
+        
+        // 展开所有父节点
+        uniqueNodes.forEach { node ->
+            if (node.type == 0) {
+                node.isExpanded = true
             }
         }
         
-        // 遍历所有直接子项，确保没有遗漏
-        android.util.Log.d("PermissionTree", "container子项数量: ${container.childCount}")
-        for (i in 0 until container.childCount) {
-            val child = container.getChildAt(i)
-            if (child is LinearLayout) {
-                val checkBox = child.getChildAt(1) as CheckBox
-                val text = checkBox.text.toString()
-                android.util.Log.d("PermissionTree", "检查直接子项: $text")
-                if (text.contains(searchText, ignoreCase = true)) {
-                    if (!matchingItems.contains(child)) {
-                        matchingItems.add(child)
-                        android.util.Log.d("PermissionTree", "匹配直接子项: $text")
-                    }
-                }
-            }
-        }
-        
-        android.util.Log.d("PermissionTree", "匹配项目数量: ${matchingItems.size}")
-        if (matchingItems.isEmpty()) {
-            // 如果没有匹配项，隐藏所有项目
-            for (i in 0 until container.childCount) {
-                val child = container.getChildAt(i)
-                if (child is LinearLayout) {
-                    child.visibility = View.GONE
-                }
-            }
-            android.util.Log.d("PermissionTree", "没有匹配项，隐藏所有项目")
-            return
-        }
-        
-        // 隐藏所有项目
-        for (i in 0 until container.childCount) {
-            val child = container.getChildAt(i)
-            if (child is LinearLayout) {
-                child.visibility = View.GONE
-            }
-        }
-        android.util.Log.d("PermissionTree", "隐藏所有项目")
-        
-        // 显示匹配的项目及其所有父部门
-        matchingItems.forEach { item ->
-            val checkBox = item.getChildAt(1) as CheckBox
-            val text = checkBox.text.toString()
-            item.visibility = View.VISIBLE
-            android.util.Log.d("PermissionTree", "显示匹配项目: $text")
-            // 找到并显示所有父部门
-            showParentDepts(item)
-        }
+        // 重新扁平化显示
+        flattenedNodes.clear()
+        flattenTreeNodes(uniqueNodes.filter { it.parent == null }, flattenedNodes)
+        treeAdapter.notifyDataSetChanged()
     }
-    
-    private fun resetAllItemsVisibility(container: LinearLayout) {
-        // 重置所有直接子视图的可见性
-        for (i in 0 until container.childCount) {
-            val child = container.getChildAt(i)
-            if (child is LinearLayout) {
-                child.visibility = View.VISIBLE
+
+    private fun convertToTreeNodes(ldapItems: List<LdapItem>, level: Int): List<TreeNode> {
+        val nodes = mutableListOf<TreeNode>()
+        for (item in ldapItems) {
+            // 创建部门节点
+            val deptNode = TreeNode(
+                dn = item.fullPath,
+                name = item.name,
+                account = null,
+                type = 0, // 0: 部门
+                hasAuth = false, // 初始状态为未勾选
+                level = level,
+                isExpanded = false
+            )
+            nodes.add(deptNode)
+
+            // 添加员工节点
+            for (employee in item.employeeList) {
+                val empNode = TreeNode(
+                    dn = employee.fullPath,
+                    name = employee.name,
+                    account = employee.name, // 使用name作为account
+                    type = 1, // 1: 员工
+                    hasAuth = false, // 初始状态为未勾选
+                    level = level + 1,
+                    parent = deptNode
+                )
+                deptNode.children.add(empNode)
+            }
+
+            // 递归处理子部门
+            if (item.deptList.isNotEmpty()) {
+                val childDeptNodes = convertToTreeNodes(item.deptList, level + 1)
+                childDeptNodes.forEach { it.parent = deptNode }
+                deptNode.children.addAll(childDeptNodes)
+            }
+        }
+        return nodes
+    }
+
+    private fun flattenTreeNodes(nodes: List<TreeNode>, result: MutableList<TreeNode>) {
+        for (node in nodes) {
+            result.add(node)
+            // 总是添加所有子节点，不管是否展开
+            if (node.children.isNotEmpty()) {
+                flattenTreeNodes(node.children, result)
             }
         }
     }
-    
-    private fun showParentDepts(item: LinearLayout) {
-        // 找到包含该项目的部门
-        deptChildrenMap.forEach { (deptView, children) ->
-            if (children.contains(item)) {
-                deptView.visibility = View.VISIBLE
-                // 展开该部门
-                val toggleButton = deptView.getChildAt(0) as Button
-                if (toggleButton.text == "▶") {
-                    val deptName = (deptView.getChildAt(1) as CheckBox).text.toString()
-                    val ldapItem = findLdapItemByName(deptName)
-                    if (ldapItem != null) {
-                        toggleDeptVisibility(deptView, ldapItem)
-                    }
-                }
-                // 递归显示父部门
-                showParentDepts(deptView)
+
+    private fun toggleNodeExpansion(node: TreeNode) {
+        if (node.type == 0 && node.children.isNotEmpty()) {
+            node.toggleExpansion()
+            // 直接更新列表，不重新创建节点
+            treeAdapter.notifyDataSetChanged()
+        }
+    }
+
+    private fun selectAllItems(select: Boolean) {
+        flattenedNodes.forEach { node ->
+            if (node.type == 0) {
+                node.setAuthState(select)
+                node.updateChildrenAuthState(select)
+            } else {
+                node.setAuthState(select)
+            }
+        }
+        treeAdapter.notifyDataSetChanged()
+    }
+
+    private fun handleAuthStateChanged(node: TreeNode, isChecked: Boolean) {
+        // 更新当前节点状态
+        node.setAuthState(isChecked)
+        
+        // 如果是部门节点，递归更新子节点
+        if (node.type == 0) {
+            node.updateChildrenAuthState(isChecked)
+        }
+        
+        // 更新父节点状态
+        updateParentNodeState(node.parent)
+        
+        // 通知适配器更新
+        treeAdapter.notifyDataSetChanged()
+    }
+
+    private fun updateParentNodeState(parent: TreeNode?) {
+        if (parent == null) return
+        
+        val allSelected = parent.areAllChildrenSelected()
+        val anySelected = parent.hasSelectedChildren()
+        
+        if (allSelected) {
+            parent.setAuthState(true)
+        } else if (anySelected) {
+            // 保持父节点的当前状态，这里可以根据需求调整
+        } else {
+            parent.setAuthState(false)
+        }
+        
+        // 递归更新上一级父节点
+        updateParentNodeState(parent.parent)
+    }
+
+    private fun getSelectedItems(): List<String> {
+        return flattenedNodes.filter { it.hasAuth }.map { it.name }
+    }
+
+    private fun findMatchingNodes(nodes: List<TreeNode>, searchText: String, result: MutableList<TreeNode>) {
+        for (node in nodes) {
+            if (node.name.contains(searchText, ignoreCase = true)) {
+                result.add(node)
+            }
+            if (node.children.isNotEmpty()) {
+                findMatchingNodes(node.children, searchText, result)
             }
         }
     }
-    
-    private fun findLdapItemByName(name: String): LdapItem? {
-        return findLdapItemByNameRecursive(ldapItems, name)
-    }
-    
-    private fun findLdapItemByNameRecursive(items: List<LdapItem>, name: String): LdapItem? {
-        for (item in items) {
-            if (item.name == name) {
-                return item
-            }
-            val found = findLdapItemByNameRecursive(item.deptList, name)
-            if (found != null) {
-                return found
-            }
-            val employeeFound = findLdapItemByNameRecursive(item.employeeList, name)
-            if (employeeFound != null) {
-                return employeeFound
-            }
+
+    private fun addNodeAndParents(node: TreeNode, result: MutableList<TreeNode>) {
+        result.add(node)
+        if (node.parent != null) {
+            addNodeAndParents(node.parent!!, result)
         }
-        return null
     }
 
     // LdapItem数据类

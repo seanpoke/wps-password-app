@@ -91,23 +91,14 @@
     </LinearLayout>
 
     <!-- 树形结构内容 -->
-    <ScrollView
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/tree_recycler_view"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:padding="8dp"
+        android:clipToPadding="false" />
 
-        <LinearLayout
-            android:id="@+id/tree_container"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="8dp">
-
-            <!-- 树形结构将通过代码动态添加 -->
-
-        </LinearLayout>
-
-    </ScrollView>
 
     <!-- 底部操作按钮 -->
     <LinearLayout
