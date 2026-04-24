@@ -588,7 +588,16 @@ class FloatingButtonService : Service() {
                     }
                 },
                 onAuthStateChanged = { node, hasAuth ->
-                    // 这里可以添加状态保存逻辑
+                    // 实现部门级联选择功能
+                    if (node.type == 0) { // 如果是部门节点
+                        // 递归更新所有子节点的权限状态
+                        node.updateChildrenAuthState(hasAuth)
+                        // 重新计算扁平化列表并通知适配器更新
+                        val newList = flattenTree(rootNodes).toMutableList()
+                        treeAdapter?.nodes?.clear()
+                        treeAdapter?.nodes?.addAll(newList)
+                        treeAdapter?.notifyDataSetChanged()
+                    }
                 }
             )
             recyclerView.adapter = treeAdapter
