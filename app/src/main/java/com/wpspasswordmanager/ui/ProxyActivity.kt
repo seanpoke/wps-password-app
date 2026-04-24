@@ -196,11 +196,12 @@ class ProxyActivity : AppCompatActivity() {
         }
 
         try {
-            // 获取文件名
-            val fileName = getFileName(uri)
+            // 获取文件名和文件是否存在于WpsManagement目录的判断结果
+            val (fileName, isInWpsManagement) = getFileName(uri)
             Log.d(TAG, "文件名: $fileName")
             Log.d(TAG, "文件 URI: $uri")
-            handleFileUri(uri, fileName)
+            Log.d(TAG, "文件是否在WpsManagement目录中: $isInWpsManagement")
+            handleFileUri(uri, fileName, isInWpsManagement)
         } catch (e: Exception) {
             Log.e(TAG, "处理 Intent 失败", e)
             // 即使失败也转发给 WPS
@@ -208,9 +209,17 @@ class ProxyActivity : AppCompatActivity() {
         }
     }
 
-    private fun getFileName(uri: Uri): String {
+    private fun getFileName(uri: Uri): Pair<String, Boolean> {
         var fileName = ""
+        var isInWpsManagement = false
+        
         try {
+            // 获取WpsManagement目录路径
+            val documentsDir = 
+                android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOCUMENTS)
+            val wpsManagementDir = File(documentsDir, "WpsManagement")
+            val wpsManagementPath = wpsManagementDir.absolutePath
+            
             val cursor = contentResolver.query(uri, null, null, null, null)
             cursor?.use {
                 if (it.moveToFirst()) {
@@ -218,6 +227,15 @@ class ProxyActivity : AppCompatActivity() {
                     val nameIndex = it.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
                     if (nameIndex != -1) {
                         fileName = it.getString(nameIndex)
+                    }
+                    
+                    // 检查文件是否在WpsManagement目录中
+                    val pathIndex = it.getColumnIndex("_data")
+                    if (pathIndex != -1) {
+                        val filePath = it.getString(pathIndex)
+                        if (!filePath.isNullOrEmpty()) {
+                            isInWpsManagement = filePath.contains(wpsManagementPath, ignoreCase = true)
+                        }
                     }
                 }
             }
@@ -230,7 +248,7 @@ class ProxyActivity : AppCompatActivity() {
             fileName = getFileNameFromUri(uri)
         }
 
-        return fileName
+        return Pair(fileName, isInWpsManagement)
     }
 
     /**
@@ -253,37 +271,39 @@ class ProxyActivity : AppCompatActivity() {
         return true
     }
 
-    private fun handleFileUri(uri: Uri, fileName: String) {
+    private fun handleFileUri(uri: Uri, fileName: String, isInWpsManagement: Boolean) {
         // 使用完整的URI字符串作为密码存储的键，确保唯一性
         val fileIdentifier = uri.toString()
         Log.d(TAG, "文件标识: $fileIdentifier")
         Log.d(TAG, "传入的文件名: '$fileName'")
         Log.d(TAG, "文件名长度: ${fileName.length}")
+        Log.d(TAG, "文件是否在WpsManagement目录中: $isInWpsManagement")
 
         // 实现完整的文件处理流程
-        val localFile = processExternalContentUri(uri, fileName)
-        if (localFile != null) {
-            val localFilePath = localFile.absolutePath
-            Log.d(TAG, "文件处理完成，本地路径: $localFilePath")
-            // 保存本地文件路径到SharedPreferences
-            saveFileUriToPreferences(localFilePath)
-        } else {
-            Log.e(TAG, "文件处理失败")
-            // 保存原始URI作为备选
-            saveFileUriToPreferences(fileIdentifier)
-        }
+        processExternalContentUri(uri, fileName, isInWpsManagement) { localFile ->
+            if (localFile != null) {
+                val localFilePath = localFile.absolutePath
+                Log.d(TAG, "文件处理完成，本地路径: $localFilePath")
+                // 保存本地文件路径到SharedPreferences
+                saveFileUriToPreferences(localFilePath)
+            } else {
+                Log.e(TAG, "文件处理失败")
+                // 保存原始URI作为备选
+                saveFileUriToPreferences(fileIdentifier)
+            }
 
-        // 无论是否找到密码，都转发给 WPS
-        forwardToWps(localFile, uri)
+            // 无论是否找到密码，都转发给 WPS
+            forwardToWps(localFile, uri)
+        }
     }
 
     /**
      * 处理外部传入的ContentURI，实现完整的文件处理流程
      */
-    private fun processExternalContentUri(uri: Uri, originalFileName: String): File? {
+    private fun processExternalContentUri(uri: Uri, originalFileName: String, isInWpsManagement: Boolean, callback: (File?) -> Unit) {
         try {
             // 1. 获取WpsManagement目录
-            val documentsDir =
+            val documentsDir = 
                 android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOCUMENTS)
             val wpsManagementDir = File(documentsDir, "WpsManagement")
 
@@ -296,22 +316,141 @@ class ProxyActivity : AppCompatActivity() {
             // 2. 文件存在性检查与拷贝
             val targetFile = File(wpsManagementDir, originalFileName)
             if (targetFile.exists() && targetFile.length() > 0) {
-                Log.d(TAG, "文件已存在，直接使用本地副本: ${targetFile.absolutePath}")
+                // 根据传入的isInWpsManagement参数判断是否直接打开文件
+                if (isInWpsManagement) {
+                    // 文件存在且来源于WpsManagement目录，直接打开文件
+                    Log.d(TAG, "文件存在且来源于WpsManagement目录，直接使用: ${targetFile.absolutePath}")
+                    processFile(targetFile, callback)
+                } else {
+                    // 文件存在但不是来源于WpsManagement目录，显示弹窗询问用户
+                    val builder = android.app.AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert)
+                    builder.setTitle("文件已存在")
+                    builder.setMessage("当前文件已存在，是否覆盖")
+                    
+                    // 设置按钮样式和间距
+                    builder.setNegativeButton("打开已存在的文档") { dialog, which ->
+                        dialog.dismiss()
+                        // 不执行任何操作，使用本地已存在的文件
+                        processFile(targetFile, callback)
+                    }
+                    builder.setPositiveButton("覆盖文档") { dialog, which ->
+                        dialog.dismiss()
+                        
+                        // 显示加载状态
+                        val loadingBuilder = android.app.AlertDialog.Builder(this)
+                        loadingBuilder.setMessage("正在处理文件...")
+                        loadingBuilder.setCancelable(false)
+                        val loadingDialog = loadingBuilder.create()
+                        loadingDialog.show()
+                        
+                        // 在后台线程中执行文件操作
+                        Thread {
+                            try {
+                                // 执行文件移除操作
+                                if (targetFile.delete()) {
+                                    Log.d(TAG, "成功删除已存在的文件: ${targetFile.absolutePath}")
+                                    // 执行文件拷贝
+                                    val copySuccess = copyFileFromContentUri(uri, targetFile)
+                                    runOnUiThread {
+                                        loadingDialog.dismiss()
+                                        if (copySuccess) {
+                                            // 显示操作成功提示
+                                            android.widget.Toast.makeText(this, "文件覆盖成功", android.widget.Toast.LENGTH_SHORT).show()
+                                            processFile(targetFile, callback)
+                                        } else {
+                                            // 显示操作失败提示
+                                            android.widget.Toast.makeText(this, "文件拷贝失败", android.widget.Toast.LENGTH_SHORT).show()
+                                            Log.d(TAG, "文件拷贝失败: ${targetFile.absolutePath}")
+                                            callback(null)
+                                        }
+                                    }
+                                } else {
+                                    runOnUiThread {
+                                        loadingDialog.dismiss()
+                                        // 显示删除失败提示
+                                        android.widget.Toast.makeText(this, "删除文件失败", android.widget.Toast.LENGTH_SHORT).show()
+                                        Log.d(TAG, "删除文件失败: ${targetFile.absolutePath}")
+                                        processFile(targetFile, callback)
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                runOnUiThread {
+                                    loadingDialog.dismiss()
+                                    // 显示错误提示
+                                    android.widget.Toast.makeText(this, "文件操作失败", android.widget.Toast.LENGTH_SHORT).show()
+                                    Log.e(TAG, "删除文件时发生错误", e)
+                                    processFile(targetFile, callback)
+                                }
+                            }
+                        }.start()
+                    }
+                    val dialog = builder.create()
+                    dialog.show()
+                    
+                    // 设置弹窗大小，根据屏幕尺寸动态计算
+                    val window = dialog.window
+                    if (window != null) {
+                        val displayMetrics = resources.displayMetrics
+                        val screenWidth = displayMetrics.widthPixels
+                        val screenHeight = displayMetrics.heightPixels
+                        
+                        // 计算弹窗大小，使用屏幕宽度的70%和高度的35%
+                        val dialogWidth = (screenWidth * 0.7).toInt()
+                        val dialogHeight = (screenHeight * 0.35).toInt()
+                        
+                        window.setLayout(dialogWidth, dialogHeight)
+                        window.setGravity(android.view.Gravity.CENTER) // 设置弹窗居中
+                        
+                        // 设置弹窗背景和边框
+                        window.setBackgroundDrawableResource(android.R.drawable.dialog_frame)
+                        
+                        // 设置按钮样式
+                        val negativeButton = dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE)
+                        val positiveButton = dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE)
+                        
+                        if (negativeButton != null && positiveButton != null) {
+                            // 设置按钮文字颜色
+                            negativeButton.setTextColor(resources.getColor(android.R.color.holo_blue_dark))
+                            positiveButton.setTextColor(resources.getColor(android.R.color.holo_blue_dark))
+                            
+                            // 设置按钮间距
+                            val layoutParams = negativeButton.layoutParams as android.widget.LinearLayout.LayoutParams
+                            layoutParams.weight = 1f
+                            layoutParams.marginStart = 16
+                            layoutParams.marginEnd = 16
+                            negativeButton.layoutParams = layoutParams
+                            positiveButton.layoutParams = layoutParams
+                        }
+                    }
+                }
             } else if (!copyFileFromContentUri(uri, targetFile)) {
                 Log.d(TAG, "文件拷贝失败: ${targetFile.absolutePath}")
-                return null
+                callback(null)
+            } else {
+                processFile(targetFile, callback)
             }
-            // 读取uid
-            val uid =  readUidFromFile(targetFile.absolutePath)
-                ?: FileMetaFactory.createUid()
-            // 读取密码
-            val password = readAndParsePassword(targetFile.absolutePath, uid)
-            // 初始化FileMeta对象并获取权限信息
-            initFileMetaWithPermissions(targetFile.absolutePath, password, uid)
-            return targetFile
         } catch (e: Exception) {
             Log.e(TAG, "处理ContentURI失败", e)
-            return null
+            callback(null)
+        }
+    }
+
+    /**
+     * 处理文件，读取UID和密码，初始化FileMeta对象
+     */
+    private fun processFile(file: File, callback: (File?) -> Unit) {
+        try {
+            // 读取uid
+            val uid = readUidFromFile(file.absolutePath)
+                ?: FileMetaFactory.createUid()
+            // 读取密码
+            val password = readAndParsePassword(file.absolutePath, uid)
+            // 初始化FileMeta对象并获取权限信息
+            initFileMetaWithPermissions(file.absolutePath, password, uid)
+            callback(file)
+        } catch (e: Exception) {
+            Log.e(TAG, "处理文件失败", e)
+            callback(null)
         }
     }
 
