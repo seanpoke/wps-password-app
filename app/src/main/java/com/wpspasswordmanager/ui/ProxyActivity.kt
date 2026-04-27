@@ -239,6 +239,15 @@ class ProxyActivity : AppCompatActivity() {
                     }
                 }
             }
+            
+            // 如果通过ContentResolver无法判断，尝试从URI路径中判断
+            if (!isInWpsManagement) {
+                val uriPath = uri.path
+                if (!uriPath.isNullOrEmpty()) {
+                    // 检查URI路径是否包含WpsManagement目录
+                    isInWpsManagement = uriPath.contains("WpsManagement", ignoreCase = true)
+                }
+            }
         } catch (e: Exception) {
             Log.e(TAG, "获取文件名失败", e)
         }
