@@ -4,7 +4,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import android.util.Log
+import com.wpspasswordmanager.utils.LogManager
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
@@ -57,6 +57,10 @@ class MainActivity : AppCompatActivity() {
     private var isLoggedIn = false
     private lateinit var sessionExpiredReceiver: android.content.BroadcastReceiver
 
+    // 标题点击计数和计时器
+    private var titleClickCount = 0
+    private var titleClickTimer: android.os.Handler? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -84,7 +88,7 @@ class MainActivity : AppCompatActivity() {
         // 初始化会话过期广播接收器
         sessionExpiredReceiver = object : android.content.BroadcastReceiver() {
             override fun onReceive(context: android.content.Context, intent: android.content.Intent) {
-                Log.d(TAG, "收到会话过期广播")
+                LogManager.log(TAG, "收到会话过期广播", "DEBUG")
                 handle401Error()
             }
         }
@@ -135,6 +139,30 @@ class MainActivity : AppCompatActivity() {
         portError = findViewById(R.id.port_error)
         usernameError = findViewById(R.id.username_error)
         passwordError = findViewById(R.id.password_error)
+
+        // 初始化标题点击事件
+        val appTitle = findViewById<TextView>(R.id.app_title)
+        appTitle.setOnClickListener {
+            handleTitleClick()
+        }
+    }
+
+    private fun handleTitleClick() {
+        titleClickCount++
+        
+        // 重置计时器
+        titleClickTimer?.removeCallbacksAndMessages(null)
+        titleClickTimer = android.os.Handler()
+        titleClickTimer?.postDelayed({
+            titleClickCount = 0
+        }, 1000) // 1秒内点击3次
+        
+        // 连续点击3次，打开日志页面
+        if (titleClickCount == 3) {
+            val intent = Intent(this, LogActivity::class.java)
+            startActivity(intent)
+            titleClickCount = 0
+        }
     }
 
     private fun setupClickListeners() {
@@ -154,6 +182,8 @@ class MainActivity : AppCompatActivity() {
                 handleLogin()
             }
         }
+
+
     }
 
     override fun onResume() {
@@ -227,7 +257,7 @@ class MainActivity : AppCompatActivity() {
 
     // 处理登录逻辑
     private fun handleLogin() {
-        Log.d(TAG, "开始处理登录")
+        LogManager.log(TAG, "开始处理登录", "DEBUG")
         // 清除之前的错误提示
         clearErrorMessages()
 
@@ -238,7 +268,7 @@ class MainActivity : AppCompatActivity() {
         val password = passwordInput.text.toString().trim()
         val rememberPassword = rememberPasswordCheckbox.isChecked
 
-        Log.d(TAG, "登录参数: IP=$ipAddress, Port=$port, Username=$username, RememberPassword=$rememberPassword")
+        LogManager.log(TAG, "登录参数: IP=$ipAddress, Port=$port, Username=$username, RememberPassword=$rememberPassword", "DEBUG")
 
         // 数据校验
         var isValid = true
@@ -248,7 +278,7 @@ class MainActivity : AppCompatActivity() {
             ipAddressError.text = "IP地址不能为空"
             ipAddressError.visibility = TextView.VISIBLE
             isValid = false
-            Log.d(TAG, "IP地址为空")
+            LogManager.log(TAG, "IP地址为空", "DEBUG")
         }
 
         // 校验端口号
@@ -256,12 +286,12 @@ class MainActivity : AppCompatActivity() {
             portError.text = "端口号不能为空"
             portError.visibility = TextView.VISIBLE
             isValid = false
-            Log.d(TAG, "端口号为空")
+            LogManager.log(TAG, "端口号为空", "DEBUG")
         } else if (!port.matches("\\d+".toRegex()) || port.toInt() !in 1..65535) {
             portError.text = "请输入有效的端口号（1-65535）"
             portError.visibility = TextView.VISIBLE
             isValid = false
-            Log.d(TAG, "端口号无效: $port")
+            LogManager.log(TAG, "端口号无效: $port", "DEBUG")
         }
 
         // 校验用户名
@@ -269,7 +299,7 @@ class MainActivity : AppCompatActivity() {
             usernameError.text = "用户名不能为空"
             usernameError.visibility = TextView.VISIBLE
             isValid = false
-            Log.d(TAG, "用户名为空")
+            LogManager.log(TAG, "用户名为空", "DEBUG")
         }
 
         // 校验密码
@@ -277,18 +307,18 @@ class MainActivity : AppCompatActivity() {
             passwordError.text = "密码不能为空"
             passwordError.visibility = TextView.VISIBLE
             isValid = false
-            Log.d(TAG, "密码为空")
+            LogManager.log(TAG, "密码为空", "DEBUG")
         }
 
         if (isValid) {
-            Log.d(TAG, "参数校验通过，准备保存配置并执行登录")
+            LogManager.log(TAG, "参数校验通过，准备保存配置并执行登录", "DEBUG")
             // 保存配置信息
             saveConfig(ipAddress, port, username, password, rememberPassword)
 
             // 执行登录请求
             performLogin(username, password)
         } else {
-            Log.d(TAG, "参数校验失败")
+            LogManager.log(TAG, "参数校验失败", "DEBUG")
         }
     }
 
@@ -321,11 +351,11 @@ class MainActivity : AppCompatActivity() {
 
     // 执行登录请求
     private fun performLogin(username: String, password: String) {
-        Log.d(TAG, "开始执行登录请求: Username=$username")
+        LogManager.log(TAG, "开始执行登录请求: Username=$username", "DEBUG")
         // 执行真实的网络请求（异步）
         networkManager.login(username, password, object : NetworkCallback {
             override fun onSuccess(response: String) {
-                Log.d(TAG, "登录请求成功，响应: $response")
+                LogManager.log(TAG, "登录请求成功，响应: $response", "DEBUG")
                 // 在主线程更新UI
                 runOnUiThread {
                     processLoginResponse(response)
@@ -333,7 +363,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onError(error: String) {
-                Log.e(TAG, "登录请求失败: $error")
+                LogManager.log(TAG, "登录请求失败: $error", "ERROR")
                 // 在主线程更新UI
                 runOnUiThread {
                     if (error.contains("401")) {
@@ -348,15 +378,15 @@ class MainActivity : AppCompatActivity() {
 
     // 处理登录响应
     private fun processLoginResponse(response: String) {
-        Log.d(TAG, "开始处理登录响应")
+        LogManager.log(TAG, "开始处理登录响应", "DEBUG")
         val gson = Gson()
         try {
             // 尝试解析为成功响应
             val loginResponse = gson.fromJson(response, LoginResponse::class.java)
-            Log.d(TAG, "解析登录响应成功: status=${loginResponse.status}, message=${loginResponse.message}")
+            LogManager.log(TAG, "解析登录响应成功: status=${loginResponse.status}, message=${loginResponse.message}", "DEBUG")
 
             if (loginResponse.status == 200) {
-                Log.d(TAG, "登录成功: account=${loginResponse.data.account}, name=${loginResponse.data.name}")
+                LogManager.log(TAG, "登录成功: account=${loginResponse.data.account}, name=${loginResponse.data.name}", "DEBUG")
                 // 保存用户信息
                 configStorage.saveUserInfo(loginResponse.data)
 
@@ -384,18 +414,18 @@ class MainActivity : AppCompatActivity() {
                 startService(heartbeatIntent)
             } else {
                 // 处理错误状态
-                Log.e(TAG, "登录失败: ${loginResponse.message}")
+                LogManager.log(TAG, "登录失败: ${loginResponse.message}", "ERROR")
                 Toast.makeText(this, loginResponse.message, Toast.LENGTH_SHORT).show()
             }
         } catch (e: Exception) {
-            Log.e(TAG, "解析登录响应失败: ${e.message}")
+            LogManager.log(TAG, "解析登录响应失败: ${e.message}", "ERROR")
             // 尝试解析为错误响应
             try {
                 val errorResponse = gson.fromJson(response, ErrorResponse::class.java)
-                Log.d(TAG, "解析错误响应成功: message=${errorResponse.message}")
+                LogManager.log(TAG, "解析错误响应成功: message=${errorResponse.message}", "DEBUG")
                 Toast.makeText(this, errorResponse.message, Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
-                Log.e(TAG, "解析错误响应失败: ${e.message}")
+                LogManager.log(TAG, "解析错误响应失败: ${e.message}", "ERROR")
                 // 解析失败
                 Toast.makeText(this, "登录失败：响应格式错误", Toast.LENGTH_SHORT).show()
             }
@@ -453,17 +483,17 @@ class MainActivity : AppCompatActivity() {
         val username = userInfo?.account ?: "未知用户"
         val token = userInfo?.token
 
-        Log.d(TAG, "开始处理注销: username=$username, token=$token")
+        LogManager.log(TAG, "开始处理注销: username=$username, token=$token", "DEBUG")
 
         // 调用登出接口（如果有token）
         if (token != null) {
             networkManager.logout(token, object : NetworkCallback {
                 override fun onSuccess(response: String) {
-                    Log.d(TAG, "登出接口调用成功: $response")
+                    LogManager.log(TAG, "登出接口调用成功: $response", "DEBUG")
                 }
 
                 override fun onError(error: String) {
-                    Log.e(TAG, "登出接口调用失败: $error")
+                    LogManager.log(TAG, "登出接口调用失败: $error", "ERROR")
                     // 登出请求失败不影响界面正常跳转
                 }
             })
@@ -533,7 +563,7 @@ class MainActivity : AppCompatActivity() {
 
     // 处理401错误
     private fun handle401Error() {
-        Log.d(TAG, "处理401错误")
+        LogManager.log(TAG, "处理401错误", "DEBUG")
         // 清理用户信息和状态
         configStorage.clearUserInfo()
         isLoggedIn = false

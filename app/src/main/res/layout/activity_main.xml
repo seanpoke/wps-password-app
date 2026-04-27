@@ -13,6 +13,7 @@
         android:orientation="vertical">
 
     <TextView
+        android:id="@+id/app_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
@@ -253,14 +254,7 @@
         android:textColor="@android:color/white"
         android:visibility="gone" />
 
-    <Button
-        android:id="@+id/settings_button"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:text="设置"
-        android:background="@android:color/holo_orange_light"
-        android:textColor="@android:color/white" />
+
 
     <!-- 权限引导信息 -->
     <LinearLayout

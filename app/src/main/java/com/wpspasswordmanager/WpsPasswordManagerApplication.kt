@@ -2,7 +2,7 @@ package com.wpspasswordmanager
 
 import android.app.Application
 import android.os.FileObserver
-import android.util.Log
+import com.wpspasswordmanager.utils.LogManager
 import com.wpspasswordmanager.business.FileMetaFactory
 import com.wpspasswordmanager.business.FileMetaManager
 import com.wpspasswordmanager.network.NetworkManager
@@ -38,6 +38,11 @@ class WpsPasswordManagerApplication : Application() {
         super.onCreate()
         instance = this
 
+        // 初始化 LogManager 的上下文提供者
+        com.wpspasswordmanager.utils.LogManager.ContextProvider.initialize(this)
+        // 记录应用启动日志
+        com.wpspasswordmanager.utils.LogManager.log("Application", "WPS Password Manager started", "INFO")
+
         // 初始化文件观察者
         initFileObserver()
     }
@@ -53,37 +58,37 @@ class WpsPasswordManagerApplication : Application() {
         // 确保目录存在
         if (!wpsManagementDir.exists()) {
             wpsManagementDir.mkdirs()
-            Log.d(TAG, "创建 WpsManagement 目录: ${wpsManagementDir.absolutePath}")
+            LogManager.log(TAG, "创建 WpsManagement 目录: ${wpsManagementDir.absolutePath}", "DEBUG")
         }
 
         // 检查目录是否存在且可访问
         if (wpsManagementDir.exists() && wpsManagementDir.isDirectory && wpsManagementDir.canRead()) {
-            Log.d(TAG, "WpsManagement 目录存在且可访问: ${wpsManagementDir.absolutePath}")
+            LogManager.log(TAG, "WpsManagement 目录存在且可访问: ${wpsManagementDir.absolutePath}", "DEBUG")
             // 列出目录内容
             val files = wpsManagementDir.listFiles()
             if (files != null && files.isNotEmpty()) {
-                Log.d(TAG, "WpsManagement 目录包含 ${files.size} 个文件/目录")
+                LogManager.log(TAG, "WpsManagement 目录包含 ${files.size} 个文件/目录", "DEBUG")
                 for (file in files) {
-                    Log.d(TAG, "  - ${file.name} (${if (file.isDirectory) "目录" else "文件"})")
+                    LogManager.log(TAG, "  - ${file.name} (${if (file.isDirectory) "目录" else "文件"})")
                 }
             } else {
-                Log.d(TAG, "WpsManagement 目录为空")
+                LogManager.log(TAG, "WpsManagement 目录为空", "DEBUG")
             }
         } else {
-            Log.e(TAG, "WpsManagement 目录不存在或不可访问: ${wpsManagementDir.absolutePath}")
+            LogManager.log(TAG, "WpsManagement 目录不存在或不可访问: ${wpsManagementDir.absolutePath}", "ERROR")
         }
 
         // 使用简单文件观察者，只监控WpsManagement目录
         fileObserver = SimpleFileObserver(wpsManagementDir.absolutePath)
         fileObserver?.startWatching()
-        Log.d(TAG, "文件观察者已启动，监听目录: ${wpsManagementDir.absolutePath}")
+        LogManager.log(TAG, "文件观察者已启动，监听目录: ${wpsManagementDir.absolutePath}", "DEBUG")
     }
 
     override fun onTerminate() {
         super.onTerminate()
         // 停止文件观察者
         fileObserver?.stopWatching()
-        Log.d(TAG, "文件观察者已停止")
+        LogManager.log(TAG, "文件观察者已停止", "DEBUG")
     }
 
     /**
@@ -100,36 +105,36 @@ class WpsPasswordManagerApplication : Application() {
             when (event and ALL_EVENTS) {
                 CLOSE_WRITE -> {
                     // 处理文件写入完成事件
-                    Log.d(TAG, "监听到文件写入完成事件: $fullPath")
+                    LogManager.log(TAG, "监听到文件写入完成事件: $fullPath", "DEBUG")
                     if (isPluginOperation()) {
-                        Log.d(TAG, "跳过由插件引起的CLOSE_WRITE事件: $fullPath")
+                        LogManager.log(TAG, "跳过由插件引起的CLOSE_WRITE事件: $fullPath", "DEBUG")
                     } else {
                         handleFileCloseWrite(fullPath)
-                        Log.d(TAG, "文件删除: $fullPath")
+                        LogManager.log(TAG, "文件删除: $fullPath", "DEBUG")
                     }
                 }
 
                 DELETE -> {
                     if (isPluginOperation()) {
-                        Log.d(TAG, "跳过由插件引起的DELETE事件: $fullPath")
+                        LogManager.log(TAG, "跳过由插件引起的DELETE事件: $fullPath", "DEBUG")
                     } else {
                         FileMetaFactory.clearFile(fullPath)
-                        Log.d(TAG, "文件删除: $fullPath")
+                        LogManager.log(TAG, "文件删除: $fullPath", "DEBUG")
                     }
                 }
 
                 MOVED_FROM -> {
                     if (isPluginOperation()) {
-                        Log.d(TAG, "跳过由插件引起的文件重命名事件(原文件): $fullPath")
+                        LogManager.log(TAG, "跳过由插件引起的文件重命名事件(原文件): $fullPath", "DEBUG")
                     } else {
                         FileMetaFactory.clearFile(fullPath)
-                        Log.d(TAG, "文件重命名(原文件): $fullPath")
+                        LogManager.log(TAG, "文件重命名(原文件): $fullPath", "DEBUG")
                     }
                 }
 
                 MOVED_TO -> {
                     // 处理文件重命名（新文件），可能是WPS的保存操作
-                    Log.d(TAG, "监听到文件移动完成: $fullPath")
+                    LogManager.log(TAG, "监听到文件移动完成: $fullPath", "DEBUG")
                     // 检查是否是我们监控的文件类型
                     if (fullPath.endsWith(".docx") || fullPath.endsWith(".doc") || fullPath.endsWith(
                             ".xlsx"
@@ -140,7 +145,7 @@ class WpsPasswordManagerApplication : Application() {
                         if (!isPluginOperation()) {
                             handleFileCloseWrite(fullPath)
                         } else {
-                            Log.d(TAG, "跳过由插件引起的MOVED_TO事件: $fullPath")
+                            LogManager.log(TAG, "跳过由插件引起的MOVED_TO事件: $fullPath", "DEBUG")
                         }
                     }
                 }
@@ -153,7 +158,7 @@ class WpsPasswordManagerApplication : Application() {
      * 使用异步防抖处理模式，参考 FileSystemEventListener 的实现
      */
     private fun handleFileCloseWrite(filePath: String) {
-        Log.d(TAG, "[时间戳: ${System.currentTimeMillis()}] 监听到文件写入完成事件: $filePath")
+        LogManager.log(TAG, "[时间戳: ${System.currentTimeMillis()}] 监听到文件写入完成事件: $filePath", "DEBUG")
 
         // 防抖处理：取消之前的任务，只处理最后一次事件
         debounceRunnable?.let { handler?.removeCallbacks(it) }
@@ -166,29 +171,32 @@ class WpsPasswordManagerApplication : Application() {
             try {
                 // 检查是否已经处理过此事件
                 if (isHandlingEvent) {
-                    Log.d(
-                        TAG,
-                        "[时间戳: ${System.currentTimeMillis()}] 事件已在处理中，跳过: $filePath"
-                    )
+                    LogManager.log(
+                    TAG,
+                    "[时间戳: ${System.currentTimeMillis()}] 事件已在处理中，跳过: $filePath",
+                    "DEBUG"
+                )
                     return@Runnable
                 }
                 isHandlingEvent = true
 
-                Log.d(
+                LogManager.log(
                     TAG,
-                    "[时间戳: ${System.currentTimeMillis()}] 开始处理文件写入事件: $filePath"
+                    "[时间戳: ${System.currentTimeMillis()}] 开始处理文件写入事件: $filePath",
+                    "DEBUG"
                 )
 
                 // 检查文件状态
                 val file = File(filePath)
-                Log.d(
+                LogManager.log(
                     TAG,
-                    "文件状态 - 存在: ${file.exists()}, 可写: ${file.canWrite()}, 大小: ${file.length()} 字节"
+                    "文件状态 - 存在: ${file.exists()}, 可写: ${file.canWrite()}, 大小: ${file.length()} 字节",
+                    "DEBUG"
                 )
 
                 val fileMeta = FileMetaFactory.getFileMeta(filePath)
                 if (fileMeta == null) {
-                    Log.d(TAG, "未找到文件相关元数据: $filePath")
+                    LogManager.log(TAG, "未找到文件相关元数据: $filePath", "DEBUG")
                     return@Runnable
                 }
 
@@ -196,10 +204,10 @@ class WpsPasswordManagerApplication : Application() {
                 FileMetaManager.getInstance().writeMetaDataToFile(file, fileMeta)
 
             } catch (e: Exception) {
-                Log.e(TAG, "处理文件写入事件失败", e)
+                LogManager.log(TAG, "处理文件写入事件失败: ${e.message}", "ERROR")
             } finally {
                 isHandlingEvent = false
-                Log.d(TAG, "文件写入事件处理完成: $filePath")
+                LogManager.log(TAG, "文件写入事件处理完成: $filePath", "DEBUG")
                 
                 // 上报保存记录到服务器
                 try {
@@ -214,7 +222,7 @@ class WpsPasswordManagerApplication : Application() {
                         val afterPassword = FileMetaFactory.getWritePassword(filePath)
                         val possiblePassword = fileMeta.pendingPasswordList?.toList()
                         
-                        Log.d(TAG, "准备上报保存记录: docId=$docId, path=$filePath, beforePassword=$beforePassword, afterPassword=$afterPassword, possiblePassword=$possiblePassword")
+                        LogManager.log(TAG, "准备上报保存记录: docId=$docId, path=$filePath, beforePassword=$beforePassword, afterPassword=$afterPassword, possiblePassword=$possiblePassword", "DEBUG")
                         
                         NetworkManager.getInstance(this).reportSaveLog(
                             docId = docId!!,
@@ -226,19 +234,19 @@ class WpsPasswordManagerApplication : Application() {
                             token = token,
                             callback = object : com.wpspasswordmanager.network.NetworkCallback {
                                 override fun onSuccess(response: String) {
-                                    Log.d(TAG, "保存记录上报成功: $response")
+                                    LogManager.log(TAG, "保存记录上报成功: $response", "DEBUG")
                                 }
                                 
                                 override fun onError(error: String) {
-                                    Log.e(TAG, "保存记录上报失败: $error")
+                                    LogManager.log(TAG, "保存记录上报失败: $error", "ERROR")
                                 }
                             }
                         )
                     } else {
-                        Log.d(TAG, "文件元数据不存在或无uid，跳过保存记录上报")
+                        LogManager.log(TAG, "文件元数据不存在或无uid，跳过保存记录上报", "DEBUG")
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "上报保存记录失败", e)
+                    LogManager.log(TAG, "上报保存记录失败: ${e.message}", "ERROR")
                 }
             }
         }
@@ -246,9 +254,10 @@ class WpsPasswordManagerApplication : Application() {
         debounceRunnable = runnable
 
         // 延迟执行，确保只处理最后一次事件
-        Log.d(
+        LogManager.log(
             TAG,
-            "[时间戳: ${System.currentTimeMillis()}] 延迟 ${debounceDelay}ms 执行密码写入: $filePath"
+            "[时间戳: ${System.currentTimeMillis()}] 延迟 ${debounceDelay}ms 执行密码写入: $filePath",
+            "DEBUG"
         )
         handler?.postDelayed(runnable, debounceDelay)
     }
@@ -259,7 +268,7 @@ class WpsPasswordManagerApplication : Application() {
     fun setPluginOperation(operating: Boolean) {
         if (operating) {
             pluginOperationTimestamp.set(System.currentTimeMillis())
-            Log.d(TAG, "设置插件操作标志，时间戳: ${pluginOperationTimestamp.get()}")
+            LogManager.log(TAG, "设置插件操作标志，时间戳: ${pluginOperationTimestamp.get()}", "DEBUG")
         }
     }
 
@@ -272,7 +281,7 @@ class WpsPasswordManagerApplication : Application() {
         val currentTime = System.currentTimeMillis()
         val isPluginOp = currentTime - timestamp <= PLUGIN_OPERATION_TIMEOUT
         if (isPluginOp) {
-            Log.d(TAG, "检测到插件操作，时间戳差: ${currentTime - timestamp}ms")
+            LogManager.log(TAG, "检测到插件操作，时间戳差: ${currentTime - timestamp}ms", "DEBUG")
         }
         return isPluginOp
     }
