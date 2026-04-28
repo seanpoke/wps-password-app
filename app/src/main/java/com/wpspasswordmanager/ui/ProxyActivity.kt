@@ -335,15 +335,15 @@ class ProxyActivity : AppCompatActivity() {
                     // 文件存在但不是来源于WpsManagement目录，显示弹窗询问用户
                     val builder = android.app.AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert)
                     builder.setTitle("文件已存在")
-                    builder.setMessage("当前文件已存在，是否覆盖")
+                    builder.setMessage("当前文件已在/Documents/WpsManagement目录存在副本，是否覆盖文档内容")
                     
                     // 设置按钮样式和间距
-                    builder.setNegativeButton("打开已存在的文档") { dialog, which ->
+                    builder.setNegativeButton("打开副本文件") { dialog, which ->
                         dialog.dismiss()
                         // 不执行任何操作，使用本地已存在的文件
                         processFile(targetFile, callback)
                     }
-                    builder.setPositiveButton("覆盖文档") { dialog, which ->
+                    builder.setPositiveButton("覆盖副本文件") { dialog, which ->
                         dialog.dismiss()
                         
                         // 显示加载状态
@@ -433,11 +433,20 @@ class ProxyActivity : AppCompatActivity() {
                         }
                     }
                 }
-            } else if (!copyFileFromContentUri(uri, targetFile)) {
-                LogManager.log(TAG, "文件拷贝失败: ${targetFile.absolutePath}", "DEBUG")
-                callback(null)
             } else {
-                processFile(targetFile, callback)
+                // 文件不存在于WpsManagement目录中
+                // 当用户从非WpsManagement目录打开文件时，显示提示弹窗
+                if (!isInWpsManagement) {
+                    showFileSavedNotification(callback, uri, targetFile)
+                } else {
+                    // 文件不存在且来源于WpsManagement目录，直接执行拷贝
+                    if (!copyFileFromContentUri(uri, targetFile)) {
+                        LogManager.log(TAG, "文件拷贝失败: ${targetFile.absolutePath}", "DEBUG")
+                        callback(null)
+                    } else {
+                        processFile(targetFile, callback)
+                    }
+                }
             }
         } catch (e: Exception) {
             LogManager.log(TAG, "处理ContentURI失败: ${e.message}", "ERROR")
@@ -461,6 +470,85 @@ class ProxyActivity : AppCompatActivity() {
         } catch (e: Exception) {
             LogManager.log(TAG, "处理文件失败: ${e.message}", "ERROR")
             callback(null)
+        }
+    }
+
+    /**
+     * 显示文件已另存通知弹窗
+     * 当用户从非WpsManagement目录打开文件，且WpsManagement目录中不存在同名文件时触发
+     */
+    private fun showFileSavedNotification(callback: (File?) -> Unit, uri: Uri, targetFile: File) {
+        val builder = android.app.AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert)
+        builder.setTitle("提示")
+        builder.setMessage("当前文件已另存，后续请移步到/Documents/WpsManagement目录中查看")
+        
+        // 设置按钮样式和间距
+        builder.setPositiveButton("知道了") { dialog, which ->
+            dialog.dismiss()
+            
+            // 显示加载状态
+            val loadingBuilder = android.app.AlertDialog.Builder(this)
+            loadingBuilder.setMessage("正在处理文件...")
+            loadingBuilder.setCancelable(false)
+            val loadingDialog = loadingBuilder.create()
+            loadingDialog.show()
+            
+            // 在后台线程中执行文件操作
+            Thread {
+                try {
+                    // 执行文件拷贝
+                    val copySuccess = copyFileFromContentUri(uri, targetFile)
+                    runOnUiThread {
+                        loadingDialog.dismiss()
+                        if (copySuccess) {
+                            // 显示操作成功提示
+                            android.widget.Toast.makeText(this, "文件保存成功", android.widget.Toast.LENGTH_SHORT).show()
+                            processFile(targetFile, callback)
+                        } else {
+                            // 显示操作失败提示
+                            android.widget.Toast.makeText(this, "文件保存失败", android.widget.Toast.LENGTH_SHORT).show()
+                            LogManager.log(TAG, "文件拷贝失败: ${targetFile.absolutePath}", "DEBUG")
+                            callback(null)
+                        }
+                    }
+                } catch (e: Exception) {
+                    runOnUiThread {
+                        loadingDialog.dismiss()
+                        // 显示错误提示
+                        android.widget.Toast.makeText(this, "文件操作失败", android.widget.Toast.LENGTH_SHORT).show()
+                        LogManager.log(TAG, "文件操作时发生错误: ${e.message}", "ERROR")
+                        callback(null)
+                    }
+                }
+            }.start()
+        }
+        
+        val dialog = builder.create()
+        dialog.show()
+        
+        // 设置弹窗大小，根据屏幕尺寸动态计算
+        val window = dialog.window
+        if (window != null) {
+            val displayMetrics = resources.displayMetrics
+            val screenWidth = displayMetrics.widthPixels
+            val screenHeight = displayMetrics.heightPixels
+            
+            // 计算弹窗大小，使用屏幕宽度的70%和高度的35%
+            val dialogWidth = (screenWidth * 0.7).toInt()
+            val dialogHeight = (screenHeight * 0.35).toInt()
+            
+            window.setLayout(dialogWidth, dialogHeight)
+            window.setGravity(android.view.Gravity.CENTER) // 设置弹窗居中
+            
+            // 设置弹窗背景和边框
+            window.setBackgroundDrawableResource(android.R.drawable.dialog_frame)
+            
+            // 设置按钮样式
+            val positiveButton = dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE)
+            if (positiveButton != null) {
+                // 设置按钮文字颜色
+                positiveButton.setTextColor(resources.getColor(android.R.color.holo_blue_dark))
+            }
         }
     }
 
