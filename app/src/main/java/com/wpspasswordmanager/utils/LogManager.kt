@@ -132,10 +132,10 @@ object LogManager {
                     writer.write(header)
                     writer.flush()
                 }
-            } catch (e: IOException) {
-                e.printStackTrace()
+                } catch (e: IOException) {
+                    printToLogcat("LogManager", "Error writing log header: ${e.message}", "ERROR")
+                }
             }
-        }
     }
 
     fun getLogs(): List<String> {
@@ -151,7 +151,7 @@ object LogManager {
                 }
             }
         } catch (e: IOException) {
-            e.printStackTrace()
+            printToLogcat(TAG, "读取日志文件失败: ${e.message}", "ERROR")
         }
         return logs
     }
@@ -165,11 +165,12 @@ object LogManager {
                     file.delete()
                     file.createNewFile()
                 }
-            } catch (e: IOException) {
-                e.printStackTrace()
+                } catch (e: IOException) {
+                    printToLogcat("LogManager", "Error clearing log file: ${e.message}", "ERROR")
             }
         }
     }
+    
 
     fun shutdown() {
         if (isRunning.compareAndSet(true, false)) {

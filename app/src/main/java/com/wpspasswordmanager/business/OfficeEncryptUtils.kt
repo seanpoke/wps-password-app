@@ -31,8 +31,7 @@ object OfficeEncryptUtils {
                 return isCorrect
             }
         } catch (e: Exception) {
-            Log.d(TAG, "密码验证失败: ${e.message}")
-            e.printStackTrace()
+            printToLogcat(TAG, "密码验证失败: ${e.message}", "ERROR")
             // 密码错误或文件损坏
             return false
         }
