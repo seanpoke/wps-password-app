@@ -3,11 +3,34 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="application/vnd.openxmlformats-officedocument.presentationml.presentation" />
+        </intent>
+        
         <package android:name="cn.wps.moffice_eng" />
         <package android:name="cn.wps.moffice" />
+        <package android:name="cn.wps.moffice_eng.cn" />
+        <package android:name="cn.wps.moffice.beta" />
+        <package android:name="cn.wps.wpsoffice" />
+        <package android:name="com.wps.moffice" />
+        <package android:name="com.wps.moffice_eng" />
+        <package android:name="com.kingsoft.wps" />
+        <package android:name="com.kingsoft.wps_office" />
     </queries>
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission 
+        android:name="android.permission.QUERY_ALL_PACKAGES" 
+        tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.BIND_ACCESSIBILITY_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />

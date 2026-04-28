@@ -14,6 +14,7 @@ class ConfigStorage private constructor(context: Context) {
         private const val KEY_USER_INFO = "user_info"
         private const val KEY_REMEMBER_PASSWORD = "remember_password"
         private const val KEY_PASSWORD = "password"
+        private const val KEY_TARGET_WPS_PKG = "target_wps_pkg"
 
         @Volatile
         private var instance: ConfigStorage? = null
@@ -109,6 +110,25 @@ class ConfigStorage private constructor(context: Context) {
     fun clearPassword() {
         val editor = sharedPreferences.edit()
         editor.remove(KEY_PASSWORD)
+        editor.apply()
+    }
+
+    // 存储目标 WPS 包名
+    fun saveTargetWpsPackage(packageName: String) {
+        val editor = sharedPreferences.edit()
+        editor.putString(KEY_TARGET_WPS_PKG, packageName)
+        editor.apply()
+    }
+
+    // 获取目标 WPS 包名
+    fun getTargetWpsPackage(): String? {
+        return sharedPreferences.getString(KEY_TARGET_WPS_PKG, null)
+    }
+
+    // 清除目标 WPS 包名
+    fun clearTargetWpsPackage() {
+        val editor = sharedPreferences.edit()
+        editor.remove(KEY_TARGET_WPS_PKG)
         editor.apply()
     }
 }

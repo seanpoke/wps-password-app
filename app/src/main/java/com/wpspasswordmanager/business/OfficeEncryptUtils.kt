@@ -1,6 +1,7 @@
 package com.wpspasswordmanager.business
 
 import android.util.Log
+import com.wpspasswordmanager.utils.LogManager
 import org.apache.poi.poifs.filesystem.POIFSFileSystem
 import org.apache.poi.poifs.crypt.EncryptionInfo
 import java.io.FileInputStream
@@ -31,7 +32,7 @@ object OfficeEncryptUtils {
                 return isCorrect
             }
         } catch (e: Exception) {
-            printToLogcat(TAG, "密码验证失败: ${e.message}", "ERROR")
+            LogManager.log(TAG, "密码验证失败: ${e.message}", "ERROR")
             // 密码错误或文件损坏
             return false
         }

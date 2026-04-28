@@ -882,11 +882,27 @@ class ProxyActivity : AppCompatActivity() {
     }
 
     private fun findWpsPackage(): String? {
-        val wpsPackages = arrayOf("cn.wps.moffice_eng", "cn.wps.moffice")
+        val configStorage = ConfigStorage.getInstance(this)
+        
+        val selectedPackage = configStorage.getTargetWpsPackage()
+        if (selectedPackage != null) {
+            try {
+                packageManager.getPackageInfo(selectedPackage, 0)
+                LogManager.log(TAG, "使用用户选择的WPS包: $selectedPackage", "DEBUG")
+                return selectedPackage
+            } catch (e: PackageManager.NameNotFoundException) {
+                LogManager.log(TAG, "用户选择的WPS包 $selectedPackage 已卸载，尝试自动查找", "WARN")
+                configStorage.clearTargetWpsPackage()
+            }
+        }
+        
+        LogManager.log(TAG, "未设置用户选择的WPS包，尝试自动查找", "DEBUG")
+        val wpsPackages = arrayOf("cn.wps.moffice_eng", "cn.wps.moffice", "cn.wps.wpsoffice")
         for (pkg in wpsPackages) {
             try {
                 packageManager.getPackageInfo(pkg, 0)
-                LogManager.log(TAG, "找到WPS应用，包名: $pkg", "DEBUG")
+                LogManager.log(TAG, "自动找到WPS应用，包名: $pkg", "DEBUG")
+                configStorage.saveTargetWpsPackage(pkg)
                 return pkg
             } catch (e: PackageManager.NameNotFoundException) {
                 LogManager.log(TAG, "WPS包 $pkg 不存在", "DEBUG")

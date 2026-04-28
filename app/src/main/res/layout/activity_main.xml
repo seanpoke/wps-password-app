@@ -22,6 +22,104 @@
         android:textSize="24sp"
         android:textStyle="bold" />
 
+    <!-- WPS 应用选择区域 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@android:color/darker_gray"
+        android:padding="16dp"
+        android:layout_marginBottom="24dp"
+        android:radius="8dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="12dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="WPS 应用选择"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/scan_wps_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="重新扫描"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/wps_scanning_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:visibility="gone"
+            android:layout_marginBottom="12dp">
+
+            <ProgressBar
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="8dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="正在扫描 WPS 应用..." />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/wps_empty_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:layout_marginBottom="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="未检测到 WPS 应用"
+                android:textColor="@android:color/holo_red_dark"
+                android:layout_gravity="center"
+                android:layout_marginBottom="12dp" />
+
+            <Button
+                android:id="@+id/install_wps_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="前往应用商店安装"
+                android:layout_gravity="center" />
+
+        </LinearLayout>
+
+        <ListView
+            android:id="@+id/wps_app_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:divider="@android:color/transparent"
+            android:dividerHeight="8dp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/wps_selected_info"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:textColor="@android:color/holo_green_dark"
+            android:visibility="gone"
+            android:layout_marginTop="8dp" />
+
+    </LinearLayout>
+
     <!-- 权限状态区域 -->
     <LinearLayout
         android:layout_width="match_parent"

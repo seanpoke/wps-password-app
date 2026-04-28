@@ -4,16 +4,19 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import com.wpspasswordmanager.utils.LogManager
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.ListView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.wpspasswordmanager.R
 import com.wpspasswordmanager.business.PasswordGenerator
 import com.wpspasswordmanager.business.FileMetaManager
+import com.wpspasswordmanager.business.WpsAppInfo
+import com.wpspasswordmanager.business.WpsManager
 import com.wpspasswordmanager.monitor.AccessibilityServiceManager
 import com.wpspasswordmanager.network.NetworkCallback
 import com.wpspasswordmanager.network.NetworkManager
@@ -24,6 +27,7 @@ import com.wpspasswordmanager.storage.ConfigStorage
 import com.wpspasswordmanager.storage.ServerConfig
 import com.wpspasswordmanager.storage.UserInfo
 import com.google.gson.Gson
+import com.wpspasswordmanager.utils.LogManager
 
 class MainActivity : AppCompatActivity() {
     private val OVERLAY_PERMISSION_REQUEST_CODE = 100
@@ -48,6 +52,17 @@ class MainActivity : AppCompatActivity() {
     private lateinit var portError: TextView
     private lateinit var usernameError: TextView
     private lateinit var passwordError: TextView
+
+    // WPS 应用选择相关 UI
+    private lateinit var wpsScanningLayout: LinearLayout
+    private lateinit var wpsEmptyLayout: LinearLayout
+    private lateinit var wpsAppList: ListView
+    private lateinit var wpsSelectedInfo: TextView
+    private lateinit var scanWpsButton: Button
+    private lateinit var installWpsButton: Button
+
+    // WPS 应用列表数据
+    private var wpsApps: List<WpsAppInfo> = emptyList()
 
     // 存储和网络管理
     private lateinit var configStorage: ConfigStorage
@@ -84,6 +99,9 @@ class MainActivity : AppCompatActivity() {
 
         // 加载已保存的配置
         loadSavedConfig()
+
+        // 扫描 WPS 应用（在后台线程执行）
+        scanWpsApps()
 
         // 初始化会话过期广播接收器
         sessionExpiredReceiver = object : android.content.BroadcastReceiver() {
@@ -140,6 +158,14 @@ class MainActivity : AppCompatActivity() {
         usernameError = findViewById(R.id.username_error)
         passwordError = findViewById(R.id.password_error)
 
+        // 初始化 WPS 应用选择相关 UI
+        wpsScanningLayout = findViewById(R.id.wps_scanning_layout)
+        wpsEmptyLayout = findViewById(R.id.wps_empty_layout)
+        wpsAppList = findViewById(R.id.wps_app_list)
+        wpsSelectedInfo = findViewById(R.id.wps_selected_info)
+        scanWpsButton = findViewById(R.id.scan_wps_button)
+        installWpsButton = findViewById(R.id.install_wps_button)
+
         // 初始化标题点击事件
         val appTitle = findViewById<TextView>(R.id.app_title)
         appTitle.setOnClickListener {
@@ -183,7 +209,13 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        scanWpsButton.setOnClickListener {
+            scanWpsApps()
+        }
 
+        installWpsButton.setOnClickListener {
+            openWpsInMarket()
+        }
     }
 
     override fun onResume() {
@@ -634,6 +666,97 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     Toast.makeText(this, "未获得显示在其他应用之上的权限，悬浮按钮功能将无法使用", Toast.LENGTH_LONG).show()
                 }
+            }
+        }
+    }
+
+    private fun scanWpsApps() {
+        LogManager.log(TAG, "========== MainActivity 开始扫描 WPS 应用 ==========", "DEBUG")
+        LogManager.log(TAG, "线程: ${Thread.currentThread().name}", "DEBUG")
+        
+        wpsScanningLayout.visibility = LinearLayout.VISIBLE
+        wpsEmptyLayout.visibility = LinearLayout.GONE
+        wpsAppList.visibility = ListView.GONE
+        wpsSelectedInfo.visibility = TextView.GONE
+
+        Thread {
+            LogManager.log(TAG, "在后台线程执行扫描", "DEBUG")
+            wpsApps = WpsManager.scanInstalledWpsApps(this@MainActivity)
+            
+            LogManager.log(TAG, "扫描完成，找到 ${wpsApps.size} 个 WPS 应用", "DEBUG")
+            wpsApps.forEach { LogManager.log(TAG, "  - ${it.label} (${it.packageName})", "DEBUG") }
+            
+            runOnUiThread {
+                LogManager.log(TAG, "回到主线程更新 UI", "DEBUG")
+                wpsScanningLayout.visibility = LinearLayout.GONE
+                
+                if (wpsApps.isEmpty()) {
+                    LogManager.log(TAG, "未找到 WPS 应用，显示空状态", "WARN")
+                    wpsEmptyLayout.visibility = LinearLayout.VISIBLE
+                    wpsSelectedInfo.text = "未选择默认 WPS 应用"
+                    wpsSelectedInfo.visibility = TextView.VISIBLE
+                } else {
+                    LogManager.log(TAG, "找到 WPS 应用，显示列表", "DEBUG")
+                    wpsAppList.visibility = ListView.VISIBLE
+                    updateWpsAppList()
+                }
+            }
+        }.start()
+    }
+
+    private fun updateWpsAppList() {
+        LogManager.log(TAG, "更新 WPS 应用列表", "DEBUG")
+        
+        val selectedPackage = configStorage.getTargetWpsPackage()
+        LogManager.log(TAG, "已保存的目标包名: $selectedPackage", "DEBUG")
+        
+        val adapter = WpsAppAdapter(
+            this,
+            wpsApps,
+            selectedPackage,
+            ::onWpsAppSelected
+        )
+        
+        wpsAppList.adapter = adapter
+        
+        if (selectedPackage != null) {
+            val selectedApp = wpsApps.find { it.packageName == selectedPackage }
+            if (selectedApp != null) {
+                LogManager.log(TAG, "找到已选择的应用: ${selectedApp.label}", "DEBUG")
+                wpsSelectedInfo.text = "已选择: ${selectedApp.label}"
+                wpsSelectedInfo.visibility = TextView.VISIBLE
+            } else {
+                LogManager.log(TAG, "已保存的包名不在当前扫描结果中", "WARN")
+                wpsSelectedInfo.text = "请选择默认 WPS 应用"
+                wpsSelectedInfo.visibility = TextView.VISIBLE
+            }
+        } else {
+            LogManager.log(TAG, "未设置默认 WPS 应用", "DEBUG")
+            wpsSelectedInfo.text = "请选择默认 WPS 应用"
+            wpsSelectedInfo.visibility = TextView.VISIBLE
+        }
+    }
+
+    private fun onWpsAppSelected(wpsApp: WpsAppInfo) {
+        LogManager.log(TAG, "用户选择了 WPS 应用: ${wpsApp.label} (${wpsApp.packageName})", "DEBUG")
+        configStorage.saveTargetWpsPackage(wpsApp.packageName)
+        LogManager.log(TAG, "已保存到 SharedPreferences", "DEBUG")
+        updateWpsAppList()
+        Toast.makeText(this, "已设置 ${wpsApp.label} 为默认 WPS 应用", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun openWpsInMarket() {
+        try {
+            val intent = Intent(Intent.ACTION_VIEW)
+            intent.data = android.net.Uri.parse("market://details?id=cn.wps.moffice")
+            startActivity(intent)
+        } catch (e: Exception) {
+            try {
+                val intent = Intent(Intent.ACTION_VIEW)
+                intent.data = android.net.Uri.parse("https://play.google.com/store/apps/details?id=cn.wps.moffice")
+                startActivity(intent)
+            } catch (ex: Exception) {
+                Toast.makeText(this, "无法打开应用商店", Toast.LENGTH_SHORT).show()
             }
         }
     }

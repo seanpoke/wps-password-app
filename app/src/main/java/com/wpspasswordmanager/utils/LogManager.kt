@@ -151,7 +151,7 @@ object LogManager {
                 }
             }
         } catch (e: IOException) {
-            printToLogcat(TAG, "读取日志文件失败: ${e.message}", "ERROR")
+            printToLogcat("LogManager", "读取日志文件失败: ${e.message}", "ERROR")
         }
         return logs
     }

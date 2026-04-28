@@ -1,0 +1,127 @@
+2026-04-28 18:14:45.733 24420-24420 HnContentR...zerManager com.wpspasswordmanager               D  getCloudConfigsBundle: get cache value
+2026-04-28 18:14:45.733 24420-24420 HnContentR...zerManager com.wpspasswordmanager               D  getCloudConfigsBundle: get cache value
+2026-04-28 18:14:45.734 24420-24420 HiTouch_Pr...reDetector com.wpspasswordmanager               I  checkDoublePointerLimit:xPoss,yPoss:984,710
+2026-04-28 18:14:45.777 24420-24420 HnContentR...zerManager com.wpspasswordmanager               D  getCloudConfigsBundle: get cache value
+2026-04-28 18:14:45.777 24420-24420 HnContentR...zerManager com.wpspasswordmanager               D  getCloudConfigsBundle: get cache value
+2026-04-28 18:14:45.778 24420-24420 HiTouch_Pr...reDetector com.wpspasswordmanager               W  action:Up,touchSlop:26,interrupted:false
+2026-04-28 18:14:45.806 24420-24420 HwViewRootImpl          com.wpspasswordmanager               I  removeInvalidNode all the node in jank list is out of time
+2026-04-28 18:14:45.812 24420-24420 MainActivity            com.wpspasswordmanager               D  ========== MainActivity 开始扫描 WPS 应用 ==========
+2026-04-28 18:14:45.816 24420-24420 MainActivity            com.wpspasswordmanager               D  线程: main
+2026-04-28 18:14:45.831 24420-26944 MainActivity            com.wpspasswordmanager               D  在后台线程执行扫描
+2026-04-28 18:14:45.836 24420-26944 WpsManager              com.wpspasswordmanager               D  ========== 开始扫描 WPS 应用 ==========
+2026-04-28 18:14:45.840 24420-26944 WpsManager              com.wpspasswordmanager               D  当前进程ID: 24420
+2026-04-28 18:14:45.844 24420-26944 WpsManager              com.wpspasswordmanager               D  当前线程: Thread-6
+2026-04-28 18:14:45.848 24420-26944 WpsManager              com.wpspasswordmanager               D  自身包名: com.wpspasswordmanager
+2026-04-28 18:14:45.852 24420-26944 WpsManager              com.wpspasswordmanager               D  搜索关键词: [wps, moffice, kingsoft]
+2026-04-28 18:14:45.858 24420-26944 WpsManager              com.wpspasswordmanager               D  --- 使用 Intent 解析方式扫描 ---
+2026-04-28 18:14:45.863 24420-26944 WpsManager              com.wpspasswordmanager               D  查询 MIME 类型: application/vnd.openxmlformats-officedocument.wordprocessingml.document
+2026-04-28 18:14:45.877 24420-26944 WpsManager              com.wpspasswordmanager               D    找到 10 个应用
+2026-04-28 18:14:45.881 24420-26944 WpsManager              com.wpspasswordmanager               D    新应用: com.hihonor.filemanager
+2026-04-28 18:14:45.888 24420-26944 WpsManager              com.wpspasswordmanager               D    跳过非 WPS 应用: com.hihonor.filemanager
+2026-04-28 18:14:45.892 24420-26944 WpsManager              com.wpspasswordmanager               D    新应用: com.hihonor.fileservice
+2026-04-28 18:14:45.897 24420-26944 WpsManager              com.wpspasswordmanager               D    跳过非 WPS 应用: com.hihonor.fileservice
+2026-04-28 18:14:45.901 24420-26944 WpsManager              com.wpspasswordmanager               D    新应用: com.hihonor.hnoffice
+2026-04-28 18:14:45.906 24420-26944 WpsManager              com.wpspasswordmanager               D    跳过非 WPS 应用: com.hihonor.hnoffice
+2026-04-28 18:14:45.910 24420-26944 WpsManager              com.wpspasswordmanager               D    新应用: com.hihonor.notepad
+2026-04-28 18:14:45.915 24420-26944 WpsManager              com.wpspasswordmanager               D    跳过非 WPS 应用: com.hihonor.notepad
+2026-04-28 18:14:45.919 24420-26944 WpsManager              com.wpspasswordmanager               D    新应用: com.hihonor.printassistant
+2026-04-28 18:14:45.925 24420-26944 WpsManager              com.wpspasswordmanager               D    跳过非 WPS 应用: com.hihonor.printassistant
+2026-04-28 18:14:45.929 24420-26944 WpsManager              com.wpspasswordmanager               D    新应用: com.kdweibo.client
+2026-04-28 18:14:45.935 24420-26944 WpsManager              com.wpspasswordmanager               D    跳过非 WPS 应用: com.kdweibo.client
+2026-04-28 18:14:45.939 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.kdweibo.client
+2026-04-28 18:14:45.943 24420-26944 WpsManager              com.wpspasswordmanager               D    新应用: com.ss.android.lark
+2026-04-28 18:14:45.950 24420-26944 WpsManager              com.wpspasswordmanager               D    跳过非 WPS 应用: com.ss.android.lark
+2026-04-28 18:14:45.958 24420-26944 WpsManager              com.wpspasswordmanager               D    新应用: com.tencent.androidqqmail
+2026-04-28 18:14:45.963 24420-26944 WpsManager              com.wpspasswordmanager               D    跳过非 WPS 应用: com.tencent.androidqqmail
+2026-04-28 18:14:45.968 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.tencent.androidqqmail
+2026-04-28 18:14:45.971 24420-26944 WpsManager              com.wpspasswordmanager               D  查询 MIME 类型: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+2026-04-28 18:14:45.980 24420-26944 WpsManager              com.wpspasswordmanager               D    找到 9 个应用
+2026-04-28 18:14:45.984 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.hihonor.filemanager
+2026-04-28 18:14:45.988 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.hihonor.fileservice
+2026-04-28 18:14:45.992 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.hihonor.hnoffice
+2026-04-28 18:14:45.995 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.hihonor.printassistant
+2026-04-28 18:14:45.999 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.kdweibo.client
+2026-04-28 18:14:46.003 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.kdweibo.client
+2026-04-28 18:14:46.007 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.ss.android.lark
+2026-04-28 18:14:46.010 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.tencent.androidqqmail
+2026-04-28 18:14:46.014 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.tencent.androidqqmail
+2026-04-28 18:14:46.017 24420-26944 WpsManager              com.wpspasswordmanager               D  查询 MIME 类型: application/vnd.openxmlformats-officedocument.presentationml.presentation
+2026-04-28 18:14:46.028 24420-26944 WpsManager              com.wpspasswordmanager               D    找到 10 个应用
+2026-04-28 18:14:46.032 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.hihonor.filemanager
+2026-04-28 18:14:46.036 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.hihonor.fileservice
+2026-04-28 18:14:46.040 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.hihonor.hnoffice
+2026-04-28 18:14:46.044 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.hihonor.notepad
+2026-04-28 18:14:46.051 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.hihonor.printassistant
+2026-04-28 18:14:46.058 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.kdweibo.client
+2026-04-28 18:14:46.062 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.kdweibo.client
+2026-04-28 18:14:46.065 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.ss.android.lark
+2026-04-28 18:14:46.069 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.tencent.androidqqmail
+2026-04-28 18:14:46.073 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.tencent.androidqqmail
+2026-04-28 18:14:46.076 24420-26944 WpsManager              com.wpspasswordmanager               D  查询 MIME 类型: application/msword
+2026-04-28 18:14:46.087 24420-26944 WpsManager              com.wpspasswordmanager               D    找到 10 个应用
+2026-04-28 18:14:46.094 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.hihonor.filemanager
+2026-04-28 18:14:46.099 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.hihonor.fileservice
+2026-04-28 18:14:46.105 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.hihonor.hnoffice
+2026-04-28 18:14:46.110 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.hihonor.notepad
+2026-04-28 18:14:46.114 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.hihonor.printassistant
+2026-04-28 18:14:46.119 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.kdweibo.client
+2026-04-28 18:14:46.124 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.kdweibo.client
+2026-04-28 18:14:46.128 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.ss.android.lark
+2026-04-28 18:14:46.133 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.tencent.androidqqmail
+2026-04-28 18:14:46.138 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.tencent.androidqqmail
+2026-04-28 18:14:46.141 24420-26944 WpsManager              com.wpspasswordmanager               D  查询 MIME 类型: application/vnd.ms-excel
+2026-04-28 18:14:46.150 24420-26944 WpsManager              com.wpspasswordmanager               D    找到 9 个应用
+2026-04-28 18:14:46.154 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.hihonor.filemanager
+2026-04-28 18:14:46.159 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.hihonor.fileservice
+2026-04-28 18:14:46.166 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.hihonor.hnoffice
+2026-04-28 18:14:46.176 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.hihonor.printassistant
+2026-04-28 18:14:46.180 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.kdweibo.client
+2026-04-28 18:14:46.184 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.kdweibo.client
+2026-04-28 18:14:46.188 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.ss.android.lark
+2026-04-28 18:14:46.191 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.tencent.androidqqmail
+2026-04-28 18:14:46.195 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.tencent.androidqqmail
+2026-04-28 18:14:46.198 24420-26944 WpsManager              com.wpspasswordmanager               D  查询 MIME 类型: application/vnd.ms-powerpoint
+2026-04-28 18:14:46.216 24420-26944 WpsManager              com.wpspasswordmanager               D    找到 10 个应用
+2026-04-28 18:14:46.220 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.hihonor.filemanager
+2026-04-28 18:14:46.224 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.hihonor.fileservice
+2026-04-28 18:14:46.228 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.hihonor.hnoffice
+2026-04-28 18:14:46.235 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.hihonor.notepad
+2026-04-28 18:14:46.239 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.hihonor.printassistant
+2026-04-28 18:14:46.243 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.kdweibo.client
+2026-04-28 18:14:46.246 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.kdweibo.client
+2026-04-28 18:14:46.250 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.ss.android.lark
+2026-04-28 18:14:46.254 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.tencent.androidqqmail
+2026-04-28 18:14:46.258 24420-26944 WpsManager              com.wpspasswordmanager               D    已处理过: com.tencent.androidqqmail
+2026-04-28 18:14:46.262 24420-26944 WpsManager              com.wpspasswordmanager               D  --- Intent 解析扫描完成: 找到 0 个应用 ---
+2026-04-28 18:14:46.265 24420-26944 WpsManager              com.wpspasswordmanager               D  通过 Intent 解析找到 0 个应用
+2026-04-28 18:14:46.269 24420-26944 WpsManager              com.wpspasswordmanager               D  --- 直接检查已知 WPS 包名 ---
+2026-04-28 18:14:46.273 24420-26944 WpsManager              com.wpspasswordmanager               D    检查包名: cn.wps.moffice_eng
+2026-04-28 18:14:46.277 24420-26944 WpsManager              com.wpspasswordmanager               D    ✓ 找到: WPS Office (cn.wps.moffice_eng)
+2026-04-28 18:14:46.280 24420-26944 WpsManager              com.wpspasswordmanager               D    检查包名: cn.wps.moffice
+2026-04-28 18:14:46.285 24420-26944 WpsManager              com.wpspasswordmanager               D    ✗ 未安装: cn.wps.moffice
+2026-04-28 18:14:46.288 24420-26944 WpsManager              com.wpspasswordmanager               D    检查包名: cn.wps.moffice_eng.cn
+2026-04-28 18:14:46.292 24420-26944 WpsManager              com.wpspasswordmanager               D    ✗ 未安装: cn.wps.moffice_eng.cn
+2026-04-28 18:14:46.296 24420-26944 WpsManager              com.wpspasswordmanager               D    检查包名: cn.wps.moffice.beta
+2026-04-28 18:14:46.300 24420-26944 WpsManager              com.wpspasswordmanager               D    ✗ 未安装: cn.wps.moffice.beta
+2026-04-28 18:14:46.303 24420-26944 WpsManager              com.wpspasswordmanager               D    检查包名: cn.wps.wpsoffice
+2026-04-28 18:14:46.307 24420-26944 WpsManager              com.wpspasswordmanager               D    ✗ 未安装: cn.wps.wpsoffice
+2026-04-28 18:14:46.311 24420-26944 WpsManager              com.wpspasswordmanager               D    检查包名: com.wps.moffice
+2026-04-28 18:14:46.315 24420-26944 WpsManager              com.wpspasswordmanager               D    ✗ 未安装: com.wps.moffice
+2026-04-28 18:14:46.319 24420-26944 WpsManager              com.wpspasswordmanager               D    检查包名: com.wps.moffice_eng
+2026-04-28 18:14:46.323 24420-26944 WpsManager              com.wpspasswordmanager               D    ✗ 未安装: com.wps.moffice_eng
+2026-04-28 18:14:46.326 24420-26944 WpsManager              com.wpspasswordmanager               D    检查包名: com.kingsoft.wps
+2026-04-28 18:14:46.331 24420-26944 WpsManager              com.wpspasswordmanager               D    ✗ 未安装: com.kingsoft.wps
+2026-04-28 18:14:46.334 24420-26944 WpsManager              com.wpspasswordmanager               D    检查包名: com.kingsoft.wps_office
+2026-04-28 18:14:46.338 24420-26944 WpsManager              com.wpspasswordmanager               D    ✗ 未安装: com.kingsoft.wps_office
+2026-04-28 18:14:46.342 24420-26944 WpsManager              com.wpspasswordmanager               D  --- 直接检查完成: 找到 1 个应用 ---
+2026-04-28 18:14:46.345 24420-26944 WpsManager              com.wpspasswordmanager               D  通过直接检查已知包名找到 1 个应用
+2026-04-28 18:14:46.348 24420-26944 WpsManager              com.wpspasswordmanager               D  去重并排除自身后结果数量: 1
+2026-04-28 18:14:46.352 24420-26944 WpsManager              com.wpspasswordmanager               D  ========== 扫描完成: 找到 1 个 WPS 应用 ==========
+2026-04-28 18:14:46.356 24420-26944 WpsManager              com.wpspasswordmanager               D    - WPS Office (cn.wps.moffice_eng)
+2026-04-28 18:14:46.360 24420-26944 MainActivity            com.wpspasswordmanager               D  扫描完成，找到 1 个 WPS 应用
+2026-04-28 18:14:46.363 24420-26944 MainActivity            com.wpspasswordmanager               D    - WPS Office (cn.wps.moffice_eng)
+2026-04-28 18:14:46.381 24420-24420 MainActivity            com.wpspasswordmanager               D  回到主线程更新 UI
+2026-04-28 18:14:46.394 24420-24420 MainActivity            com.wpspasswordmanager               D  找到 WPS 应用，显示列表
+2026-04-28 18:14:46.402 24420-24420 MainActivity            com.wpspasswordmanager               D  更新 WPS 应用列表
+2026-04-28 18:14:46.406 24420-24420 MainActivity            com.wpspasswordmanager               D  已保存的目标包名: cn.wps.moffice_eng
+2026-04-28 18:14:46.413 24420-24420 MainActivity            com.wpspasswordmanager               D  找到已选择的应用: WPS Office
