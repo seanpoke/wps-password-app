@@ -2,6 +2,7 @@ package com.wpspasswordmanager.ui
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.view.accessibility.AccessibilityManager
@@ -724,7 +725,6 @@ class ProxyActivity : AppCompatActivity() {
     private fun forwardToWps(localFile: File?, originalUri: Uri) {
         try {
             if (localFile != null) {
-                // 使用FileProvider获取可共享的URI
                 val shareUri = getShareableUriFromFile(this, localFile)
                 LogManager.log(TAG, "插件转换后唤起WPS的ContentURI: $shareUri", "DEBUG")
                 val wpsIntent = Intent(Intent.ACTION_VIEW)
@@ -733,39 +733,29 @@ class ProxyActivity : AppCompatActivity() {
                     "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                 )
 
-                // 添加读写权限
                 wpsIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 wpsIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
                 wpsIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
-                // 添加WPS特定参数，尝试阻止创建副本
-                wpsIntent.putExtra("OpenMode", "Normal") // 正常打开模式
-                wpsIntent.putExtra("NeedCreateTemp", false) // 不需要创建临时文件
-                wpsIntent.putExtra("ReadOnly", false) // 可读写模式
+                wpsIntent.putExtra("OpenMode", "Normal")
+                wpsIntent.putExtra("NeedCreateTemp", false)
+                wpsIntent.putExtra("ReadOnly", false)
 
-                // 尝试启动WPS
-                if (wpsIntent.resolveActivity(packageManager) != null) {
-                    // 显式授予权限给WPS包
-                    val wpsPackages = arrayOf("cn.wps.moffice_eng", "cn.wps.moffice")
-                    for (pkg in wpsPackages) {
-                        try {
-                            grantUriPermission(
-                                pkg,
-                                shareUri,
-                                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                            )
-                        } catch (e: Exception) {
-                            LogManager.log(TAG, "授予权限给 $pkg 失败: ${e.message}", "ERROR")
-                        }
-                    }
+                val wpsPackage = findWpsPackage()
+                if (wpsPackage != null) {
+                    wpsIntent.setPackage(wpsPackage)
+                    grantUriPermission(
+                        wpsPackage,
+                        shareUri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                    )
 
                     startActivity(wpsIntent)
-                    LogManager.log(TAG, "通过FileProvider启动WPS成功，文件: ${localFile.absolutePath}", "DEBUG")
+                    LogManager.log(TAG, "通过FileProvider启动WPS成功，包名: $wpsPackage，文件: ${localFile.absolutePath}", "DEBUG")
                     LogManager.log(TAG, "已授予WPS应用读写权限", "DEBUG")
                     LogManager.log(TAG, "已添加WPS特定参数，尝试阻止创建副本", "DEBUG")
                 } else {
-                    // 如果直接启动失败，尝试通过文件选择器
-                    LogManager.log(TAG, "直接启动WPS失败，尝试使用文件选择器", "DEBUG")
+                    LogManager.log(TAG, "未找到WPS应用，尝试使用文件选择器", "DEBUG")
                     val chooserIntent = Intent.createChooser(wpsIntent, "选择应用打开文件")
                     if (chooserIntent.resolveActivity(packageManager) != null) {
                         chooserIntent.flags =
@@ -778,7 +768,6 @@ class ProxyActivity : AppCompatActivity() {
                     }
                 }
             } else {
-                // 如果本地文件不存在，尝试直接使用原始URI
                 LogManager.log(TAG, "本地文件不存在，尝试使用原始URI", "DEBUG")
                 LogManager.log(TAG, "插件转换后唤起WPS的ContentURI: $originalUri", "DEBUG")
                 val wpsIntent = Intent(Intent.ACTION_VIEW)
@@ -786,9 +775,11 @@ class ProxyActivity : AppCompatActivity() {
                 wpsIntent.flags =
                     Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK
 
-                if (wpsIntent.resolveActivity(packageManager) != null) {
+                val wpsPackage = findWpsPackage()
+                if (wpsPackage != null) {
+                    wpsIntent.setPackage(wpsPackage)
                     startActivity(wpsIntent)
-                    LogManager.log(TAG, "使用原始URI启动WPS成功", "DEBUG")
+                    LogManager.log(TAG, "使用原始URI启动WPS成功，包名: $wpsPackage", "DEBUG")
                 } else {
                     LogManager.log(TAG, "没有应用可以打开此文件", "ERROR")
                     showErrorNotification("错误", "没有应用可以打开此文件")
@@ -798,9 +789,22 @@ class ProxyActivity : AppCompatActivity() {
             LogManager.log(TAG, "启动 WPS 失败: ${e.message}", "ERROR")
             showErrorNotification("启动失败", "无法启动WPS应用")
         } finally {
-            // 完成后销毁自身
             finish()
         }
+    }
+
+    private fun findWpsPackage(): String? {
+        val wpsPackages = arrayOf("cn.wps.moffice_eng", "cn.wps.moffice")
+        for (pkg in wpsPackages) {
+            try {
+                packageManager.getPackageInfo(pkg, 0)
+                LogManager.log(TAG, "找到WPS应用，包名: $pkg", "DEBUG")
+                return pkg
+            } catch (e: PackageManager.NameNotFoundException) {
+                LogManager.log(TAG, "WPS包 $pkg 不存在", "DEBUG")
+            }
+        }
+        return null
     }
 
     /**
