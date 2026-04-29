@@ -376,7 +376,7 @@ class ProxyActivity : AppCompatActivity() {
     }
 
     private fun showOverwriteDialog(uri: Uri, fileName: String) {
-        val builder = android.app.AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert)
+        val builder = android.app.AlertDialog.Builder(this, R.style.Theme_WpsPasswordManager_LightDialog)
         builder.setTitle("文件已存在")
         builder.setMessage("当前文件已在/Documents/WpsManagement目录存在副本，是否覆盖文档内容")
         
@@ -396,18 +396,15 @@ class ProxyActivity : AppCompatActivity() {
         val dialog = builder.create()
         dialog.show()
         
+        setupDialogButtons(dialog)
+        
         val window = dialog.window
         if (window != null) {
             val displayMetrics = resources.displayMetrics
-            val screenWidth = displayMetrics.widthPixels
-            val screenHeight = displayMetrics.heightPixels
-            
-            val dialogWidth = (screenWidth * 0.7).toInt()
-            val dialogHeight = (screenHeight * 0.35).toInt()
-            
-            window.setLayout(dialogWidth, dialogHeight)
+            val dialogWidth = (displayMetrics.widthPixels * 0.85).toInt()
+            window.setLayout(dialogWidth, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
             window.setGravity(android.view.Gravity.CENTER)
-            window.setBackgroundDrawableResource(android.R.drawable.dialog_frame)
+            window.setBackgroundDrawableResource(android.R.color.white)
         }
     }
 
@@ -428,7 +425,7 @@ class ProxyActivity : AppCompatActivity() {
 
     private fun showSaveFileDialog(uri: Uri, currentFileName: String, isHashName: Boolean) {
         val extension = FileNameResolver.getFileExtension(currentFileName)
-        val dialogBuilder = android.app.AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert)
+        val dialogBuilder = android.app.AlertDialog.Builder(this, R.style.Theme_WpsPasswordManager_LightDialog)
         dialogBuilder.setTitle("文件保存")
 
         val inputLayout = android.widget.LinearLayout(this)
@@ -489,7 +486,7 @@ class ProxyActivity : AppCompatActivity() {
             val wpsManagementDir = File(documentsDir, "WpsManagement")
             val targetFile = File(wpsManagementDir, newFileName)
 
-            val loadingBuilder = android.app.AlertDialog.Builder(this)
+            val loadingBuilder = android.app.AlertDialog.Builder(this, R.style.Theme_WpsPasswordManager_LightDialog)
             loadingBuilder.setMessage("正在保存文件...")
             loadingBuilder.setCancelable(false)
             val loadingDialog = loadingBuilder.create()
@@ -535,6 +532,8 @@ class ProxyActivity : AppCompatActivity() {
 
         val dialog = dialogBuilder.create()
         dialog.show()
+        
+        setupDialogButtons(dialog)
 
         val window = dialog.window
         if (window != null) {
@@ -542,6 +541,7 @@ class ProxyActivity : AppCompatActivity() {
             val dialogWidth = (displayMetrics.widthPixels * 0.85).toInt()
             window.setLayout(dialogWidth, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
             window.setGravity(android.view.Gravity.CENTER)
+            window.setBackgroundDrawableResource(android.R.color.white)
         }
     }
 
@@ -571,7 +571,7 @@ class ProxyActivity : AppCompatActivity() {
                     processFile(targetFile, callback)
                 } else {
                     // 文件存在但不是来源于WpsManagement目录，显示弹窗询问用户
-                    val builder = android.app.AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert)
+                    val builder = android.app.AlertDialog.Builder(this, R.style.Theme_WpsPasswordManager_LightDialog)
                     builder.setTitle("文件已存在")
                     builder.setMessage("当前文件已在/Documents/WpsManagement目录存在副本，是否覆盖文档内容")
                     
@@ -585,7 +585,7 @@ class ProxyActivity : AppCompatActivity() {
                         dialog.dismiss()
                         
                         // 显示加载状态
-                        val loadingBuilder = android.app.AlertDialog.Builder(this)
+                        val loadingBuilder = android.app.AlertDialog.Builder(this, R.style.Theme_WpsPasswordManager_LightDialog)
                         loadingBuilder.setMessage("正在处理文件...")
                         loadingBuilder.setCancelable(false)
                         val loadingDialog = loadingBuilder.create()
@@ -635,40 +635,16 @@ class ProxyActivity : AppCompatActivity() {
                     val dialog = builder.create()
                     dialog.show()
                     
+                    setupDialogButtons(dialog)
+                    
                     // 设置弹窗大小，根据屏幕尺寸动态计算
                     val window = dialog.window
                     if (window != null) {
                         val displayMetrics = resources.displayMetrics
-                        val screenWidth = displayMetrics.widthPixels
-                        val screenHeight = displayMetrics.heightPixels
-                        
-                        // 计算弹窗大小，使用屏幕宽度的70%和高度的35%
-                        val dialogWidth = (screenWidth * 0.7).toInt()
-                        val dialogHeight = (screenHeight * 0.35).toInt()
-                        
-                        window.setLayout(dialogWidth, dialogHeight)
-                        window.setGravity(android.view.Gravity.CENTER) // 设置弹窗居中
-                        
-                        // 设置弹窗背景和边框
-                        window.setBackgroundDrawableResource(android.R.drawable.dialog_frame)
-                        
-                        // 设置按钮样式
-                        val negativeButton = dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE)
-                        val positiveButton = dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE)
-                        
-                        if (negativeButton != null && positiveButton != null) {
-                            // 设置按钮文字颜色
-                            negativeButton.setTextColor(resources.getColor(android.R.color.holo_blue_dark))
-                            positiveButton.setTextColor(resources.getColor(android.R.color.holo_blue_dark))
-                            
-                            // 设置按钮间距
-                            val layoutParams = negativeButton.layoutParams as android.widget.LinearLayout.LayoutParams
-                            layoutParams.weight = 1f
-                            layoutParams.marginStart = 16
-                            layoutParams.marginEnd = 16
-                            negativeButton.layoutParams = layoutParams
-                            positiveButton.layoutParams = layoutParams
-                        }
+                        val dialogWidth = (displayMetrics.widthPixels * 0.85).toInt()
+                        window.setLayout(dialogWidth, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
+                        window.setGravity(android.view.Gravity.CENTER)
+                        window.setBackgroundDrawableResource(android.R.color.white)
                     }
                 }
             } else {
@@ -1095,6 +1071,35 @@ class ProxyActivity : AppCompatActivity() {
             notificationManager.notify(1, notification)
         } catch (e: Exception) {
             LogManager.log(TAG, "显示通知失败: ${e.message}", "ERROR")
+        }
+    }
+
+    private fun setupDialogButtons(dialog: android.app.AlertDialog) {
+        val negativeButton = dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE)
+        val positiveButton = dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE)
+        
+        if (negativeButton != null) {
+            negativeButton.setTextColor(resources.getColor(android.R.color.black))
+            negativeButton.setBackgroundColor(resources.getColor(R.color.purple_500))
+            val params = negativeButton.layoutParams as android.widget.LinearLayout.LayoutParams
+            params.width = android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            params.height = android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            params.weight = 0f
+            params.marginStart = 16
+            params.marginEnd = 8
+            negativeButton.layoutParams = params
+        }
+        
+        if (positiveButton != null) {
+            positiveButton.setTextColor(resources.getColor(android.R.color.black))
+            positiveButton.setBackgroundColor(resources.getColor(R.color.purple_500))
+            val params = positiveButton.layoutParams as android.widget.LinearLayout.LayoutParams
+            params.width = android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            params.height = android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            params.weight = 0f
+            params.marginStart = 8
+            params.marginEnd = 16
+            positiveButton.layoutParams = params
         }
     }
 }

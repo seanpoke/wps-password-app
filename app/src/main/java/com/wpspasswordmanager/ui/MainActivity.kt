@@ -646,7 +646,7 @@ class MainActivity : AppCompatActivity() {
         userInfoTextView.visibility = TextView.GONE
         
         // 显示居中较小的提示弹窗
-        val builder = android.app.AlertDialog.Builder(this)
+        val builder = android.app.AlertDialog.Builder(this, R.style.Theme_WpsPasswordManager_LightDialog)
         builder.setTitle("登录过期")
         builder.setMessage("您的登录已过期，请重新登录")
         builder.setPositiveButton("确定") { dialog, which ->
@@ -655,10 +655,13 @@ class MainActivity : AppCompatActivity() {
         val dialog = builder.create()
         dialog.show()
         
+        setupDialogButtons(dialog)
+        
         // 设置弹窗大小
         val window = dialog.window
         window?.setLayout(600, 400) // 设置弹窗宽度为600px，高度为400px
         window?.setGravity(android.view.Gravity.CENTER) // 设置弹窗居中
+        window?.setBackgroundDrawableResource(android.R.color.white)
     }
 
     override fun onStart() {
@@ -817,7 +820,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showPermissionDialog() {
-        val builder = android.app.AlertDialog.Builder(this)
+        val builder = android.app.AlertDialog.Builder(this, R.style.Theme_WpsPasswordManager_LightDialog)
         builder.setTitle("读取设备应用列表权限")
         builder.setMessage("为了扫描WPS应用，需要授予\"读取设备应用列表\"权限。\n\n请点击确定前往应用信息页面开启权限。")
         builder.setPositiveButton("确定") { _, _ ->
@@ -826,7 +829,10 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
         builder.setNegativeButton("取消", null)
-        builder.show()
+        val dialog = builder.create()
+        dialog.show()
+        setupDialogButtons(dialog)
+        dialog.window?.setBackgroundDrawableResource(android.R.color.white)
     }
 
     private fun updateWpsAppList() {
@@ -888,6 +894,35 @@ class MainActivity : AppCompatActivity() {
             } catch (ex: Exception) {
                 Toast.makeText(this, "无法打开应用商店", Toast.LENGTH_SHORT).show()
             }
+        }
+    }
+
+    private fun setupDialogButtons(dialog: android.app.AlertDialog) {
+        val negativeButton = dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE)
+        val positiveButton = dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE)
+        
+        if (negativeButton != null) {
+            negativeButton.setTextColor(resources.getColor(android.R.color.black))
+            negativeButton.setBackgroundColor(resources.getColor(R.color.purple_500))
+            val params = negativeButton.layoutParams as android.widget.LinearLayout.LayoutParams
+            params.width = android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            params.height = android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            params.weight = 0f
+            params.marginStart = 16
+            params.marginEnd = 8
+            negativeButton.layoutParams = params
+        }
+        
+        if (positiveButton != null) {
+            positiveButton.setTextColor(resources.getColor(android.R.color.black))
+            positiveButton.setBackgroundColor(resources.getColor(R.color.purple_500))
+            val params = positiveButton.layoutParams as android.widget.LinearLayout.LayoutParams
+            params.width = android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            params.height = android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            params.weight = 0f
+            params.marginStart = 8
+            params.marginEnd = 16
+            positiveButton.layoutParams = params
         }
     }
 }
