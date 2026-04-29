@@ -51,8 +51,42 @@ class ProxyActivity : AppCompatActivity() {
             return
         }
 
+        // 检查是否选择了 WPS 应用
+        if (!checkWpsAppSelected()) {
+            // 未选择 WPS 应用，跳转到主页面
+            val mainIntent = Intent(this, MainActivity::class.java)
+            mainIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            startActivity(mainIntent)
+            finish()
+            return
+        }
+
         // 处理传入的 Intent
         handleIntent(intent)
+    }
+
+    /**
+     * 检查是否选择了 WPS 应用
+     * @return true if WPS app is selected, false otherwise
+     */
+    private fun checkWpsAppSelected(): Boolean {
+        val configStorage = ConfigStorage.getInstance(this)
+        val selectedPackage = configStorage.getTargetWpsPackage()
+        
+        if (selectedPackage.isNullOrEmpty()) {
+            LogManager.log(TAG, "未选择 WPS 应用", "DEBUG")
+            return false
+        }
+        
+        try {
+            packageManager.getPackageInfo(selectedPackage, 0)
+            LogManager.log(TAG, "已选择 WPS 应用: $selectedPackage", "DEBUG")
+            return true
+        } catch (e: PackageManager.NameNotFoundException) {
+            LogManager.log(TAG, "选择的 WPS 应用 $selectedPackage 已卸载", "WARN")
+            configStorage.clearTargetWpsPackage()
+            return false
+        }
     }
 
     /**
