@@ -360,27 +360,45 @@ class ProxyActivity : AppCompatActivity() {
         LogManager.log(TAG, "文件是否来自WpsManagement目录: $isInWpsManagement", "DEBUG")
 
         if (isInWpsManagement) {
-            processFileUriInternal(uri, fileName, isInWpsManagement)
+            LogManager.log(TAG, "文件是副本文件，直接执行打开流程", "DEBUG")
+            val documentsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOCUMENTS)
+            val wpsManagementDir = File(documentsDir, "WpsManagement")
+            val targetFile = File(wpsManagementDir, fileName)
+            processFile(targetFile) { localFile ->
+                if (localFile != null) {
+                    saveFileUriToPreferences(localFile.absolutePath)
+                } else {
+                    saveFileUriToPreferences(uri.toString())
+                }
+                forwardToWps(localFile, uri)
+            }
         } else {
             val documentsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOCUMENTS)
             val wpsManagementDir = File(documentsDir, "WpsManagement")
             val targetFile = File(wpsManagementDir, fileName)
             
             if (targetFile.exists() && targetFile.length() > 0) {
-                showOverwriteDialog(uri, fileName)
+                LogManager.log(TAG, "插件目录中存在同名文件，显示【文档已存在】弹窗", "DEBUG")
+                showFileExistsDialog(uri, fileName)
             } else {
+                LogManager.log(TAG, "插件目录中不存在同名文件，显示【文档保存】弹窗", "DEBUG")
                 val isHashName = FileNameResolver.isHashFileName(fileName)
                 showSaveFileDialog(uri, fileName, isHashName)
             }
         }
     }
 
-    private fun showOverwriteDialog(uri: Uri, fileName: String) {
+    private fun showFileExistsDialog(uri: Uri, fileName: String) {
         val dialogView = layoutInflater.inflate(R.layout.dialog_file_exists, null)
         
         val btnOpenCopy = dialogView.findViewById<android.widget.Button>(R.id.btn_open_copy)
         val btnOverwrite = dialogView.findViewById<android.widget.Button>(R.id.btn_overwrite)
+        val etNewFileName = dialogView.findViewById<android.widget.EditText>(R.id.et_new_file_name)
+        val btnRenameSave = dialogView.findViewById<android.widget.Button>(R.id.btn_rename_save)
+        val tvErrorMessage = dialogView.findViewById<android.widget.TextView>(R.id.tv_error_message)
         val btnCancel = dialogView.findViewById<android.widget.Button>(R.id.btn_cancel)
+        
+        etNewFileName.setText(fileName)
         
         val dialog = android.app.AlertDialog.Builder(this, R.style.Theme_WpsPasswordManager_LightDialog)
             .setView(dialogView)
@@ -391,16 +409,125 @@ class ProxyActivity : AppCompatActivity() {
             val documentsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOCUMENTS)
             val wpsManagementDir = File(documentsDir, "WpsManagement")
             val targetFile = File(wpsManagementDir, fileName)
-            processFileUriInternal(uri, fileName, isInWpsManagement = true)
+            processFile(targetFile) { localFile ->
+                if (localFile != null) {
+                    saveFileUriToPreferences(localFile.absolutePath)
+                } else {
+                    saveFileUriToPreferences(uri.toString())
+                }
+                forwardToWps(localFile, uri)
+            }
         }
         
         btnOverwrite.setOnClickListener {
             dialog.dismiss()
-            processFileUriInternal(uri, fileName, isInWpsManagement = false)
+            
+            val loadingBuilder = android.app.AlertDialog.Builder(this, R.style.Theme_WpsPasswordManager_LightDialog)
+            loadingBuilder.setMessage("正在覆盖文件...")
+            loadingBuilder.setCancelable(false)
+            val loadingDialog = loadingBuilder.create()
+            loadingDialog.show()
+            
+            Thread {
+                try {
+                    val documentsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOCUMENTS)
+                    val wpsManagementDir = File(documentsDir, "WpsManagement")
+                    val targetFile = File(wpsManagementDir, fileName)
+                    
+                    if (targetFile.exists() && targetFile.delete()) {
+                        LogManager.log(TAG, "成功删除已存在的文件: ${targetFile.absolutePath}", "DEBUG")
+                    }
+                    
+                    val copySuccess = copyFileFromContentUri(uri, targetFile)
+                    runOnUiThread {
+                        loadingDialog.dismiss()
+                        if (copySuccess) {
+                            android.widget.Toast.makeText(this, "文件覆盖成功", android.widget.Toast.LENGTH_SHORT).show()
+                            processFile(targetFile) { localFile ->
+                                if (localFile != null) {
+                                    saveFileUriToPreferences(localFile.absolutePath)
+                                } else {
+                                    saveFileUriToPreferences(uri.toString())
+                                }
+                                forwardToWps(localFile, uri)
+                            }
+                        } else {
+                            android.widget.Toast.makeText(this, "文件覆盖失败", android.widget.Toast.LENGTH_SHORT).show()
+                            forwardToWps(null, uri)
+                        }
+                    }
+                } catch (e: Exception) {
+                    runOnUiThread {
+                        loadingDialog.dismiss()
+                        android.widget.Toast.makeText(this, "文件操作失败", android.widget.Toast.LENGTH_SHORT).show()
+                        LogManager.log(TAG, "文件覆盖时发生错误: ${e.message}", "ERROR")
+                        forwardToWps(null, uri)
+                    }
+                }
+            }.start()
+        }
+        
+        btnRenameSave.setOnClickListener {
+            val newFileName = etNewFileName.text.toString().trim()
+            if (newFileName.isEmpty()) {
+                tvErrorMessage.text = "请输入文件名"
+                tvErrorMessage.visibility = android.view.View.VISIBLE
+                return@setOnClickListener
+            }
+            
+            val documentsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOCUMENTS)
+            val wpsManagementDir = File(documentsDir, "WpsManagement")
+            val targetFile = File(wpsManagementDir, newFileName)
+            
+            if (targetFile.exists() && targetFile.length() > 0) {
+                tvErrorMessage.text = "文件已存在，请输入其他名称"
+                tvErrorMessage.visibility = android.view.View.VISIBLE
+                return@setOnClickListener
+            }
+            
+            tvErrorMessage.visibility = android.view.View.GONE
+            dialog.dismiss()
+            
+            val loadingBuilder = android.app.AlertDialog.Builder(this, R.style.Theme_WpsPasswordManager_LightDialog)
+            loadingBuilder.setMessage("正在保存文件...")
+            loadingBuilder.setCancelable(false)
+            val loadingDialog = loadingBuilder.create()
+            loadingDialog.show()
+            
+            Thread {
+                try {
+                    val copySuccess = copyFileFromContentUri(uri, targetFile)
+                    runOnUiThread {
+                        loadingDialog.dismiss()
+                        if (copySuccess) {
+                            android.widget.Toast.makeText(this, "文件保存成功", android.widget.Toast.LENGTH_SHORT).show()
+                            processFile(targetFile) { localFile ->
+                                if (localFile != null) {
+                                    saveFileUriToPreferences(localFile.absolutePath)
+                                } else {
+                                    saveFileUriToPreferences(uri.toString())
+                                }
+                                forwardToWps(localFile, uri)
+                            }
+                        } else {
+                            android.widget.Toast.makeText(this, "文件保存失败", android.widget.Toast.LENGTH_SHORT).show()
+                            forwardToWps(null, uri)
+                        }
+                    }
+                } catch (e: Exception) {
+                    runOnUiThread {
+                        loadingDialog.dismiss()
+                        android.widget.Toast.makeText(this, "文件操作失败", android.widget.Toast.LENGTH_SHORT).show()
+                        LogManager.log(TAG, "文件重命名保存时发生错误: ${e.message}", "ERROR")
+                        forwardToWps(null, uri)
+                    }
+                }
+            }.start()
         }
         
         btnCancel.setOnClickListener {
             dialog.dismiss()
+            finish()
         }
         
         dialog.show()
@@ -440,7 +567,7 @@ class ProxyActivity : AppCompatActivity() {
         inputLayout.setPadding(48, 24, 48, 16)
 
         val titleLabel = android.widget.TextView(this)
-        titleLabel.text = if (isHashName) "检测到文件名可能被系统混淆，请输入文件的真实名称：" else "请确认文件保存信息："
+        titleLabel.text = "当前文件将保存到/Documents/WpsManagement目录中"
         titleLabel.setTextColor(resources.getColor(android.R.color.black))
         titleLabel.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 16f)
         inputLayout.addView(titleLabel)
@@ -462,26 +589,27 @@ class ProxyActivity : AppCompatActivity() {
         input.layoutParams = inputParams
         inputLayout.addView(input)
 
-        val hintText = android.widget.TextView(this)
-        hintText.text = "文件将保存到 /Documents/WpsManagement 目录"
-        hintText.setTextColor(resources.getColor(android.R.color.darker_gray))
-        hintText.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12f)
-        val hintParams = android.widget.LinearLayout.LayoutParams(
+        val errorText = android.widget.TextView(this)
+        errorText.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12f)
+        errorText.setTextColor(resources.getColor(android.R.color.holo_red_light))
+        errorText.visibility = android.view.View.GONE
+        val errorParams = android.widget.LinearLayout.LayoutParams(
             android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
             android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
         )
-        hintParams.topMargin = 12
-        hintText.layoutParams = hintParams
-        inputLayout.addView(hintText)
+        errorParams.topMargin = 8
+        errorText.layoutParams = errorParams
+        inputLayout.addView(errorText)
 
         dialogBuilder.setView(inputLayout)
 
         dialogBuilder.setPositiveButton("保存") { dialog, which ->
-            dialog.dismiss()
+            errorText.visibility = android.view.View.GONE
+            
             var newFileName = input.text.toString().trim()
             if (newFileName.isEmpty()) {
-                android.widget.Toast.makeText(this, "请输入文件名称", android.widget.Toast.LENGTH_SHORT).show()
-                showSaveFileDialog(uri, currentFileName, isHashName)
+                errorText.text = "请输入文件名称"
+                errorText.visibility = android.view.View.VISIBLE
                 return@setPositiveButton
             }
             if (!newFileName.contains(".")) {
@@ -492,6 +620,14 @@ class ProxyActivity : AppCompatActivity() {
             val documentsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOCUMENTS)
             val wpsManagementDir = File(documentsDir, "WpsManagement")
             val targetFile = File(wpsManagementDir, newFileName)
+
+            if (targetFile.exists() && targetFile.length() > 0) {
+                dialog.dismiss()
+                showFileExistsDialog(uri, newFileName)
+                return@setPositiveButton
+            }
+
+            dialog.dismiss()
 
             val loadingBuilder = android.app.AlertDialog.Builder(this, R.style.Theme_WpsPasswordManager_LightDialog)
             loadingBuilder.setMessage("正在保存文件...")
@@ -553,113 +689,29 @@ class ProxyActivity : AppCompatActivity() {
     }
 
     /**
-     * 处理外部传入的ContentURI，实现完整的文件处理流程
+     * 处理外部传入的ContentURI，执行文件拷贝和处理流程
      */
     private fun processExternalContentUri(uri: Uri, originalFileName: String, isInWpsManagement: Boolean, callback: (File?) -> Unit) {
         try {
-            // 1. 获取WpsManagement目录
-            val documentsDir = 
-                android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOCUMENTS)
+            val documentsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOCUMENTS)
             val wpsManagementDir = File(documentsDir, "WpsManagement")
 
-            // 确保WpsManagement目录存在
             if (!wpsManagementDir.exists()) {
                 wpsManagementDir.mkdirs()
                 LogManager.log(TAG, "创建 WpsManagement 目录: ${wpsManagementDir.absolutePath}", "DEBUG")
             }
 
-            // 2. 文件存在性检查与拷贝
             val targetFile = File(wpsManagementDir, originalFileName)
-            if (targetFile.exists() && targetFile.length() > 0) {
-                // 根据传入的isInWpsManagement参数判断是否直接打开文件
-                if (isInWpsManagement) {
-                    // 文件存在且来源于WpsManagement目录，直接打开文件
-                    LogManager.log(TAG, "文件存在且来源于WpsManagement目录，直接使用: ${targetFile.absolutePath}", "DEBUG")
-                    processFile(targetFile, callback)
-                } else {
-                    // 文件存在但不是来源于WpsManagement目录，显示弹窗询问用户
-                    val dialogView = layoutInflater.inflate(R.layout.dialog_file_exists, null)
-                    
-                    val btnOpenCopy = dialogView.findViewById<android.widget.Button>(R.id.btn_open_copy)
-                    val btnOverwrite = dialogView.findViewById<android.widget.Button>(R.id.btn_overwrite)
-                    val btnCancel = dialogView.findViewById<android.widget.Button>(R.id.btn_cancel)
-                    
-                    val dialog = android.app.AlertDialog.Builder(this, R.style.Theme_WpsPasswordManager_LightDialog)
-                        .setView(dialogView)
-                        .create()
-                    
-                    btnOpenCopy.setOnClickListener {
-                        dialog.dismiss()
-                        processFile(targetFile, callback)
-                    }
-                    
-                    btnOverwrite.setOnClickListener {
-                        dialog.dismiss()
-                        
-                        val loadingBuilder = android.app.AlertDialog.Builder(this, R.style.Theme_WpsPasswordManager_LightDialog)
-                        loadingBuilder.setMessage("正在处理文件...")
-                        loadingBuilder.setCancelable(false)
-                        val loadingDialog = loadingBuilder.create()
-                        loadingDialog.show()
-                        
-                        Thread {
-                            try {
-                                if (targetFile.delete()) {
-                                    LogManager.log(TAG, "成功删除已存在的文件: ${targetFile.absolutePath}", "DEBUG")
-                                    val copySuccess = copyFileFromContentUri(uri, targetFile)
-                                    runOnUiThread {
-                                        loadingDialog.dismiss()
-                                        if (copySuccess) {
-                                            android.widget.Toast.makeText(this, "文件覆盖成功", android.widget.Toast.LENGTH_SHORT).show()
-                                            processFile(targetFile, callback)
-                                        } else {
-                                            android.widget.Toast.makeText(this, "文件拷贝失败", android.widget.Toast.LENGTH_SHORT).show()
-                                            LogManager.log(TAG, "文件拷贝失败: ${targetFile.absolutePath}", "DEBUG")
-                                            callback(null)
-                                        }
-                                    }
-                                } else {
-                                    runOnUiThread {
-                                        loadingDialog.dismiss()
-                                        android.widget.Toast.makeText(this, "删除文件失败", android.widget.Toast.LENGTH_SHORT).show()
-                                        LogManager.log(TAG, "删除文件失败: ${targetFile.absolutePath}", "DEBUG")
-                                        processFile(targetFile, callback)
-                                    }
-                                }
-                            } catch (e: Exception) {
-                                runOnUiThread {
-                                    loadingDialog.dismiss()
-                                    android.widget.Toast.makeText(this, "文件操作失败", android.widget.Toast.LENGTH_SHORT).show()
-                                    LogManager.log(TAG, "删除文件时发生错误: ${e.message}", "ERROR")
-                                    processFile(targetFile, callback)
-                                }
-                            }
-                        }.start()
-                    }
-                    
-                    btnCancel.setOnClickListener {
-                        dialog.dismiss()
-                    }
-                    
-                    dialog.show()
-                    
-                    val window = dialog.window
-                    if (window != null) {
-                        val displayMetrics = resources.displayMetrics
-                        val dialogWidth = (displayMetrics.widthPixels * 0.85).toInt()
-                        window.setLayout(dialogWidth, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
-                        window.setGravity(android.view.Gravity.CENTER)
-                        window.setBackgroundDrawableResource(android.R.color.white)
-                    }
-                }
-            } else {
+            
+            if (!isInWpsManagement && !targetFile.exists()) {
                 if (!copyFileFromContentUri(uri, targetFile)) {
                     LogManager.log(TAG, "文件拷贝失败: ${targetFile.absolutePath}", "DEBUG")
                     callback(null)
-                } else {
-                    processFile(targetFile, callback)
+                    return
                 }
             }
+            
+            processFile(targetFile, callback)
         } catch (e: Exception) {
             LogManager.log(TAG, "处理ContentURI失败: ${e.message}", "ERROR")
             callback(null)

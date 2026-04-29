@@ -20,24 +20,24 @@
         android:id="@+id/tv_message"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="当前文件已在/Documents/WpsManagement目录存在副本，是否覆盖文档内容"
+        android:text="当前文件已在/Documents/WpsManagement目录存在副本"
         android:textSize="14sp"
         android:textColor="@android:color/black"
         android:gravity="center_horizontal"
-        android:layout_marginBottom="24dp" />
+        android:layout_marginBottom="20dp" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="end">
+        android:gravity="center">
 
         <Button
             android:id="@+id/btn_open_copy"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="打开副本文件"
+            android:text="打开副本"
             android:textColor="@android:color/black"
             android:background="@color/purple_500"
             android:layout_marginEnd="8dp" />
@@ -47,12 +47,57 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="覆盖副本文件"
+            android:text="覆盖副本"
             android:textColor="@android:color/black"
             android:background="@color/purple_500"
             android:layout_marginStart="8dp" />
 
     </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@android:color/darker_gray"
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="16dp" />
+
+    <TextView
+        android:id="@+id/tv_rename_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="重命名"
+        android:textSize="14sp"
+        android:textColor="@android:color/black"
+        android:textStyle="bold"
+        android:layout_marginBottom="12dp" />
+
+    <EditText
+        android:id="@+id/et_new_file_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="请输入新文件名"
+        android:textSize="14sp"
+        android:inputType="text"
+        android:maxLines="1"
+        android:layout_marginBottom="12dp" />
+
+    <TextView
+        android:id="@+id/tv_error_message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="12sp"
+        android:textColor="@android:color/holo_red_light"
+        android:visibility="gone"
+        android:layout_marginBottom="12dp" />
+
+    <Button
+        android:id="@+id/btn_rename_save"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="保存"
+        android:textColor="@android:color/black"
+        android:background="@color/purple_500"
+        android:layout_marginBottom="16dp" />
 
     <Button
         android:id="@+id/btn_cancel"
@@ -60,9 +105,6 @@
         android:layout_height="wrap_content"
         android:text="取消"
         android:textColor="@android:color/black"
-        android:background="@color/purple_500"
-        android:layout_marginTop="12dp"
-        android:layout_marginStart="32dp"
-        android:layout_marginEnd="32dp" />
+        android:background="@color/purple_500" />
 
 </LinearLayout>
