@@ -27,6 +27,7 @@ class PermissionTreeActivity : Activity() {
     private lateinit var ldapItems: List<LdapItem>
     private lateinit var treeAdapter: TreeAdapter
     private val flattenedNodes = mutableListOf<TreeNode>()
+    private var rootTreeNodes: List<TreeNode> = emptyList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,8 +54,8 @@ class PermissionTreeActivity : Activity() {
         }
 
         // 转换为TreeNode并扁平化
-        val rootNodes = convertToTreeNodes(ldapItems, 0)
-        flattenTreeNodes(rootNodes, flattenedNodes)
+        rootTreeNodes = convertToTreeNodes(ldapItems, 0)
+        flattenTreeNodes(rootTreeNodes, flattenedNodes)
 
         // 初始化RecyclerView
         treeAdapter = TreeAdapter(
@@ -134,38 +135,42 @@ class PermissionTreeActivity : Activity() {
         val searchText = etSearch.text.toString()
         android.util.Log.d("PermissionTree", "执行搜索: $searchText")
         if (searchText.isEmpty()) {
-            // 恢复完整树
+            resetAllNodesExpansion(rootTreeNodes)
             flattenedNodes.clear()
-            val rootNodes = convertToTreeNodes(ldapItems, 0)
-            flattenTreeNodes(rootNodes, flattenedNodes)
+            flattenTreeNodes(rootTreeNodes, flattenedNodes)
             treeAdapter.notifyDataSetChanged()
             return
         }
 
-        // 搜索匹配的节点
+        resetAllNodesExpansion(rootTreeNodes)
+
         val matchingNodes = mutableListOf<TreeNode>()
-        findMatchingNodes(convertToTreeNodes(ldapItems, 0), searchText, matchingNodes)
-        
-        // 显示匹配的节点及其父节点
-        val nodesToShow = mutableListOf<TreeNode>()
+        findMatchingNodes(rootTreeNodes, searchText, matchingNodes)
+
         matchingNodes.forEach { node ->
-            addNodeAndParents(node, nodesToShow)
+            expandAncestors(node)
         }
-        
-        // 去重并排序
-        val uniqueNodes = nodesToShow.distinctBy { it.dn }.sortedBy { it.level }
-        
-        // 展开所有父节点
-        uniqueNodes.forEach { node ->
-            if (node.type == 0) {
-                node.isExpanded = true
+
+        flattenedNodes.clear()
+        flattenTreeNodes(rootTreeNodes, flattenedNodes)
+        treeAdapter.notifyDataSetChanged()
+    }
+
+    private fun resetAllNodesExpansion(nodes: List<TreeNode>) {
+        for (node in nodes) {
+            node.isExpanded = false
+            if (node.children.isNotEmpty()) {
+                resetAllNodesExpansion(node.children)
             }
         }
-        
-        // 重新扁平化显示
-        flattenedNodes.clear()
-        flattenTreeNodes(uniqueNodes.filter { it.parent == null }, flattenedNodes)
-        treeAdapter.notifyDataSetChanged()
+    }
+
+    private fun expandAncestors(node: TreeNode) {
+        var current = node.parent
+        while (current != null) {
+            current.isExpanded = true
+            current = current.parent
+        }
     }
 
     private fun convertToTreeNodes(ldapItems: List<LdapItem>, level: Int): List<TreeNode> {
@@ -283,13 +288,6 @@ class PermissionTreeActivity : Activity() {
             if (node.children.isNotEmpty()) {
                 findMatchingNodes(node.children, searchText, result)
             }
-        }
-    }
-
-    private fun addNodeAndParents(node: TreeNode, result: MutableList<TreeNode>) {
-        result.add(node)
-        if (node.parent != null) {
-            addNodeAndParents(node.parent!!, result)
         }
     }
 
