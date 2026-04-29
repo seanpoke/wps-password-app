@@ -31,6 +31,7 @@ import com.wpspasswordmanager.utils.LogManager
 
 class MainActivity : AppCompatActivity() {
     private val OVERLAY_PERMISSION_REQUEST_CODE = 100
+    private val QUERY_ALL_PACKAGES_REQUEST_CODE = 101
     private val TAG = "MainActivity"
 
     private lateinit var accessibilityStatus: TextView
@@ -100,8 +101,8 @@ class MainActivity : AppCompatActivity() {
         // 加载已保存的配置
         loadSavedConfig()
 
-        // 扫描 WPS 应用（在后台线程执行）
-        scanWpsApps()
+        // 检查并请求 QUERY_ALL_PACKAGES 权限（Android 11+）
+        checkAndRequestQueryAllPackagesPermission()
 
         // 初始化会话过期广播接收器
         sessionExpiredReceiver = object : android.content.BroadcastReceiver() {
@@ -670,6 +671,25 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        
+        if (requestCode == QUERY_ALL_PACKAGES_REQUEST_CODE) {
+            LogManager.log(TAG, "处理 QUERY_ALL_PACKAGES 权限请求结果", "DEBUG")
+            
+            if (grantResults.isNotEmpty() && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                LogManager.log(TAG, "QUERY_ALL_PACKAGES 权限已授予", "DEBUG")
+                Toast.makeText(this, "已获得读取设备应用列表权限", Toast.LENGTH_SHORT).show()
+                scanWpsApps()
+            } else {
+                LogManager.log(TAG, "QUERY_ALL_PACKAGES 权限被拒绝", "WARN")
+                Toast.makeText(this, "未获得读取设备应用列表权限，将无法扫描WPS应用", Toast.LENGTH_LONG).show()
+                // 仍尝试扫描（可能在 Android 11 之前版本或通过 <queries> 声明可以扫描部分应用）
+                scanWpsApps()
+            }
+        }
+    }
+
     private fun scanWpsApps() {
         LogManager.log(TAG, "========== MainActivity 开始扫描 WPS 应用 ==========", "DEBUG")
         LogManager.log(TAG, "线程: ${Thread.currentThread().name}", "DEBUG")
@@ -702,9 +722,10 @@ class MainActivity : AppCompatActivity() {
                             wpsSelectedInfo.visibility = TextView.VISIBLE
                             showPermissionDialog()
                         } else {
-                            wpsEmptyLayout.visibility = LinearLayout.VISIBLE
-                            wpsSelectedInfo.text = "未选择默认 WPS 应用"
+                            wpsSelectedInfo.text = "扫描结果为空，请检查是否已安装WPS或开启应用信息权限"
                             wpsSelectedInfo.visibility = TextView.VISIBLE
+                            wpsEmptyLayout.visibility = LinearLayout.VISIBLE
+                            showPermissionDialog()
                         }
                     } else {
                         wpsEmptyLayout.visibility = LinearLayout.VISIBLE
@@ -735,10 +756,27 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun checkAndRequestQueryAllPackagesPermission() {
+        LogManager.log(TAG, "检查 QUERY_ALL_PACKAGES 权限", "DEBUG")
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            LogManager.log(TAG, "Android 版本 >= 11，延迟请求 QUERY_ALL_PACKAGES 权限", "DEBUG")
+            android.os.Handler().postDelayed({
+                requestPermissions(
+                    arrayOf(android.Manifest.permission.QUERY_ALL_PACKAGES),
+                    QUERY_ALL_PACKAGES_REQUEST_CODE
+                )
+            }, 500)
+        } else {
+            LogManager.log(TAG, "Android 版本低于 11，无需请求权限，直接扫描", "DEBUG")
+            scanWpsApps()
+        }
+    }
+
     private fun showPermissionDialog() {
         val builder = android.app.AlertDialog.Builder(this)
-        builder.setTitle("权限请求")
-        builder.setMessage("为了扫描WPS应用，需要开启\"查询所有软件包\"权限。\n\n请点击确定前往设置页面开启权限。")
+        builder.setTitle("读取设备应用列表权限")
+        builder.setMessage("为了扫描WPS应用，需要授予\"读取设备应用列表\"权限。\n\n请点击确定前往应用信息页面开启权限。")
         builder.setPositiveButton("确定") { _, _ ->
             val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
             intent.data = android.net.Uri.parse("package:$packageName")
