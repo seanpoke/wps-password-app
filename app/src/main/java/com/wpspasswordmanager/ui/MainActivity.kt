@@ -77,6 +77,13 @@ class MainActivity : AppCompatActivity() {
     private var titleClickCount = 0
     private var titleClickTimer: android.os.Handler? = null
 
+    // 按钮防重复点击相关
+    private var originalButtonText: String = ""
+    private var originalButtonBackground: android.graphics.drawable.Drawable? = null
+    private var isButtonLoading: Boolean = false
+    private var buttonTimeoutTimer: android.os.Handler? = null
+    private val TIMEOUT_DURATION = 15000 // 15秒超时
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -115,25 +122,27 @@ class MainActivity : AppCompatActivity() {
         // 检查是否已登录，如果已登录则启动心跳服务
         val userInfo = configStorage.getUserInfo()
         if (userInfo != null) {
-            // 立即检查token有效性
+            disableButton()
             networkManager.refreshToken(userInfo.token, object : NetworkCallback {
                 override fun onSuccess(response: String) {
-                    // Token有效，保持登录状态
                     runOnUiThread {
+                        clearButtonTimeout()
                         isLoggedIn = true
                         disableConfigInputs()
                         updateLoginButton()
                         userInfoTextView.text = "你好，${userInfo.name}"
                         userInfoTextView.visibility = TextView.VISIBLE
+                        enableButton()
                     }
                 }
 
                 override fun onError(error: String) {
-                // Token无效（401）或网络错误，清理登录状态
-                runOnUiThread {
-                    handle401Error()
+                    runOnUiThread {
+                        clearButtonTimeout()
+                        enableButton()
+                        handle401Error()
+                    }
                 }
-            }
             })
         }
     }
@@ -203,10 +212,12 @@ class MainActivity : AppCompatActivity() {
         }
 
         loginButton.setOnClickListener {
-            if (isLoggedIn) {
-                handleLogout()
-            } else {
-                handleLogin()
+            if (!isButtonLoading) {
+                if (isLoggedIn) {
+                    handleLogout()
+                } else {
+                    handleLogin()
+                }
             }
         }
 
@@ -217,6 +228,37 @@ class MainActivity : AppCompatActivity() {
         installWpsButton.setOnClickListener {
             openWpsInMarket()
         }
+    }
+
+    private fun disableButton() {
+        if (!isButtonLoading) {
+            isButtonLoading = true
+            originalButtonText = loginButton.text.toString()
+            originalButtonBackground = loginButton.background
+
+            loginButton.isEnabled = false
+            loginButton.text = "加载中..."
+            loginButton.setBackgroundColor(resources.getColor(android.R.color.darker_gray))
+
+            buttonTimeoutTimer?.removeCallbacksAndMessages(null)
+            buttonTimeoutTimer = android.os.Handler()
+            buttonTimeoutTimer?.postDelayed({
+                enableButton()
+                Toast.makeText(this, "请求超时，请重试", Toast.LENGTH_SHORT).show()
+            }, TIMEOUT_DURATION.toLong())
+        }
+    }
+
+    private fun enableButton() {
+        isButtonLoading = false
+        loginButton.isEnabled = true
+        updateLoginButton()
+
+        buttonTimeoutTimer?.removeCallbacksAndMessages(null)
+    }
+
+    private fun clearButtonTimeout() {
+        buttonTimeoutTimer?.removeCallbacksAndMessages(null)
     }
 
     override fun onResume() {
@@ -345,10 +387,11 @@ class MainActivity : AppCompatActivity() {
 
         if (isValid) {
             LogManager.log(TAG, "参数校验通过，准备保存配置并执行登录", "DEBUG")
-            // 保存配置信息
+            
+            disableButton()
+
             saveConfig(ipAddress, port, username, password, rememberPassword)
 
-            // 执行登录请求
             performLogin(username, password)
         } else {
             LogManager.log(TAG, "参数校验失败", "DEBUG")
@@ -385,20 +428,21 @@ class MainActivity : AppCompatActivity() {
     // 执行登录请求
     private fun performLogin(username: String, password: String) {
         LogManager.log(TAG, "开始执行登录请求: Username=$username", "DEBUG")
-        // 执行真实的网络请求（异步）
         networkManager.login(username, password, object : NetworkCallback {
             override fun onSuccess(response: String) {
                 LogManager.log(TAG, "登录请求成功，响应: $response", "DEBUG")
-                // 在主线程更新UI
                 runOnUiThread {
+                    clearButtonTimeout()
                     processLoginResponse(response)
+                    enableButton()
                 }
             }
 
             override fun onError(error: String) {
                 LogManager.log(TAG, "登录请求失败: $error", "ERROR")
-                // 在主线程更新UI
                 runOnUiThread {
+                    clearButtonTimeout()
+                    enableButton()
                     if (error.contains("401")) {
                         handle401Error()
                     } else {
@@ -511,52 +555,49 @@ class MainActivity : AppCompatActivity() {
 
     // 处理注销逻辑
     private fun handleLogout() {
-        // 获取当前用户信息用于日志记录和登出请求
         val userInfo = configStorage.getUserInfo()
         val username = userInfo?.account ?: "未知用户"
         val token = userInfo?.token
 
         LogManager.log(TAG, "开始处理注销: username=$username, token=$token", "DEBUG")
 
-        // 调用登出接口（如果有token）
+        disableButton()
+
         if (token != null) {
             networkManager.logout(token, object : NetworkCallback {
                 override fun onSuccess(response: String) {
                     LogManager.log(TAG, "登出接口调用成功: $response", "DEBUG")
+                    runOnUiThread {
+                        clearButtonTimeout()
+                        completeLogout(username)
+                    }
                 }
 
                 override fun onError(error: String) {
                     LogManager.log(TAG, "登出接口调用失败: $error", "ERROR")
-                    // 登出请求失败不影响界面正常跳转
+                    runOnUiThread {
+                        clearButtonTimeout()
+                        completeLogout(username)
+                    }
                 }
             })
+        } else {
+            clearButtonTimeout()
+            completeLogout(username)
         }
+    }
 
-        // 清理用户信息和密码缓存（保留服务器配置）
+    private fun completeLogout(username: String) {
         configStorage.clearUserInfo()
-
-        // 更新登录状态
         isLoggedIn = false
-
-        // 启用配置管理页面的所有输入框
         enableConfigInputs()
-
-        // 变更注销按钮为登录按钮
         updateLoginButton()
-
-        // 隐藏用户信息
+        enableButton()
         userInfoTextView.visibility = TextView.GONE
-
-        // 重新加载配置信息
         loadSavedConfig()
-
-        // 记录注销日志
         logLogoutSuccess(username)
-
-        // 显示注销成功提示
         Toast.makeText(this, "注销成功", Toast.LENGTH_SHORT).show()
 
-        // 停止心跳服务
         val heartbeatIntent = Intent(this, HeartbeatService::class.java)
         stopService(heartbeatIntent)
     }
