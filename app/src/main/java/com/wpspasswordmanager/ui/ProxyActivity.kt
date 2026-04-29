@@ -376,11 +376,17 @@ class ProxyActivity : AppCompatActivity() {
     }
 
     private fun showOverwriteDialog(uri: Uri, fileName: String) {
-        val builder = android.app.AlertDialog.Builder(this, R.style.Theme_WpsPasswordManager_LightDialog)
-        builder.setTitle("文件已存在")
-        builder.setMessage("当前文件已在/Documents/WpsManagement目录存在副本，是否覆盖文档内容")
+        val dialogView = layoutInflater.inflate(R.layout.dialog_file_exists, null)
         
-        builder.setNegativeButton("打开副本文件") { dialog, which ->
+        val btnOpenCopy = dialogView.findViewById<android.widget.Button>(R.id.btn_open_copy)
+        val btnOverwrite = dialogView.findViewById<android.widget.Button>(R.id.btn_overwrite)
+        val btnCancel = dialogView.findViewById<android.widget.Button>(R.id.btn_cancel)
+        
+        val dialog = android.app.AlertDialog.Builder(this, R.style.Theme_WpsPasswordManager_LightDialog)
+            .setView(dialogView)
+            .create()
+        
+        btnOpenCopy.setOnClickListener {
             dialog.dismiss()
             val documentsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOCUMENTS)
             val wpsManagementDir = File(documentsDir, "WpsManagement")
@@ -388,15 +394,16 @@ class ProxyActivity : AppCompatActivity() {
             processFileUriInternal(uri, fileName, isInWpsManagement = true)
         }
         
-        builder.setPositiveButton("覆盖副本文件") { dialog, which ->
+        btnOverwrite.setOnClickListener {
             dialog.dismiss()
             processFileUriInternal(uri, fileName, isInWpsManagement = false)
         }
         
-        val dialog = builder.create()
-        dialog.show()
+        btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
         
-        setupDialogButtons(dialog)
+        dialog.show()
         
         val window = dialog.window
         if (window != null) {
@@ -571,42 +578,41 @@ class ProxyActivity : AppCompatActivity() {
                     processFile(targetFile, callback)
                 } else {
                     // 文件存在但不是来源于WpsManagement目录，显示弹窗询问用户
-                    val builder = android.app.AlertDialog.Builder(this, R.style.Theme_WpsPasswordManager_LightDialog)
-                    builder.setTitle("文件已存在")
-                    builder.setMessage("当前文件已在/Documents/WpsManagement目录存在副本，是否覆盖文档内容")
+                    val dialogView = layoutInflater.inflate(R.layout.dialog_file_exists, null)
                     
-                    // 设置按钮样式和间距
-                    builder.setNegativeButton("打开副本文件") { dialog, which ->
+                    val btnOpenCopy = dialogView.findViewById<android.widget.Button>(R.id.btn_open_copy)
+                    val btnOverwrite = dialogView.findViewById<android.widget.Button>(R.id.btn_overwrite)
+                    val btnCancel = dialogView.findViewById<android.widget.Button>(R.id.btn_cancel)
+                    
+                    val dialog = android.app.AlertDialog.Builder(this, R.style.Theme_WpsPasswordManager_LightDialog)
+                        .setView(dialogView)
+                        .create()
+                    
+                    btnOpenCopy.setOnClickListener {
                         dialog.dismiss()
-                        // 不执行任何操作，使用本地已存在的文件
                         processFile(targetFile, callback)
                     }
-                    builder.setPositiveButton("覆盖副本文件") { dialog, which ->
+                    
+                    btnOverwrite.setOnClickListener {
                         dialog.dismiss()
                         
-                        // 显示加载状态
                         val loadingBuilder = android.app.AlertDialog.Builder(this, R.style.Theme_WpsPasswordManager_LightDialog)
                         loadingBuilder.setMessage("正在处理文件...")
                         loadingBuilder.setCancelable(false)
                         val loadingDialog = loadingBuilder.create()
                         loadingDialog.show()
                         
-                        // 在后台线程中执行文件操作
                         Thread {
                             try {
-                                // 执行文件移除操作
                                 if (targetFile.delete()) {
                                     LogManager.log(TAG, "成功删除已存在的文件: ${targetFile.absolutePath}", "DEBUG")
-                                    // 执行文件拷贝
                                     val copySuccess = copyFileFromContentUri(uri, targetFile)
                                     runOnUiThread {
                                         loadingDialog.dismiss()
                                         if (copySuccess) {
-                                            // 显示操作成功提示
                                             android.widget.Toast.makeText(this, "文件覆盖成功", android.widget.Toast.LENGTH_SHORT).show()
                                             processFile(targetFile, callback)
                                         } else {
-                                            // 显示操作失败提示
                                             android.widget.Toast.makeText(this, "文件拷贝失败", android.widget.Toast.LENGTH_SHORT).show()
                                             LogManager.log(TAG, "文件拷贝失败: ${targetFile.absolutePath}", "DEBUG")
                                             callback(null)
@@ -615,7 +621,6 @@ class ProxyActivity : AppCompatActivity() {
                                 } else {
                                     runOnUiThread {
                                         loadingDialog.dismiss()
-                                        // 显示删除失败提示
                                         android.widget.Toast.makeText(this, "删除文件失败", android.widget.Toast.LENGTH_SHORT).show()
                                         LogManager.log(TAG, "删除文件失败: ${targetFile.absolutePath}", "DEBUG")
                                         processFile(targetFile, callback)
@@ -624,7 +629,6 @@ class ProxyActivity : AppCompatActivity() {
                             } catch (e: Exception) {
                                 runOnUiThread {
                                     loadingDialog.dismiss()
-                                    // 显示错误提示
                                     android.widget.Toast.makeText(this, "文件操作失败", android.widget.Toast.LENGTH_SHORT).show()
                                     LogManager.log(TAG, "删除文件时发生错误: ${e.message}", "ERROR")
                                     processFile(targetFile, callback)
@@ -632,12 +636,13 @@ class ProxyActivity : AppCompatActivity() {
                             }
                         }.start()
                     }
-                    val dialog = builder.create()
+                    
+                    btnCancel.setOnClickListener {
+                        dialog.dismiss()
+                    }
+                    
                     dialog.show()
                     
-                    setupDialogButtons(dialog)
-                    
-                    // 设置弹窗大小，根据屏幕尺寸动态计算
                     val window = dialog.window
                     if (window != null) {
                         val displayMetrics = resources.displayMetrics
@@ -1077,12 +1082,15 @@ class ProxyActivity : AppCompatActivity() {
     private fun setupDialogButtons(dialog: android.app.AlertDialog) {
         val negativeButton = dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE)
         val positiveButton = dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE)
+        val neutralButton = dialog.getButton(android.app.AlertDialog.BUTTON_NEUTRAL)
+        
+        val buttonWidth = (resources.displayMetrics.widthPixels * 0.22).toInt()
         
         if (negativeButton != null) {
             negativeButton.setTextColor(resources.getColor(android.R.color.black))
             negativeButton.setBackgroundColor(resources.getColor(R.color.purple_500))
             val params = negativeButton.layoutParams as android.widget.LinearLayout.LayoutParams
-            params.width = android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            params.width = buttonWidth
             params.height = android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
             params.weight = 0f
             params.marginStart = 16
@@ -1094,12 +1102,24 @@ class ProxyActivity : AppCompatActivity() {
             positiveButton.setTextColor(resources.getColor(android.R.color.black))
             positiveButton.setBackgroundColor(resources.getColor(R.color.purple_500))
             val params = positiveButton.layoutParams as android.widget.LinearLayout.LayoutParams
-            params.width = android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            params.width = buttonWidth
             params.height = android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
             params.weight = 0f
             params.marginStart = 8
             params.marginEnd = 16
             positiveButton.layoutParams = params
+        }
+        
+        if (neutralButton != null) {
+            neutralButton.setTextColor(resources.getColor(android.R.color.black))
+            neutralButton.setBackgroundColor(resources.getColor(R.color.purple_500))
+            val params = neutralButton.layoutParams as android.widget.LinearLayout.LayoutParams
+            params.width = buttonWidth
+            params.height = android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+            params.weight = 0f
+            params.marginStart = 8
+            params.marginEnd = 8
+            neutralButton.layoutParams = params
         }
     }
 }
