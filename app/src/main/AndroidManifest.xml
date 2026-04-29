@@ -15,16 +15,26 @@
             <action android:name="android.intent.action.VIEW" />
             <data android:mimeType="application/vnd.openxmlformats-officedocument.presentationml.presentation" />
         </intent>
-        
-        <package android:name="cn.wps.moffice_eng" />
-        <package android:name="cn.wps.moffice" />
-        <package android:name="cn.wps.moffice_eng.cn" />
-        <package android:name="cn.wps.moffice.beta" />
-        <package android:name="cn.wps.wpsoffice" />
-        <package android:name="com.wps.moffice" />
-        <package android:name="com.wps.moffice_eng" />
-        <package android:name="com.kingsoft.wps" />
-        <package android:name="com.kingsoft.wps_office" />
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="application/msword" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="application/vnd.ms-excel" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="application/vnd.ms-powerpoint" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.EDIT" />
+            <data android:mimeType="application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW_DOCUMENT" />
+            <data android:mimeType="*/*" />
+        </intent>
     </queries>
 
     <uses-permission android:name="android.permission.INTERNET" />

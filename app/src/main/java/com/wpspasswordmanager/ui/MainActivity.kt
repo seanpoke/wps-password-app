@@ -692,9 +692,25 @@ class MainActivity : AppCompatActivity() {
                 
                 if (wpsApps.isEmpty()) {
                     LogManager.log(TAG, "未找到 WPS 应用，显示空状态", "WARN")
-                    wpsEmptyLayout.visibility = LinearLayout.VISIBLE
-                    wpsSelectedInfo.text = "未选择默认 WPS 应用"
-                    wpsSelectedInfo.visibility = TextView.VISIBLE
+                    
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        val permissionStatus = checkQueryAllPackagesPermissionStatus()
+                        LogManager.log(TAG, "QUERY_ALL_PACKAGES 权限状态: $permissionStatus", "DEBUG")
+                        
+                        if (permissionStatus != "granted") {
+                            wpsSelectedInfo.text = "需要开启应用信息权限才能扫描WPS应用"
+                            wpsSelectedInfo.visibility = TextView.VISIBLE
+                            showPermissionDialog()
+                        } else {
+                            wpsEmptyLayout.visibility = LinearLayout.VISIBLE
+                            wpsSelectedInfo.text = "未选择默认 WPS 应用"
+                            wpsSelectedInfo.visibility = TextView.VISIBLE
+                        }
+                    } else {
+                        wpsEmptyLayout.visibility = LinearLayout.VISIBLE
+                        wpsSelectedInfo.text = "未选择默认 WPS 应用"
+                        wpsSelectedInfo.visibility = TextView.VISIBLE
+                    }
                 } else {
                     LogManager.log(TAG, "找到 WPS 应用，显示列表", "DEBUG")
                     wpsAppList.visibility = ListView.VISIBLE
@@ -702,6 +718,34 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }.start()
+    }
+
+    private fun checkQueryAllPackagesPermissionStatus(): String {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+            return "not_required"
+        }
+        
+        val permission = android.Manifest.permission.QUERY_ALL_PACKAGES
+        val result = checkSelfPermission(permission)
+        
+        return when (result) {
+            android.content.pm.PackageManager.PERMISSION_GRANTED -> "granted"
+            android.content.pm.PackageManager.PERMISSION_DENIED -> "denied"
+            else -> "unknown_$result"
+        }
+    }
+
+    private fun showPermissionDialog() {
+        val builder = android.app.AlertDialog.Builder(this)
+        builder.setTitle("权限请求")
+        builder.setMessage("为了扫描WPS应用，需要开启\"查询所有软件包\"权限。\n\n请点击确定前往设置页面开启权限。")
+        builder.setPositiveButton("确定") { _, _ ->
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+            intent.data = android.net.Uri.parse("package:$packageName")
+            startActivity(intent)
+        }
+        builder.setNegativeButton("取消", null)
+        builder.show()
     }
 
     private fun updateWpsAppList() {
