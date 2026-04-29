@@ -732,6 +732,8 @@ class MainActivity : AppCompatActivity() {
                         wpsSelectedInfo.text = "未选择默认 WPS 应用"
                         wpsSelectedInfo.visibility = TextView.VISIBLE
                     }
+                    
+                    updateWpsAppList()
                 } else {
                     LogManager.log(TAG, "找到 WPS 应用，显示列表", "DEBUG")
                     wpsAppList.visibility = ListView.VISIBLE
@@ -809,8 +811,13 @@ class MainActivity : AppCompatActivity() {
                 wpsSelectedInfo.visibility = TextView.VISIBLE
             } else {
                 LogManager.log(TAG, "已保存的包名不在当前扫描结果中", "WARN")
-                wpsSelectedInfo.text = "请选择默认 WPS 应用"
-                wpsSelectedInfo.visibility = TextView.VISIBLE
+                if (wpsApps.isEmpty()) {
+                    wpsSelectedInfo.text = "已选择: $selectedPackage"
+                    wpsSelectedInfo.visibility = TextView.VISIBLE
+                } else {
+                    wpsSelectedInfo.text = "请选择默认 WPS 应用"
+                    wpsSelectedInfo.visibility = TextView.VISIBLE
+                }
             }
         } else {
             LogManager.log(TAG, "未设置默认 WPS 应用", "DEBUG")
