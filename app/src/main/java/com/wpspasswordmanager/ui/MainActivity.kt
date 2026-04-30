@@ -936,16 +936,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun convertToModernFormat(namePrefix: String, selectedType: String): Pair<String, String> {
-        val modernType = when (selectedType.toLowerCase()) {
-            "doc" -> "docx"
-            "xls" -> "xlsx"
-            "ppt" -> "pptx"
-            else -> selectedType
-        }
-        return Pair(modernType, "$namePrefix.$modernType")
-    }
-
     private fun showCreateDocumentDialog() {
         val dialogBuilder = android.app.AlertDialog.Builder(this, R.style.Theme_WpsPasswordManager_LightDialog)
         dialogBuilder.setTitle("新建文档")
@@ -982,7 +972,7 @@ class MainActivity : AppCompatActivity() {
         inputLayout.addView(typeLabel)
 
         val typeSpinner = Spinner(this)
-        val documentTypes = arrayOf("docx", "doc", "xlsx", "xls", "pptx", "ppt", "pdf", "txt")
+        val documentTypes = arrayOf("docx", "xlsx", "pptx")
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, documentTypes)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         typeSpinner.adapter = adapter
@@ -1019,8 +1009,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             val selectedType = typeSpinner.selectedItem.toString()
-            
-            val (actualType, fileName) = convertToModernFormat(namePrefix, selectedType)
+            val fileName = "$namePrefix.$selectedType"
 
             val documentsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOCUMENTS)
             val wpsManagementDir = File(documentsDir, "WpsManagement")
@@ -1047,7 +1036,7 @@ class MainActivity : AppCompatActivity() {
 
             Thread {
                 try {
-                    val created = createEmptyDocument(targetFile, actualType)
+                    val created = createEmptyDocument(targetFile, selectedType)
                     runOnUiThread {
                         loadingDialog.dismiss()
                         if (created) {
