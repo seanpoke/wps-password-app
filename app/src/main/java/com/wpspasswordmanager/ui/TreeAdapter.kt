@@ -11,6 +11,8 @@ import com.wpspasswordmanager.R
 
 class TreeAdapter(val nodes: MutableList<TreeNode>, private val onItemClicked: (TreeNode) -> Unit, private val onAuthStateChanged: (TreeNode, Boolean) -> Unit) : RecyclerView.Adapter<TreeAdapter.TreeViewHolder>() {
 
+    var isSearchMode = false
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TreeViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.tree_node_item, parent, false)
         return TreeViewHolder(view)
@@ -18,11 +20,11 @@ class TreeAdapter(val nodes: MutableList<TreeNode>, private val onItemClicked: (
 
     override fun onBindViewHolder(holder: TreeViewHolder, position: Int) {
         val node = nodes[position]
-        // 检查节点是否应该显示
         val shouldShow = shouldShowNode(node)
+        android.util.Log.d("TreeAdapter", "onBindViewHolder: position=$position, node=${node.name}, isSearchMode=$isSearchMode, shouldShow=$shouldShow")
+        
         if (shouldShow) {
             holder.itemView.visibility = View.VISIBLE
-            // 恢复布局高度
             val params = holder.itemView.layoutParams
             if (params != null) {
                 params.height = ViewGroup.LayoutParams.WRAP_CONTENT
@@ -31,7 +33,6 @@ class TreeAdapter(val nodes: MutableList<TreeNode>, private val onItemClicked: (
             holder.bind(node, onItemClicked, onAuthStateChanged)
         } else {
             holder.itemView.visibility = View.GONE
-            // 设置最小高度为0，避免占位
             val params = holder.itemView.layoutParams
             if (params != null) {
                 params.height = 0
@@ -41,22 +42,29 @@ class TreeAdapter(val nodes: MutableList<TreeNode>, private val onItemClicked: (
     }
 
     override fun getItemCount(): Int {
-        return nodes.size
+        val count = nodes.size
+        android.util.Log.d("TreeAdapter", "getItemCount: $count, isSearchMode=$isSearchMode")
+        return count
     }
 
     private fun shouldShowNode(node: TreeNode): Boolean {
-        // 如果是根节点，直接显示
-        if (node.parent == null) {
+        if (isSearchMode) {
+            android.util.Log.d("TreeAdapter", "shouldShowNode: ${node.name} - true (搜索模式)")
             return true
         }
-        // 检查所有父节点是否都已展开
+        if (node.parent == null) {
+            android.util.Log.d("TreeAdapter", "shouldShowNode: ${node.name} - true (根节点)")
+            return true
+        }
         var current = node.parent
         while (current != null) {
             if (!current.isExpanded) {
+                android.util.Log.d("TreeAdapter", "shouldShowNode: ${node.name} - false (父节点${current.name}未展开)")
                 return false
             }
             current = current.parent
         }
+        android.util.Log.d("TreeAdapter", "shouldShowNode: ${node.name} - true")
         return true
     }
 

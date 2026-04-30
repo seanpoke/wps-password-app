@@ -33,7 +33,6 @@ class PermissionTreeActivity : Activity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.dialog_permission_tree)
 
-        // 获取视图
         treeRecyclerView = findViewById(R.id.tree_recycler_view)
         btnClose = findViewById(R.id.btn_close)
         btnSelectAll = findViewById(R.id.btn_select_all)
@@ -42,6 +41,9 @@ class PermissionTreeActivity : Activity() {
         btnCancel = findViewById(R.id.btn_cancel)
         etSearch = findViewById(R.id.et_search)
         btnSearch = findViewById(R.id.btn_search)
+        
+        android.util.Log.d("PermissionTree", "btnSearch: ${btnSearch != null}")
+        android.util.Log.d("PermissionTree", "etSearch: ${etSearch != null}")
 
         // 获取传递的LdapItems数据
         val ldapItemsJson = intent.getStringExtra(EXTRA_LDAP_ITEMS)
@@ -98,14 +100,14 @@ class PermissionTreeActivity : Activity() {
             finish()
         }
 
-        // 搜索按钮点击事件
         btnSearch.setOnClickListener {
+            android.util.Log.d("PermissionTree", "搜索按钮被点击")
             performSearch()
         }
 
-        // 搜索框回车事件
         etSearch.setOnEditorActionListener { v, actionId, event ->
             if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH) {
+                android.util.Log.d("PermissionTree", "搜索框回车事件触发")
                 performSearch()
                 true
             } else {
@@ -133,27 +135,71 @@ class PermissionTreeActivity : Activity() {
 
     private fun performSearch() {
         val searchText = etSearch.text.toString()
-        android.util.Log.d("PermissionTree", "执行搜索: $searchText")
+        android.util.Log.d("PermissionTree", "===== 开始搜索 =====")
+        android.util.Log.d("PermissionTree", "搜索文本: $searchText")
+        android.util.Log.d("PermissionTree", "根节点数量: ${rootTreeNodes.size}")
+        
         if (searchText.isEmpty()) {
+            android.util.Log.d("PermissionTree", "搜索文本为空，重置显示")
+            treeAdapter.isSearchMode = false
             resetAllNodesExpansion(rootTreeNodes)
             flattenedNodes.clear()
             flattenTreeNodes(rootTreeNodes, flattenedNodes)
+            android.util.Log.d("PermissionTree", "重置后节点数量: ${flattenedNodes.size}")
             treeAdapter.notifyDataSetChanged()
             return
         }
 
-        resetAllNodesExpansion(rootTreeNodes)
+        treeAdapter.isSearchMode = true
+        android.util.Log.d("PermissionTree", "设置为搜索模式")
 
         val matchingNodes = mutableListOf<TreeNode>()
         findMatchingNodes(rootTreeNodes, searchText, matchingNodes)
+        android.util.Log.d("PermissionTree", "找到匹配节点数量: ${matchingNodes.size}")
+        matchingNodes.forEach { android.util.Log.d("PermissionTree", "匹配节点: ${it.name}") }
 
-        matchingNodes.forEach { node ->
-            expandAncestors(node)
+        if (matchingNodes.isEmpty()) {
+            android.util.Log.d("PermissionTree", "未找到匹配节点")
+            flattenedNodes.clear()
+            treeAdapter.notifyDataSetChanged()
+            return
         }
 
+        val nodesToShow = mutableSetOf<TreeNode>()
+        matchingNodes.forEach { node ->
+            var current: TreeNode? = node
+            while (current != null) {
+                nodesToShow.add(current)
+                if (current.type == 0) {
+                    current.isExpanded = true
+                }
+                current = current.parent
+            }
+        }
+        android.util.Log.d("PermissionTree", "需要显示的节点数量: ${nodesToShow.size}")
+        nodesToShow.forEach { android.util.Log.d("PermissionTree", "显示节点: ${it.name}") }
+
+        val pathNodes = mutableListOf<TreeNode>()
+        collectPathNodes(rootTreeNodes, nodesToShow, pathNodes)
+        android.util.Log.d("PermissionTree", "收集到的路径节点数量: ${pathNodes.size}")
+        pathNodes.forEach { android.util.Log.d("PermissionTree", "路径节点: ${it.name} (层级: ${it.level})") }
+
         flattenedNodes.clear()
-        flattenTreeNodes(rootTreeNodes, flattenedNodes)
+        flattenedNodes.addAll(pathNodes)
+        android.util.Log.d("PermissionTree", "flattenedNodes更新后数量: ${flattenedNodes.size}")
         treeAdapter.notifyDataSetChanged()
+        android.util.Log.d("PermissionTree", "===== 搜索结束 =====")
+    }
+
+    private fun collectPathNodes(nodes: List<TreeNode>, nodesToShow: Set<TreeNode>, result: MutableList<TreeNode>) {
+        for (node in nodes) {
+            if (nodesToShow.contains(node)) {
+                result.add(node)
+                if (node.children.isNotEmpty()) {
+                    collectPathNodes(node.children, nodesToShow, result)
+                }
+            }
+        }
     }
 
     private fun resetAllNodesExpansion(nodes: List<TreeNode>) {

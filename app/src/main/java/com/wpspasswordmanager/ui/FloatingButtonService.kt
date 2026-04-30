@@ -703,23 +703,17 @@ class FloatingButtonService : Service() {
                 removePermissionPanel()
             }
 
-            // 搜索按钮点击事件
             btnSearch?.setOnClickListener {
                 val searchText = etSearch?.text?.toString() ?: ""
-                val filteredNodes = filterNodes(rootNodes, searchText).toMutableList()
-                treeAdapter?.nodes?.clear()
-                treeAdapter?.nodes?.addAll(filteredNodes)
-                treeAdapter?.notifyDataSetChanged()
+                android.util.Log.d(TAG, "搜索按钮点击，搜索文本: $searchText")
+                performSearch(searchText)
             }
 
-            // 搜索框回车事件
             etSearch?.setOnEditorActionListener { v, actionId, event ->
                 if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH) {
                     val searchText = etSearch.text.toString()
-                    val filteredNodes = filterNodes(rootNodes, searchText).toMutableList()
-                    treeAdapter?.nodes?.clear()
-                    treeAdapter?.nodes?.addAll(filteredNodes)
-                    treeAdapter?.notifyDataSetChanged()
+                    android.util.Log.d(TAG, "搜索框回车，搜索文本: $searchText")
+                    performSearch(searchText)
                     true
                 } else {
                     false
@@ -774,17 +768,99 @@ class FloatingButtonService : Service() {
         return selected
     }
 
+    private fun performSearch(searchText: String) {
+        Log.d(TAG, "开始搜索: $searchText")
+        
+        if (searchText.isEmpty()) {
+            Log.d(TAG, "搜索文本为空，显示完整树")
+            resetAllExpanded(rootNodes)
+            val initialList = flattenTree(rootNodes).toMutableList()
+            treeAdapter?.isSearchMode = false
+            treeAdapter?.nodes?.clear()
+            treeAdapter?.nodes?.addAll(initialList)
+            treeAdapter?.notifyDataSetChanged()
+            return
+        }
+
+        treeAdapter?.isSearchMode = true
+        
+        val matchingNodes = mutableListOf<TreeNode>()
+        findMatchingNodes(rootNodes, searchText, matchingNodes)
+        Log.d(TAG, "找到匹配节点: ${matchingNodes.size}个")
+        matchingNodes.forEach { Log.d(TAG, "匹配节点: ${it.name}") }
+        
+        if (matchingNodes.isEmpty()) {
+            Log.d(TAG, "未找到匹配节点")
+            treeAdapter?.nodes?.clear()
+            treeAdapter?.notifyDataSetChanged()
+            return
+        }
+
+        val nodesToShowDn = mutableSetOf<String>()
+        matchingNodes.forEach { node ->
+            var current: TreeNode? = node
+            while (current != null) {
+                nodesToShowDn.add(current.dn)
+                if (current.type == 0) {
+                    current.isExpanded = true
+                }
+                current = current.parent
+            }
+        }
+        Log.d(TAG, "需要显示的节点DN: ${nodesToShowDn.size}个")
+
+        val pathNodes = mutableListOf<TreeNode>()
+        collectPathNodes(rootNodes, nodesToShowDn, pathNodes)
+        
+        Log.d(TAG, "收集到的路径节点: ${pathNodes.size}个")
+        pathNodes.forEach { Log.d(TAG, "路径节点: ${it.name} (层级: ${it.level})") }
+
+        treeAdapter?.nodes?.clear()
+        treeAdapter?.nodes?.addAll(pathNodes)
+        treeAdapter?.notifyDataSetChanged()
+        Log.d(TAG, "搜索完成")
+    }
+
+    private fun findMatchingNodes(nodes: List<TreeNode>, searchText: String, result: MutableList<TreeNode>) {
+        for (node in nodes) {
+            if (node.name.contains(searchText, ignoreCase = true)) {
+                result.add(node)
+            }
+            if (node.children.isNotEmpty()) {
+                findMatchingNodes(node.children, searchText, result)
+            }
+        }
+    }
+
+    private fun collectPathNodes(nodes: List<TreeNode>, nodesToShowDn: Set<String>, result: MutableList<TreeNode>) {
+        for (node in nodes) {
+            if (nodesToShowDn.contains(node.dn)) {
+                result.add(node)
+                if (node.children.isNotEmpty()) {
+                    collectPathNodes(node.children, nodesToShowDn, result)
+                }
+            }
+        }
+    }
+
+    private fun resetAllExpanded(nodes: List<TreeNode>) {
+        for (node in nodes) {
+            node.isExpanded = false
+            if (node.children.isNotEmpty()) {
+                resetAllExpanded(node.children)
+            }
+        }
+    }
+
     private fun filterNodes(nodes: List<TreeNode>, searchText: String): List<TreeNode> {
         val result = mutableListOf<TreeNode>()
         for (node in nodes) {
             if (node.name.contains(searchText, ignoreCase = true)) {
                 result.add(node)
-                // 无论部门是否展开，都添加所有子节点
                 if (node.type == 0 && node.children.isNotEmpty()) {
                     result.addAll(filterNodes(node.children, searchText))
                 }
             } else if (node.type == 0 && node.children.isNotEmpty()) {
-                // 无论部门是否展开，都搜索子节点
                 val filteredChildren = filterNodes(node.children, searchText)
                 if (filteredChildren.isNotEmpty()) {
                     result.add(node)
