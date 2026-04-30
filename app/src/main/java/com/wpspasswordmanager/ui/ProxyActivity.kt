@@ -996,11 +996,13 @@ class ProxyActivity : AppCompatActivity() {
         try {
             if (localFile != null) {
                 val shareUri = getShareableUriFromFile(this, localFile)
+                val mimeType = getMimeTypeFromFileExtension(localFile.name)
                 LogManager.log(TAG, "插件转换后唤起WPS的ContentURI: $shareUri", "DEBUG")
+                LogManager.log(TAG, "文件MIME类型: $mimeType", "DEBUG")
                 val wpsIntent = Intent(Intent.ACTION_VIEW)
                 wpsIntent.setDataAndType(
                     shareUri,
-                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    mimeType
                 )
 
                 wpsIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
@@ -1060,6 +1062,21 @@ class ProxyActivity : AppCompatActivity() {
             showErrorNotification("启动失败", "无法启动WPS应用")
         } finally {
             finish()
+        }
+    }
+
+    private fun getMimeTypeFromFileExtension(fileName: String): String {
+        val extension = fileName.substringAfterLast('.', "").toLowerCase()
+        return when (extension) {
+            "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            "doc" -> "application/msword"
+            "xlsx" -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            "xls" -> "application/vnd.ms-excel"
+            "pptx" -> "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+            "ppt" -> "application/vnd.ms-powerpoint"
+            "pdf" -> "application/pdf"
+            "txt" -> "text/plain"
+            else -> "application/octet-stream"
         }
     }
 
