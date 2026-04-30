@@ -907,6 +907,80 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun checkTokenValidity(): Boolean {
+        try {
+            val userInfo = configStorage.getUserInfo()
+            val token = userInfo?.token
+            if (token.isNullOrEmpty()) {
+                LogManager.log(TAG, "Token不存在", "DEBUG")
+                return false
+            }
+            return true
+        } catch (e: Exception) {
+            LogManager.log(TAG, "检查Token失败: ${e.message}", "ERROR")
+            return false
+        }
+    }
+
+    private fun checkAppPermissions(): Boolean {
+        val isAccessibilityServiceEnabled = isAccessibilityServiceEnabled()
+        LogManager.log(TAG, "无障碍服务状态: $isAccessibilityServiceEnabled", "DEBUG")
+
+        val isOverlayPermissionGranted = isOverlayPermissionGranted()
+        LogManager.log(TAG, "悬浮窗权限状态: $isOverlayPermissionGranted", "DEBUG")
+
+        return isAccessibilityServiceEnabled && isOverlayPermissionGranted
+    }
+
+    private fun isAccessibilityServiceEnabled(): Boolean {
+        try {
+            val accessibilityManager = getSystemService(android.content.Context.ACCESSIBILITY_SERVICE) as android.view.accessibility.AccessibilityManager
+            val enabledServices = accessibilityManager.getEnabledAccessibilityServiceList(android.accessibilityservice.AccessibilityServiceInfo.FEEDBACK_GENERIC)
+            
+            for (service in enabledServices) {
+                if (service.id.contains("WpsAccessibilityService")) {
+                    return true
+                }
+            }
+            return false
+        } catch (e: Exception) {
+            LogManager.log(TAG, "检查无障碍服务状态失败: ${e.message}", "ERROR")
+            return false
+        }
+    }
+
+    private fun isOverlayPermissionGranted(): Boolean {
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                return android.provider.Settings.canDrawOverlays(this)
+            } else {
+                return true
+            }
+        } catch (e: Exception) {
+            LogManager.log(TAG, "检查悬浮窗权限失败: ${e.message}", "ERROR")
+            return false
+        }
+    }
+
+    private fun checkWpsAppSelected(): Boolean {
+        val selectedPackage = configStorage.getTargetWpsPackage()
+        
+        if (selectedPackage.isNullOrEmpty()) {
+            LogManager.log(TAG, "未选择 WPS 应用", "DEBUG")
+            return false
+        }
+        
+        try {
+            packageManager.getPackageInfo(selectedPackage, 0)
+            LogManager.log(TAG, "已选择 WPS 应用: $selectedPackage", "DEBUG")
+            return true
+        } catch (e: android.content.pm.PackageManager.NameNotFoundException) {
+            LogManager.log(TAG, "选择的 WPS 应用 $selectedPackage 已卸载", "WARN")
+            configStorage.clearTargetWpsPackage()
+            return false
+        }
+    }
+
     private fun setupDialogButtons(dialog: android.app.AlertDialog) {
         val negativeButton = dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE)
         val positiveButton = dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE)
@@ -1035,6 +1109,24 @@ class MainActivity : AppCompatActivity() {
 
                 positiveButton.setOnClickListener {
                     errorText.visibility = android.view.View.GONE
+
+                    if (!checkTokenValidity()) {
+                        errorText.text = "用户登录状态已失效，请重新登录"
+                        errorText.visibility = android.view.View.VISIBLE
+                        return@setOnClickListener
+                    }
+
+                    if (!checkAppPermissions()) {
+                        errorText.text = "应用权限不足，请检查无障碍服务和悬浮窗权限"
+                        errorText.visibility = android.view.View.VISIBLE
+                        return@setOnClickListener
+                    }
+
+                    if (!checkWpsAppSelected()) {
+                        errorText.text = "未选择 WPS 应用，请先选择"
+                        errorText.visibility = android.view.View.VISIBLE
+                        return@setOnClickListener
+                    }
 
                     val namePrefix = nameInput.text.toString().trim()
                     if (namePrefix.isEmpty()) {
