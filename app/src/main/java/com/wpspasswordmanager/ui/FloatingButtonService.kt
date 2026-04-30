@@ -588,16 +588,20 @@ class FloatingButtonService : Service() {
                     }
                 },
                 onAuthStateChanged = { node, hasAuth ->
-                    // 实现部门级联选择功能
-                    if (node.type == 0) { // 如果是部门节点
-                        // 递归更新所有子节点的权限状态
+                    node.hasAuth = hasAuth
+                    
+                    if (node.type == 0) {
                         node.updateChildrenAuthState(hasAuth)
-                        // 重新计算扁平化列表并通知适配器更新
-                        val newList = flattenTree(rootNodes).toMutableList()
-                        treeAdapter?.nodes?.clear()
-                        treeAdapter?.nodes?.addAll(newList)
-                        treeAdapter?.notifyDataSetChanged()
                     }
+                    
+                    if (!hasAuth) {
+                        updateParentAuthState(node.parent)
+                    }
+                    
+                    val newList = flattenTree(rootNodes).toMutableList()
+                    treeAdapter?.nodes?.clear()
+                    treeAdapter?.nodes?.addAll(newList)
+                    treeAdapter?.notifyDataSetChanged()
                 }
             )
             recyclerView.adapter = treeAdapter
@@ -850,6 +854,20 @@ class FloatingButtonService : Service() {
                 resetAllExpanded(node.children)
             }
         }
+    }
+
+    private fun updateParentAuthState(parent: TreeNode?) {
+        if (parent == null) {
+            return
+        }
+        
+        if (!parent.hasAuth) {
+            return
+        }
+        
+        parent.hasAuth = false
+        
+        updateParentAuthState(parent.parent)
     }
 
     private fun filterNodes(nodes: List<TreeNode>, searchText: String): List<TreeNode> {
