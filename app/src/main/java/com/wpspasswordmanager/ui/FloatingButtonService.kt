@@ -594,9 +594,7 @@ class FloatingButtonService : Service() {
                         node.updateChildrenAuthState(hasAuth)
                     }
                     
-                    if (!hasAuth) {
-                        updateParentAuthState(node.parent)
-                    }
+                    updateParentAuthState(node.parent, hasAuth)
                     
                     val newList = flattenTree(rootNodes).toMutableList()
                     treeAdapter?.nodes?.clear()
@@ -856,18 +854,38 @@ class FloatingButtonService : Service() {
         }
     }
 
-    private fun updateParentAuthState(parent: TreeNode?) {
+    private fun updateParentAuthState(parent: TreeNode?, childAuthState: Boolean) {
         if (parent == null) {
             return
         }
         
+        if (childAuthState) {
+            handleParentOnChildChecked(parent)
+        } else {
+            handleParentOnChildUnchecked(parent)
+        }
+    }
+
+    private fun handleParentOnChildChecked(parent: TreeNode) {
+        if (parent.hasAuth) {
+            return
+        }
+        
+        val allChildrenChecked = parent.children.all { it.hasAuth }
+        
+        if (allChildrenChecked) {
+            parent.hasAuth = true
+            updateParentAuthState(parent.parent, true)
+        }
+    }
+
+    private fun handleParentOnChildUnchecked(parent: TreeNode) {
         if (!parent.hasAuth) {
             return
         }
         
         parent.hasAuth = false
-        
-        updateParentAuthState(parent.parent)
+        updateParentAuthState(parent.parent, false)
     }
 
     private fun filterNodes(nodes: List<TreeNode>, searchText: String): List<TreeNode> {

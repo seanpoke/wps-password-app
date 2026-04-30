@@ -89,7 +89,7 @@ class TreeAdapter(val nodes: MutableList<TreeNode>, private val onItemClicked: (
                 arrowImageView.visibility = View.VISIBLE
                 arrowImageView.setImageResource(if (node.isExpanded) R.drawable.ic_expanded else R.drawable.ic_collapsed)
             } else {
-                arrowImageView.visibility = View.GONE
+                arrowImageView.visibility = View.INVISIBLE
             }
 
             // 区分部门和员工的图标
