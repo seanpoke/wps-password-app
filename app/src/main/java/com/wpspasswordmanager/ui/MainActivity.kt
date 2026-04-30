@@ -9,6 +9,8 @@ import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ListView
+import android.widget.Spinner
+import android.widget.ArrayAdapter
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -28,6 +30,8 @@ import com.wpspasswordmanager.storage.ServerConfig
 import com.wpspasswordmanager.storage.UserInfo
 import com.google.gson.Gson
 import com.wpspasswordmanager.utils.LogManager
+import java.io.File
+import java.io.FileOutputStream
 
 class MainActivity : AppCompatActivity() {
     private val OVERLAY_PERMISSION_REQUEST_CODE = 100
@@ -180,6 +184,12 @@ class MainActivity : AppCompatActivity() {
         val appTitle = findViewById<TextView>(R.id.app_title)
         appTitle.setOnClickListener {
             handleTitleClick()
+        }
+
+        // 初始化新建文档按钮
+        val addDocumentButton = findViewById<Button>(R.id.fab_add_document)
+        addDocumentButton.setOnClickListener {
+            showCreateDocumentDialog()
         }
     }
 
@@ -923,6 +933,454 @@ class MainActivity : AppCompatActivity() {
             params.marginStart = 8
             params.marginEnd = 16
             positiveButton.layoutParams = params
+        }
+    }
+
+    private fun convertToModernFormat(namePrefix: String, selectedType: String): Pair<String, String> {
+        val modernType = when (selectedType.toLowerCase()) {
+            "doc" -> "docx"
+            "xls" -> "xlsx"
+            "ppt" -> "pptx"
+            else -> selectedType
+        }
+        return Pair(modernType, "$namePrefix.$modernType")
+    }
+
+    private fun showCreateDocumentDialog() {
+        val dialogBuilder = android.app.AlertDialog.Builder(this, R.style.Theme_WpsPasswordManager_LightDialog)
+        dialogBuilder.setTitle("新建文档")
+
+        val inputLayout = android.widget.LinearLayout(this)
+        inputLayout.orientation = android.widget.LinearLayout.VERTICAL
+        inputLayout.setPadding(48, 24, 48, 16)
+
+        val titleLabel = android.widget.TextView(this)
+        titleLabel.text = "请输入文档名称以及选择文档类型，新建文件将保存到/Documents/WpsManagement目录中"
+        titleLabel.setTextColor(resources.getColor(android.R.color.black))
+        titleLabel.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 14f)
+        titleLabel.setPadding(0, 0, 0, 16)
+        inputLayout.addView(titleLabel)
+
+        val nameInput = android.widget.EditText(this)
+        nameInput.hint = "请输入文档名称前缀"
+        nameInput.maxLines = 1
+        nameInput.inputType = android.text.InputType.TYPE_CLASS_TEXT
+        nameInput.setSingleLine(true)
+        val nameParams = android.widget.LinearLayout.LayoutParams(
+            android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        nameParams.bottomMargin = 16
+        nameInput.layoutParams = nameParams
+        inputLayout.addView(nameInput)
+
+        val typeLabel = android.widget.TextView(this)
+        typeLabel.text = "选择文档类型"
+        typeLabel.setTextColor(resources.getColor(android.R.color.black))
+        typeLabel.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 14f)
+        typeLabel.setPadding(0, 0, 0, 8)
+        inputLayout.addView(typeLabel)
+
+        val typeSpinner = Spinner(this)
+        val documentTypes = arrayOf("docx", "doc", "xlsx", "xls", "pptx", "ppt", "pdf", "txt")
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, documentTypes)
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        typeSpinner.adapter = adapter
+        val spinnerParams = android.widget.LinearLayout.LayoutParams(
+            android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        spinnerParams.bottomMargin = 16
+        typeSpinner.layoutParams = spinnerParams
+        inputLayout.addView(typeSpinner)
+
+        val errorText = android.widget.TextView(this)
+        errorText.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12f)
+        errorText.setTextColor(resources.getColor(android.R.color.holo_red_light))
+        errorText.visibility = android.view.View.GONE
+        val errorParams = android.widget.LinearLayout.LayoutParams(
+            android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        errorParams.bottomMargin = 8
+        errorText.layoutParams = errorParams
+        inputLayout.addView(errorText)
+
+        dialogBuilder.setView(inputLayout)
+
+        dialogBuilder.setPositiveButton("创建") { dialog, which ->
+            errorText.visibility = android.view.View.GONE
+
+            val namePrefix = nameInput.text.toString().trim()
+            if (namePrefix.isEmpty()) {
+                errorText.text = "请输入文档名称"
+                errorText.visibility = android.view.View.VISIBLE
+                return@setPositiveButton
+            }
+
+            val selectedType = typeSpinner.selectedItem.toString()
+            
+            val (actualType, fileName) = convertToModernFormat(namePrefix, selectedType)
+
+            val documentsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOCUMENTS)
+            val wpsManagementDir = File(documentsDir, "WpsManagement")
+            
+            if (!wpsManagementDir.exists()) {
+                wpsManagementDir.mkdirs()
+            }
+
+            val targetFile = File(wpsManagementDir, fileName)
+
+            if (targetFile.exists() && targetFile.length() > 0) {
+                errorText.text = "文件已存在，请输入其他名称"
+                errorText.visibility = android.view.View.VISIBLE
+                return@setPositiveButton
+            }
+
+            dialog.dismiss()
+
+            val loadingBuilder = android.app.AlertDialog.Builder(this, R.style.Theme_WpsPasswordManager_LightDialog)
+            loadingBuilder.setMessage("正在创建文档...")
+            loadingBuilder.setCancelable(false)
+            val loadingDialog = loadingBuilder.create()
+            loadingDialog.show()
+
+            Thread {
+                try {
+                    val created = createEmptyDocument(targetFile, actualType)
+                    runOnUiThread {
+                        loadingDialog.dismiss()
+                        if (created) {
+                            Toast.makeText(this@MainActivity, "文档创建成功", Toast.LENGTH_SHORT).show()
+                            openDocumentInWps(targetFile)
+                        } else {
+                            Toast.makeText(this@MainActivity, "文档创建失败", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                } catch (e: Exception) {
+                    runOnUiThread {
+                        loadingDialog.dismiss()
+                        Toast.makeText(this@MainActivity, "创建文档时发生错误", Toast.LENGTH_SHORT).show()
+                        LogManager.log(TAG, "创建文档失败: ${e.message}", "ERROR")
+                    }
+                }
+            }.start()
+        }
+
+        dialogBuilder.setNegativeButton("取消") { dialog, which ->
+            dialog.dismiss()
+        }
+
+        val dialog = dialogBuilder.create()
+        dialog.show()
+
+        setupDialogButtons(dialog)
+
+        val window = dialog.window
+        if (window != null) {
+            val displayMetrics = resources.displayMetrics
+            val dialogWidth = (displayMetrics.widthPixels * 0.85).toInt()
+            window.setLayout(dialogWidth, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
+            window.setGravity(android.view.Gravity.CENTER)
+            window.setBackgroundDrawableResource(android.R.color.white)
+        }
+    }
+
+    private fun createEmptyDocument(targetFile: File, type: String): Boolean {
+        try {
+            if (!targetFile.parentFile?.exists()!!) {
+                targetFile.parentFile?.mkdirs()
+            }
+
+            when (type.toLowerCase()) {
+                "docx" -> {
+                    return createEmptyDocx(targetFile)
+                }
+                "doc" -> {
+                    return createEmptyDocx(targetFile)
+                }
+                "xlsx" -> {
+                    return createEmptyXlsx(targetFile)
+                }
+                "xls" -> {
+                    return createEmptyXlsx(targetFile)
+                }
+                "pptx" -> {
+                    return createEmptyPptx(targetFile)
+                }
+                "ppt" -> {
+                    return createEmptyPptx(targetFile)
+                }
+                "pdf" -> {
+                    return createEmptyPdf(targetFile)
+                }
+                else -> {
+                    return createEmptyTextFile(targetFile)
+                }
+            }
+        } catch (e: Exception) {
+            LogManager.log(TAG, "创建空文档失败: ${e.message}", "ERROR")
+            return false
+        }
+    }
+
+    private fun createEmptyDocx(targetFile: File): Boolean {
+        try {
+            val zipOutputStream = java.util.zip.ZipOutputStream(FileOutputStream(targetFile))
+            
+            val contentTypes = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+  <Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>
+  <Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/>
+  <Override PartName="/word/webSettings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.webSettings+xml"/>
+  <Override PartName="/word/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>
+  <Override PartName="/word/fontTable.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.fontTable+xml"/>
+</Types>"""
+            addToZip(zipOutputStream, "[Content_Types].xml", contentTypes.toByteArray())
+
+            val relationships = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+</Relationships>"""
+            addToZip(zipOutputStream, "_rels/.rels", relationships.toByteArray())
+
+            val document = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p>
+      <w:r>
+        <w:t></w:t>
+      </w:r>
+    </w:p>
+  </w:body>
+</w:document>"""
+            addToZip(zipOutputStream, "word/document.xml", document.toByteArray())
+
+            val wordRels = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"/>"""
+            addToZip(zipOutputStream, "word/_rels/document.xml.rels", wordRels.toByteArray())
+
+            zipOutputStream.close()
+            return true
+        } catch (e: Exception) {
+            LogManager.log(TAG, "创建空DOCX失败: ${e.message}", "ERROR")
+            return false
+        }
+    }
+
+    private fun createEmptyXlsx(targetFile: File): Boolean {
+        try {
+            val zipOutputStream = java.util.zip.ZipOutputStream(FileOutputStream(targetFile))
+            
+            val contentTypes = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+  <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+</Types>"""
+            addToZip(zipOutputStream, "[Content_Types].xml", contentTypes.toByteArray())
+
+            val relationships = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+</Relationships>"""
+            addToZip(zipOutputStream, "_rels/.rels", relationships.toByteArray())
+
+            val workbook = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <sheets>
+    <sheet name="Sheet1" sheetId="1" r:id="rId1" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/>
+  </sheets>
+</workbook>"""
+            addToZip(zipOutputStream, "xl/workbook.xml", workbook.toByteArray())
+
+            val xlRels = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+</Relationships>"""
+            addToZip(zipOutputStream, "xl/_rels/workbook.xml.rels", xlRels.toByteArray())
+
+            val worksheet = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <sheetData/>
+</worksheet>"""
+            addToZip(zipOutputStream, "xl/worksheets/sheet1.xml", worksheet.toByteArray())
+
+            zipOutputStream.close()
+            return true
+        } catch (e: Exception) {
+            LogManager.log(TAG, "创建空XLSX失败: ${e.message}", "ERROR")
+            return false
+        }
+    }
+
+    private fun createEmptyPptx(targetFile: File): Boolean {
+        try {
+            val zipOutputStream = java.util.zip.ZipOutputStream(FileOutputStream(targetFile))
+            
+            val contentTypes = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/>
+  <Override PartName="/ppt/slides/slide1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>
+</Types>"""
+            addToZip(zipOutputStream, "[Content_Types].xml", contentTypes.toByteArray())
+
+            val relationships = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/>
+</Relationships>"""
+            addToZip(zipOutputStream, "_rels/.rels", relationships.toByteArray())
+
+            val presentation = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:presentation xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
+  <p:sldMasterIdLst>
+    <p:sldMasterId id="256" r:id="rId1" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/>
+  </p:sldMasterIdLst>
+  <p:sldIdLst>
+    <p:sldId id="256" r:id="rId2" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/>
+  </p:sldIdLst>
+</p:presentation>"""
+            addToZip(zipOutputStream, "ppt/presentation.xml", presentation.toByteArray())
+
+            val pptRels = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="slideMasters/slideMaster1.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide1.xml"/>
+</Relationships>"""
+            addToZip(zipOutputStream, "ppt/_rels/presentation.xml.rels", pptRels.toByteArray())
+
+            val slideMaster = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sldMaster xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"/>"""
+            addToZip(zipOutputStream, "ppt/slideMasters/slideMaster1.xml", slideMaster.toByteArray())
+
+            val slide = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
+  <p:cSld>
+    <p:spTree>
+      <p:nvGrpSpPr>
+        <p:cNvPr id="1" name=""/>
+        <p:cNvGrpSpPr/>
+        <p:nvPr/>
+      </p:nvGrpSpPr>
+      <p:grpSpPr/>
+    </p:spTree>
+  </p:cSld>
+</p:sld>"""
+            addToZip(zipOutputStream, "ppt/slides/slide1.xml", slide.toByteArray())
+
+            zipOutputStream.close()
+            return true
+        } catch (e: Exception) {
+            LogManager.log(TAG, "创建空PPTX失败: ${e.message}", "ERROR")
+            return false
+        }
+    }
+
+    private fun createEmptyPdf(targetFile: File): Boolean {
+        try {
+            val minimalPdf = "%PDF-1.4\n" +
+                    "1 0 obj\n" +
+                    "<< /Type /Catalog /Pages 2 0 R >>\n" +
+                    "endobj\n" +
+                    "2 0 obj\n" +
+                    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>\n" +
+                    "endobj\n" +
+                    "3 0 obj\n" +
+                    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>\n" +
+                    "endobj\n" +
+                    "xref\n" +
+                    "0 4\n" +
+                    "0000000000 65535 f \n" +
+                    "0000000009 00000 n \n" +
+                    "0000000058 00000 n \n" +
+                    "0000000115 00000 n \n" +
+                    "trailer\n" +
+                    "<< /Size 4 /Root 1 0 R >>\n" +
+                    "startxref\n" +
+                    "195\n" +
+                    "%%EOF"
+            FileOutputStream(targetFile).use { output ->
+                output.write(minimalPdf.toByteArray())
+            }
+            return true
+        } catch (e: Exception) {
+            LogManager.log(TAG, "创建空PDF失败: ${e.message}", "ERROR")
+            return false
+        }
+    }
+
+    private fun createEmptyTextFile(targetFile: File): Boolean {
+        try {
+            FileOutputStream(targetFile).use { output ->
+                output.write(ByteArray(0))
+            }
+            return true
+        } catch (e: Exception) {
+            LogManager.log(TAG, "创建空文本文件失败: ${e.message}", "ERROR")
+            return false
+        }
+    }
+
+    private fun addToZip(zipOutputStream: java.util.zip.ZipOutputStream, entryName: String, data: ByteArray) {
+        val entry = java.util.zip.ZipEntry(entryName)
+        zipOutputStream.putNextEntry(entry)
+        zipOutputStream.write(data)
+        zipOutputStream.closeEntry()
+    }
+
+    private fun openDocumentInWps(file: File) {
+        try {
+            val shareUri = androidx.core.content.FileProvider.getUriForFile(
+                this,
+                "com.wpspasswordmanager.fileprovider",
+                file
+            )
+
+            val wpsIntent = Intent(Intent.ACTION_VIEW)
+            wpsIntent.setDataAndType(shareUri, getMimeType(file.name))
+
+            wpsIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            wpsIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+            wpsIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+            val configStorage = ConfigStorage.getInstance(this)
+            val wpsPackage = configStorage.getTargetWpsPackage()
+            
+            if (wpsPackage != null) {
+                wpsIntent.setPackage(wpsPackage)
+                grantUriPermission(
+                    wpsPackage,
+                    shareUri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                )
+            }
+
+            startActivity(wpsIntent)
+            LogManager.log(TAG, "通过FileProvider启动WPS成功，文件: ${file.absolutePath}", "DEBUG")
+        } catch (e: Exception) {
+            LogManager.log(TAG, "启动WPS失败: ${e.message}", "ERROR")
+            Toast.makeText(this, "无法启动WPS应用", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun getMimeType(fileName: String): String {
+        val extension = fileName.substringAfterLast('.', "").toLowerCase()
+        return when (extension) {
+            "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            "doc" -> "application/msword"
+            "xlsx" -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            "xls" -> "application/vnd.ms-excel"
+            "pptx" -> "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+            "ppt" -> "application/vnd.ms-powerpoint"
+            "pdf" -> "application/pdf"
+            "txt" -> "text/plain"
+            else -> "application/octet-stream"
         }
     }
 }
