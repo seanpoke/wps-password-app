@@ -12,15 +12,7 @@ import com.wpspasswordmanager.R
 class TreeAdapter(val nodes: MutableList<TreeNode>, private val onItemClicked: (TreeNode) -> Unit, private val onAuthStateChanged: (TreeNode, Boolean) -> Unit) : RecyclerView.Adapter<TreeAdapter.TreeViewHolder>() {
 
     var isSearchMode = false
-    
-    private fun getIndeterminateDrawable(context: android.content.Context): android.graphics.drawable.Drawable {
-        val d = android.graphics.drawable.GradientDrawable()
-        d.shape = android.graphics.drawable.GradientDrawable.RECTANGLE
-        d.setColor(android.graphics.Color.parseColor("#6200EE"))
-        d.setSize(20, 20)
-        d.cornerRadius = 4f
-        return d
-    }
+
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TreeViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.tree_node_item, parent, false)

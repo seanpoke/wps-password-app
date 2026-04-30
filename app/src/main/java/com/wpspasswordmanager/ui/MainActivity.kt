@@ -20,6 +20,7 @@ import com.wpspasswordmanager.business.FileMetaManager
 import com.wpspasswordmanager.business.WpsAppInfo
 import com.wpspasswordmanager.business.WpsManager
 import com.wpspasswordmanager.monitor.AccessibilityServiceManager
+import com.wpspasswordmanager.monitor.WpsAccessibilityService
 import com.wpspasswordmanager.network.NetworkCallback
 import com.wpspasswordmanager.network.NetworkManager
 import com.wpspasswordmanager.network.HeartbeatService
@@ -1168,7 +1169,7 @@ class MainActivity : AppCompatActivity() {
                                 loadingDialog.dismiss()
                                 if (created) {
                                     Toast.makeText(this@MainActivity, "文档创建成功", Toast.LENGTH_SHORT).show()
-                                    openDocumentInWps(targetFile)
+                                    ProxyActivity.openFileWithWps(this@MainActivity, targetFile)
                                 } else {
                                     Toast.makeText(this@MainActivity, "文档创建失败", Toast.LENGTH_SHORT).show()
                                 }
@@ -1447,6 +1448,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun openDocumentInWps(file: File) {
         try {
+            WpsAccessibilityService.stableDocumentPath = file.absolutePath
+            WpsAccessibilityService.currentDocumentPath = file.absolutePath
+            LogManager.log(TAG, "保存文件路径到WpsAccessibilityService: ${file.absolutePath}", "DEBUG")
+
             val shareUri = androidx.core.content.FileProvider.getUriForFile(
                 this,
                 "com.wpspasswordmanager.fileprovider",
@@ -1462,7 +1467,7 @@ class MainActivity : AppCompatActivity() {
 
             val configStorage = ConfigStorage.getInstance(this)
             val wpsPackage = configStorage.getTargetWpsPackage()
-            
+
             if (wpsPackage != null) {
                 wpsIntent.setPackage(wpsPackage)
                 grantUriPermission(

@@ -542,7 +542,6 @@ class WpsAccessibilityService : AccessibilityService() {
                     )
                 ) {
                     currentDialogType = DialogType.MODIFY_PASSWORD
-                    Log.d(TAG, "检测到对话框类型: 修改密码")
                     return
                 }
 
@@ -795,10 +794,7 @@ class WpsAccessibilityService : AccessibilityService() {
                                         val node = iterator.next()
                                         val success = clickMFShowPassword(node)
                                         if (success) {
-                                            Log.d(TAG, "成功点击显示密码节点，从集合中移除")
                                             iterator.remove()
-                                        } else {
-                                            Log.d(TAG, "点击显示密码节点失败，继续下一个")
                                         }
                                     }
 
@@ -916,34 +912,17 @@ class WpsAccessibilityService : AccessibilityService() {
         var success = false
 
         try {
-            Log.d(TAG, "处理【显示密码】节点: ${node.className}")
-
             // 尝试找到关联的复选框
             val checkboxNode = findAssociatedCheckbox(node)
             if (checkboxNode != null) {
-                Log.d(
-                    TAG,
-                    "找到关联的复选框: ${checkboxNode.className}, 可点击: ${checkboxNode.isClickable}, 当前状态: ${checkboxNode.isChecked}"
-                )
-
                 // 执行点击操作
                 if (checkboxNode.isClickable) {
                     success = checkboxNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-                    if (success) {
-                        Log.i(TAG, "成功点击【显示密码】复选框")
-                    } else {
-                        Log.e(TAG, "点击【显示密码】复选框失败")
-                    }
                 }
             } else {
                 // 尝试直接点击节点
                 if (node.isClickable) {
                     success = node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-                    if (success) {
-                        Log.i(TAG, "成功点击【显示密码】节点")
-                    } else {
-                        Log.e(TAG, "点击【显示密码】节点失败")
-                    }
                 }
             }
         } catch (e: Exception) {
@@ -1922,9 +1901,6 @@ class WpsAccessibilityService : AccessibilityService() {
                     Intent(this, com.wpspasswordmanager.ui.FloatingButtonService::class.java)
                 stopService(intent)
                 isFloatingButtonServiceStarted = false
-                Log.d(TAG, "悬浮按钮服务停止成功")
-            } else {
-                Log.d(TAG, "悬浮按钮服务已经停止")
             }
         } catch (e: Exception) {
             Log.e(TAG, "停止悬浮按钮服务失败", e)

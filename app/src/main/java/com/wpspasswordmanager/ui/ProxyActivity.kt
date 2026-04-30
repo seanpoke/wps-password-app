@@ -27,6 +27,92 @@ class ProxyActivity : AppCompatActivity() {
     companion object {
         private const val TAG = "ProxyActivity"
         private const val WPS_MANAGEMENT_DIR = "WpsManagement"
+
+        fun openFileWithWps(context: Context, file: File) {
+            val intent = Intent(context, ProxyActivity::class.java)
+            intent.action = Intent.ACTION_VIEW
+            intent.data = androidx.core.content.FileProvider.getUriForFile(
+                context,
+                "com.wpspasswordmanager.fileprovider",
+                file
+            )
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            context.startActivity(intent)
+        }
+
+        fun readPasswordFromFile(context: Context, filePath: String, uid: String): String? {
+            LogManager.log(TAG, "开始读取密码并存储到缓存，文件路径: $filePath", "DEBUG")
+            try {
+                val file = File(filePath)
+                LogManager.log(TAG, "文件存在: ${file.exists()}", "DEBUG")
+                LogManager.log(TAG, "文件可读: ${file.canRead()}", "DEBUG")
+                LogManager.log(TAG, "文件大小: ${file.length()} 字节", "DEBUG")
+
+                val localPassword = FileMetaManager.getInstance().getPasswordFromFile(context, filePath)
+                if (localPassword != null) {
+                    LogManager.log(TAG, "从本地文件读取到密码: $localPassword", "DEBUG")
+                    val token = getStaticTokenFromStorage(context)
+                    LogManager.log(TAG, "获取到token: ${if (token.isNullOrEmpty()) "空" else "已获取"}", "DEBUG")
+
+                    val latch = java.util.concurrent.CountDownLatch(1)
+                    var resultPassword: String? = null
+
+                    LogManager.log(TAG, "开始调用获取文档密码接口", "DEBUG")
+                    NetworkManager.getInstance(context).getDocumentPassword(
+                        docId = uid,
+                        encryPassword = localPassword,
+                        token = token,
+                        callback = object : NetworkCallback {
+                            override fun onSuccess(response: String) {
+                                LogManager.log(TAG, "获取文档密码响应: $response", "DEBUG")
+                                try {
+                                    val json = org.json.JSONObject(response)
+                                    if (json.getInt("status") == 200) {
+                                        val data = json.getJSONObject("data")
+                                        val documentPassword = data.optString("password")
+                                        LogManager.log(TAG, "从接口获取到文档密码: $documentPassword", "DEBUG")
+                                        resultPassword = documentPassword
+                                    } else {
+                                        LogManager.log(TAG, "获取文档密码失败，响应状态码不是200", "ERROR")
+                                        resultPassword = null
+                                    }
+                                } catch (e: Exception) {
+                                    LogManager.log(TAG, "解析获取文档密码响应失败: ${e.message}", "ERROR")
+                                    resultPassword = null
+                                } finally {
+                                    latch.countDown()
+                                }
+                            }
+
+                            override fun onError(error: String) {
+                                LogManager.log(TAG, "获取文档密码失败: $error", "ERROR")
+                                resultPassword = null
+                                latch.countDown()
+                            }
+                        }
+                    )
+
+                    latch.await(10, java.util.concurrent.TimeUnit.SECONDS)
+                    return resultPassword
+                } else {
+                    LogManager.log(TAG, "本地文件中未找到密码", "DEBUG")
+                    return null
+                }
+            } catch (e: Exception) {
+                LogManager.log(TAG, "读取本地文件密码失败: ${e.message}", "ERROR")
+                return null
+            }
+        }
+
+        private fun getStaticTokenFromStorage(context: Context): String? {
+            try {
+                val userInfo = ConfigStorage.getInstance(context).getUserInfo()
+                return userInfo?.token
+            } catch (e: Exception) {
+                LogManager.log(TAG, "获取token失败: ${e.message}", "ERROR")
+                return null
+            }
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -542,20 +628,6 @@ class ProxyActivity : AppCompatActivity() {
         }
     }
 
-    private fun processFileUriInternal(uri: Uri, fileName: String, isInWpsManagement: Boolean) {
-        val fileIdentifier = uri.toString()
-        processExternalContentUri(uri, fileName, isInWpsManagement) { localFile ->
-            if (localFile != null) {
-                val localFilePath = localFile.absolutePath
-                LogManager.log(TAG, "文件处理完成，本地路径: $localFilePath", "DEBUG")
-                saveFileUriToPreferences(localFilePath)
-            } else {
-                LogManager.log(TAG, "文件处理失败", "ERROR")
-                saveFileUriToPreferences(fileIdentifier)
-            }
-            forwardToWps(localFile, uri)
-        }
-    }
 
     private fun showSaveFileDialog(uri: Uri, currentFileName: String, isHashName: Boolean) {
         val extension = FileNameResolver.getFileExtension(currentFileName)
@@ -762,7 +834,7 @@ class ProxyActivity : AppCompatActivity() {
                     docId = uid,
                     encryPassword = localPassword, // 这里直接使用从文件读取的密码，实际应用中可能需要加密
                     token = token,
-                    callback = object : com.wpspasswordmanager.network.NetworkCallback {
+                    callback = object : NetworkCallback {
                         override fun onSuccess(response: String) {
                             LogManager.log(TAG, "获取文档密码响应: $response", "DEBUG")
                             try {
@@ -844,7 +916,7 @@ class ProxyActivity : AppCompatActivity() {
             NetworkManager.getInstance(this).getDocumentOwner(
                 docId = uid,
                 token = token,
-                callback = object : com.wpspasswordmanager.network.NetworkCallback {
+                callback = object : NetworkCallback {
                     override fun onSuccess(response: String) {
                         LogManager.log(TAG, "获取文档权限响应: $response", "DEBUG")
                         try {

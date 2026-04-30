@@ -71,8 +71,6 @@ class AccessibilityServiceManager private constructor() {
     fun hideFloatingButton() {
         if (floatingButtonService != null) {
             floatingButtonService?.hideFloatingButton()
-        } else {
-            Log.d(TAG, "悬浮按钮服务未初始化，无需隐藏")
         }
     }
 }

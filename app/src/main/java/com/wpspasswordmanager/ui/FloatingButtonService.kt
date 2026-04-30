@@ -16,6 +16,7 @@ import android.widget.Button
 import android.widget.Toast
 import com.wpspasswordmanager.R
 import com.wpspasswordmanager.business.FileMetaFactory
+import com.wpspasswordmanager.business.FileMetaManager
 import com.wpspasswordmanager.business.PasswordGenerator
 import com.wpspasswordmanager.monitor.AccessibilityServiceManager
 import com.wpspasswordmanager.monitor.WpsAccessibilityService
@@ -255,7 +256,7 @@ class FloatingButtonService : Service() {
         // 获取稳定文档路径（存储密码时使用的路径）
         val documentPath = WpsAccessibilityService.stableDocumentPath
         if (documentPath.isNullOrEmpty()) {
-            showOperationNotification("查看密码", "未找到文档路径")
+            showOperationNotification("复制密码", "未找到文档路径")
             Toast.makeText(this, "未找到文档路径", Toast.LENGTH_SHORT).show()
             Log.e(TAG, "未找到文档路径")
             return
@@ -264,20 +265,24 @@ class FloatingButtonService : Service() {
         // 优先使用临时密码
         var password = WpsAccessibilityService.getTempPassword()
         if (password == null || password.isEmpty()) {
-            // 如果临时密码为空，从FileMeta获取当前密码
-            password = FileMetaFactory.getCurrentPassword(documentPath)
+            // 如果FileMeta中也没有密码，从文档末尾读取密码（使用ProxyActivity）
+            val uid = FileMetaFactory.getFileMeta(documentPath)?.uid ?: FileMetaFactory.createUid()
+            password = ProxyActivity.readPasswordFromFile(this, documentPath, uid)
+            if (password != null) {
+                Log.d(TAG, "从文档末尾成功读取密码")
+            }
         }
 
         if (password != null && password.isNotEmpty()) {
             // 将密码复制到剪贴板
             copyToClipboard(password)
             // 显示密码通知
-            showOperationNotification("查看密码", "密码已复制到剪贴板")
+            showOperationNotification("复制密码", "密码已复制到剪贴板")
             // 显示Toast提示
             Toast.makeText(this, "密码已复制到剪贴板", Toast.LENGTH_LONG).show()
             Log.d(TAG, "获取密码成功: $password")
         } else {
-            showOperationNotification("查看密码", "未找到存储的密码")
+            showOperationNotification("复制密码", "未找到存储的密码")
             Toast.makeText(this, "未找到存储的密码", Toast.LENGTH_SHORT).show()
             Log.e(TAG, "未找到存储的密码，文件路径: $documentPath")
         }
