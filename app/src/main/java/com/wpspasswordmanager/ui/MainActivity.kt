@@ -960,9 +960,21 @@ class MainActivity : AppCompatActivity() {
             android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
             android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
         )
-        nameParams.bottomMargin = 16
+        nameParams.bottomMargin = 8
         nameInput.layoutParams = nameParams
         inputLayout.addView(nameInput)
+
+        val errorText = android.widget.TextView(this)
+        errorText.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12f)
+        errorText.setTextColor(resources.getColor(android.R.color.holo_red_light))
+        errorText.visibility = android.view.View.GONE
+        val errorParams = android.widget.LinearLayout.LayoutParams(
+            android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        errorParams.bottomMargin = 12
+        errorText.layoutParams = errorParams
+        inputLayout.addView(errorText)
 
         val typeLabel = android.widget.TextView(this)
         typeLabel.text = "选择文档类型"
@@ -984,86 +996,102 @@ class MainActivity : AppCompatActivity() {
         typeSpinner.layoutParams = spinnerParams
         inputLayout.addView(typeSpinner)
 
-        val errorText = android.widget.TextView(this)
-        errorText.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 12f)
-        errorText.setTextColor(resources.getColor(android.R.color.holo_red_light))
-        errorText.visibility = android.view.View.GONE
-        val errorParams = android.widget.LinearLayout.LayoutParams(
-            android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
-            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
-        )
-        errorParams.bottomMargin = 8
-        errorText.layoutParams = errorParams
-        inputLayout.addView(errorText)
-
         dialogBuilder.setView(inputLayout)
 
-        dialogBuilder.setPositiveButton("创建") { dialog, which ->
-            errorText.visibility = android.view.View.GONE
+        dialogBuilder.setPositiveButton("创建") { _, _ -> }
 
-            val namePrefix = nameInput.text.toString().trim()
-            if (namePrefix.isEmpty()) {
-                errorText.text = "请输入文档名称"
-                errorText.visibility = android.view.View.VISIBLE
-                return@setPositiveButton
-            }
-
-            val selectedType = typeSpinner.selectedItem.toString()
-            val fileName = "$namePrefix.$selectedType"
-
-            val documentsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOCUMENTS)
-            val wpsManagementDir = File(documentsDir, "WpsManagement")
-            
-            if (!wpsManagementDir.exists()) {
-                wpsManagementDir.mkdirs()
-            }
-
-            val targetFile = File(wpsManagementDir, fileName)
-
-            if (targetFile.exists() && targetFile.length() > 0) {
-                errorText.text = "文件已存在，请输入其他名称"
-                errorText.visibility = android.view.View.VISIBLE
-                return@setPositiveButton
-            }
-
-            dialog.dismiss()
-
-            val loadingBuilder = android.app.AlertDialog.Builder(this, R.style.Theme_WpsPasswordManager_LightDialog)
-            loadingBuilder.setMessage("正在创建文档...")
-            loadingBuilder.setCancelable(false)
-            val loadingDialog = loadingBuilder.create()
-            loadingDialog.show()
-
-            Thread {
-                try {
-                    val created = createEmptyDocument(targetFile, selectedType)
-                    runOnUiThread {
-                        loadingDialog.dismiss()
-                        if (created) {
-                            Toast.makeText(this@MainActivity, "文档创建成功", Toast.LENGTH_SHORT).show()
-                            openDocumentInWps(targetFile)
-                        } else {
-                            Toast.makeText(this@MainActivity, "文档创建失败", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                } catch (e: Exception) {
-                    runOnUiThread {
-                        loadingDialog.dismiss()
-                        Toast.makeText(this@MainActivity, "创建文档时发生错误", Toast.LENGTH_SHORT).show()
-                        LogManager.log(TAG, "创建文档失败: ${e.message}", "ERROR")
-                    }
-                }
-            }.start()
-        }
-
-        dialogBuilder.setNegativeButton("取消") { dialog, which ->
+        dialogBuilder.setNegativeButton("取消") { dialog, _ ->
             dialog.dismiss()
         }
 
         val dialog = dialogBuilder.create()
-        dialog.show()
 
-        setupDialogButtons(dialog)
+        dialog.setOnShowListener {
+            val negativeButton = dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE)
+            val positiveButton = dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE)
+
+            if (negativeButton != null) {
+                negativeButton.setTextColor(resources.getColor(android.R.color.black))
+                negativeButton.setBackgroundColor(resources.getColor(R.color.purple_500))
+                val params = negativeButton.layoutParams as android.widget.LinearLayout.LayoutParams
+                params.width = android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                params.height = android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                params.weight = 0f
+                params.marginStart = 16
+                params.marginEnd = 8
+                negativeButton.layoutParams = params
+            }
+
+            if (positiveButton != null) {
+                positiveButton.setTextColor(resources.getColor(android.R.color.black))
+                positiveButton.setBackgroundColor(resources.getColor(R.color.purple_500))
+                val params = positiveButton.layoutParams as android.widget.LinearLayout.LayoutParams
+                params.width = android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                params.height = android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                params.weight = 0f
+                params.marginStart = 8
+                params.marginEnd = 16
+                positiveButton.layoutParams = params
+
+                positiveButton.setOnClickListener {
+                    errorText.visibility = android.view.View.GONE
+
+                    val namePrefix = nameInput.text.toString().trim()
+                    if (namePrefix.isEmpty()) {
+                        errorText.text = "请输入文档名称"
+                        errorText.visibility = android.view.View.VISIBLE
+                        return@setOnClickListener
+                    }
+
+                    val selectedType = typeSpinner.selectedItem.toString()
+                    val fileName = "$namePrefix.$selectedType"
+
+                    val documentsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOCUMENTS)
+                    val wpsManagementDir = File(documentsDir, "WpsManagement")
+                    
+                    if (!wpsManagementDir.exists()) {
+                        wpsManagementDir.mkdirs()
+                    }
+
+                    val targetFile = File(wpsManagementDir, fileName)
+
+                    if (targetFile.exists() && targetFile.length() > 0) {
+                        errorText.text = "文件已存在，请输入其他名称"
+                        errorText.visibility = android.view.View.VISIBLE
+                        return@setOnClickListener
+                    }
+
+                    dialog.dismiss()
+
+                    val loadingBuilder = android.app.AlertDialog.Builder(this@MainActivity, R.style.Theme_WpsPasswordManager_LightDialog)
+                    loadingBuilder.setMessage("正在创建文档...")
+                    loadingBuilder.setCancelable(false)
+                    val loadingDialog = loadingBuilder.create()
+                    loadingDialog.show()
+
+                    Thread {
+                        try {
+                            val created = createEmptyDocument(targetFile, selectedType)
+                            runOnUiThread {
+                                loadingDialog.dismiss()
+                                if (created) {
+                                    Toast.makeText(this@MainActivity, "文档创建成功", Toast.LENGTH_SHORT).show()
+                                    openDocumentInWps(targetFile)
+                                } else {
+                                    Toast.makeText(this@MainActivity, "文档创建失败", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        } catch (e: Exception) {
+                            runOnUiThread {
+                                loadingDialog.dismiss()
+                                Toast.makeText(this@MainActivity, "创建文档时发生错误", Toast.LENGTH_SHORT).show()
+                                LogManager.log(TAG, "创建文档失败: ${e.message}", "ERROR")
+                            }
+                        }
+                    }.start()
+                }
+            }
+        }
 
         val window = dialog.window
         if (window != null) {
@@ -1073,6 +1101,8 @@ class MainActivity : AppCompatActivity() {
             window.setGravity(android.view.Gravity.CENTER)
             window.setBackgroundDrawableResource(android.R.color.white)
         }
+
+        dialog.show()
     }
 
     private fun createEmptyDocument(targetFile: File, type: String): Boolean {
