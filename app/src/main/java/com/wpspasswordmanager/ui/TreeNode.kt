@@ -14,7 +14,8 @@ data class TreeNode(
     var level: Int = 0,          // 当前层级（用于缩进）
     var isExpanded: Boolean = false, // 是否展开
     var parent: TreeNode? = null,    // 父节点引用（可选，用于向上查找）
-    val children: MutableList<TreeNode> = mutableListOf() // 统一的子节点列表
+    val children: MutableList<TreeNode> = mutableListOf(), // 统一的子节点列表
+    var isIndeterminate: Boolean = false // 半勾选状态
 ) {
     /**
      * 切换节点的展开/折叠状态
@@ -35,6 +36,7 @@ data class TreeNode(
      */
     fun updateChildrenAuthState(auth: Boolean) {
         children.forEach {
+            it.isIndeterminate = false
             it.setAuthState(auth)
             if (it.type == 0) {
                 it.updateChildrenAuthState(auth)

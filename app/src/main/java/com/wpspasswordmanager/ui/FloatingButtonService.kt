@@ -454,11 +454,38 @@ class FloatingButtonService : Service() {
         if (permissionPanelView == null) {
             // 解析LdapItem为TreeNode
             rootNodes = parseLdapItemsToTreeNodes(ldapItems)
+            // 初始化时计算所有父节点的半勾选状态
+            initializeParentAuthState(rootNodes)
             // 创建权限面板视图
             createPermissionPanel()
         } else {
             // 切换面板展开/收起状态
             togglePermissionPanel()
+        }
+    }
+
+    private fun initializeParentAuthState(nodes: List<TreeNode>) {
+        for (node in nodes) {
+            if (node.children.isNotEmpty()) {
+                initializeParentAuthState(node.children)
+                
+                val (checkedLeafCount, totalLeafCount) = countLeafNodes(node)
+                
+                if (totalLeafCount == 0) {
+                    continue
+                }
+                
+                if (checkedLeafCount == 0) {
+                    node.hasAuth = false
+                    node.isIndeterminate = false
+                } else if (checkedLeafCount == totalLeafCount) {
+                    node.hasAuth = true
+                    node.isIndeterminate = false
+                } else {
+                    node.hasAuth = false
+                    node.isIndeterminate = true
+                }
+            }
         }
     }
 
@@ -589,12 +616,13 @@ class FloatingButtonService : Service() {
                 },
                 onAuthStateChanged = { node, hasAuth ->
                     node.hasAuth = hasAuth
+                    node.isIndeterminate = false
                     
                     if (node.type == 0) {
                         node.updateChildrenAuthState(hasAuth)
                     }
                     
-                    updateParentAuthState(node.parent, hasAuth)
+                    updateParentAuthState(node.parent)
                     
                     val newList = flattenTree(rootNodes).toMutableList()
                     treeAdapter?.nodes?.clear()
@@ -854,38 +882,47 @@ class FloatingButtonService : Service() {
         }
     }
 
-    private fun updateParentAuthState(parent: TreeNode?, childAuthState: Boolean) {
+    private fun updateParentAuthState(parent: TreeNode?) {
         if (parent == null) {
             return
         }
         
-        if (childAuthState) {
-            handleParentOnChildChecked(parent)
-        } else {
-            handleParentOnChildUnchecked(parent)
-        }
-    }
-
-    private fun handleParentOnChildChecked(parent: TreeNode) {
-        if (parent.hasAuth) {
+        val (checkedLeafCount, totalLeafCount) = countLeafNodes(parent)
+        
+        if (totalLeafCount == 0) {
             return
         }
         
-        val allChildrenChecked = parent.children.all { it.hasAuth }
-        
-        if (allChildrenChecked) {
+        if (checkedLeafCount == 0) {
+            parent.hasAuth = false
+            parent.isIndeterminate = false
+        } else if (checkedLeafCount == totalLeafCount) {
             parent.hasAuth = true
-            updateParentAuthState(parent.parent, true)
-        }
-    }
-
-    private fun handleParentOnChildUnchecked(parent: TreeNode) {
-        if (!parent.hasAuth) {
-            return
+            parent.isIndeterminate = false
+        } else {
+            parent.hasAuth = false
+            parent.isIndeterminate = true
         }
         
-        parent.hasAuth = false
-        updateParentAuthState(parent.parent, false)
+        updateParentAuthState(parent.parent)
+    }
+
+    private fun countLeafNodes(node: TreeNode): Pair<Int, Int> {
+        if (node.type == 1 || node.children.isEmpty()) {
+            // 叶子节点（员工或无子部门）
+            return if (node.hasAuth) Pair(1, 1) else Pair(0, 1)
+        }
+        
+        var checkedCount = 0
+        var totalCount = 0
+        
+        for (child in node.children) {
+            val (childChecked, childTotal) = countLeafNodes(child)
+            checkedCount += childChecked
+            totalCount += childTotal
+        }
+        
+        return Pair(checkedCount, totalCount)
     }
 
     private fun filterNodes(nodes: List<TreeNode>, searchText: String): List<TreeNode> {

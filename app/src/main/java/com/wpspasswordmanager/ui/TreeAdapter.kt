@@ -12,6 +12,15 @@ import com.wpspasswordmanager.R
 class TreeAdapter(val nodes: MutableList<TreeNode>, private val onItemClicked: (TreeNode) -> Unit, private val onAuthStateChanged: (TreeNode, Boolean) -> Unit) : RecyclerView.Adapter<TreeAdapter.TreeViewHolder>() {
 
     var isSearchMode = false
+    
+    private fun getIndeterminateDrawable(context: android.content.Context): android.graphics.drawable.Drawable {
+        val d = android.graphics.drawable.GradientDrawable()
+        d.shape = android.graphics.drawable.GradientDrawable.RECTANGLE
+        d.setColor(android.graphics.Color.parseColor("#6200EE"))
+        d.setSize(20, 20)
+        d.cornerRadius = 4f
+        return d
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TreeViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.tree_node_item, parent, false)
@@ -21,8 +30,7 @@ class TreeAdapter(val nodes: MutableList<TreeNode>, private val onItemClicked: (
     override fun onBindViewHolder(holder: TreeViewHolder, position: Int) {
         val node = nodes[position]
         val shouldShow = shouldShowNode(node)
-        android.util.Log.d("TreeAdapter", "onBindViewHolder: position=$position, node=${node.name}, isSearchMode=$isSearchMode, shouldShow=$shouldShow")
-        
+
         if (shouldShow) {
             holder.itemView.visibility = View.VISIBLE
             val params = holder.itemView.layoutParams
@@ -43,28 +51,23 @@ class TreeAdapter(val nodes: MutableList<TreeNode>, private val onItemClicked: (
 
     override fun getItemCount(): Int {
         val count = nodes.size
-        android.util.Log.d("TreeAdapter", "getItemCount: $count, isSearchMode=$isSearchMode")
         return count
     }
 
     private fun shouldShowNode(node: TreeNode): Boolean {
         if (isSearchMode) {
-            android.util.Log.d("TreeAdapter", "shouldShowNode: ${node.name} - true (搜索模式)")
             return true
         }
         if (node.parent == null) {
-            android.util.Log.d("TreeAdapter", "shouldShowNode: ${node.name} - true (根节点)")
             return true
         }
         var current = node.parent
         while (current != null) {
             if (!current.isExpanded) {
-                android.util.Log.d("TreeAdapter", "shouldShowNode: ${node.name} - false (父节点${current.name}未展开)")
                 return false
             }
             current = current.parent
         }
-        android.util.Log.d("TreeAdapter", "shouldShowNode: ${node.name} - true")
         return true
     }
 
@@ -95,14 +98,20 @@ class TreeAdapter(val nodes: MutableList<TreeNode>, private val onItemClicked: (
             // 区分部门和员工的图标
             iconImageView.setImageResource(if (node.type == 0) R.drawable.ic_dept else R.drawable.ic_employee)
 
-            // 根据hasAuth处理权限标识
-            authImageView.visibility = if (node.hasAuth) View.VISIBLE else View.GONE
+            // 半勾选状态显示半勾选图标，其他状态不显示图标
+            if (node.type == 0 && node.isIndeterminate) {
+                authImageView.visibility = View.VISIBLE
+                authImageView.setImageResource(R.drawable.ic_indeterminate_checkbox)
+            } else {
+                authImageView.visibility = View.GONE
+            }
 
             // 设置勾选状态，避免触发onCheckedChangeListener
             checkBox.setOnCheckedChangeListener(null)
             checkBox.isChecked = node.hasAuth
             checkBox.setOnCheckedChangeListener {
                 _, isChecked ->
+                node.isIndeterminate = false
                 node.setAuthState(isChecked)
                 onAuthStateChanged(node, isChecked)
             }
