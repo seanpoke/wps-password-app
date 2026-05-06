@@ -1,0 +1,418 @@
+2026-05-06 10:37:10.003 15075-15075 HnContentR...zerManager com.wpspasswordmanager               D  getCloudConfigsBundle: get cache value
+2026-05-06 10:37:10.003 15075-15075 HnContentR...zerManager com.wpspasswordmanager               D  getCloudConfigsBundle: get cache value
+2026-05-06 10:37:10.003 15075-15075 HiTouch_Pr...reDetector com.wpspasswordmanager               I  checkDoublePointerLimit:xPoss,yPoss:1004,718
+2026-05-06 10:37:10.084 15075-15075 HnContentR...zerManager com.wpspasswordmanager               D  getCloudConfigsBundle: get cache value
+2026-05-06 10:37:10.085 15075-15075 HnContentR...zerManager com.wpspasswordmanager               D  getCloudConfigsBundle: get cache value
+2026-05-06 10:37:10.085 15075-15075 HiTouch_Pr...reDetector com.wpspasswordmanager               W  action:Up,touchSlop:26,interrupted:false
+2026-05-06 10:37:10.104 15075-15075 MainActivity            com.wpspasswordmanager               D  无障碍服务状态: true
+2026-05-06 10:37:10.109 15075-15075 MainActivity            com.wpspasswordmanager               D  悬浮窗权限状态: true
+2026-05-06 10:37:10.115 15075-15075 MainActivity            com.wpspasswordmanager               D  已选择 WPS 应用: cn.wps.moffice_eng
+2026-05-06 10:37:10.133 15075-15075 WindowOnBackDispatcher  com.wpspasswordmanager               I  UnregisterOnBackInvokedCallback, remove ime callback.
+2026-05-06 10:37:10.134 15075-15075 WindowOnBackDispatcher  com.wpspasswordmanager               W  sendCancelIfRunning: isInProgress=falsecallback=ImeCallback=ImeOnBackInvokedCallback@169994726 Callback=android.window.IOnBackInvokedCallback$Stub$Proxy@dbb185e
+2026-05-06 10:37:10.136 15075-15075 WindowOnBackDispatcher  com.wpspasswordmanager               W  sendCancelIfRunning: isInProgress=falsecallback=android.view.ViewRootImpl$$ExternalSyntheticLambda20@fad56b4
+2026-05-06 10:37:10.136 15075-15075 VRI[MainActivity]       com.wpspasswordmanager               I  dispatchDetachedFromWindow in doDie
+2026-05-06 10:37:10.144 15075-15075 HiTouch_Pr...reDetector com.wpspasswordmanager               D  onDetached:true
+2026-05-06 10:37:10.149 15075-15115 BufferQueueProducer     com.wpspasswordmanager               I  [VRI[MainActivity]#2(BLAST Consumer)2](id:3ae300000002,api:1,p:15075,c:15075) disconnect: api 1
+2026-05-06 10:37:10.149 15075-15075 SurfaceControl          com.wpspasswordmanager               I  nativeRelease 0xb40000735e5add70 count: 2 name: com.wpspasswordmanager/com.wpspasswordmanager.ui.MainActivity#58313
+2026-05-06 10:37:10.149 15075-15075 BufferQueueConsumer     com.wpspasswordmanager               I  [VRI[MainActivity]#2(BLAST Consumer)2](id:3ae300000002,api:0,p:-1,c:15075) disconnect
+2026-05-06 10:37:10.150 15075-15075 SurfaceControl          com.wpspasswordmanager               I  ~SurfaceControl 0xb40000735e5add70 com.wpspasswordmanager/com.wpspasswordmanager.ui.MainActivity#58313
+2026-05-06 10:37:10.198 15075-15103 SurfaceControl          com.wpspasswordmanager               I  SurfaceControl 0xb40000735e5a55d0 Surface(name=7d51e3c InputMethod)/@0xd3fe8e6 - animation-leash of insets_animation#58318
+2026-05-06 10:37:10.201 15075-15103 SurfaceControl          com.wpspasswordmanager               I  SurfaceControl 0xb40000735e5a2770 Surface(name=988fad2 StatusBar)/@0x15cc3b1 - animation-leash of insets_animation#58323
+2026-05-06 10:37:10.204 15075-15075 SurfaceControl          com.wpspasswordmanager               I  nativeRelease 0xb40000735e5a6210 count: 1 name: Surface(name=7d51e3c InputMethod)/@0xd3fe8e6 - animation-leash of insets_animation#58318
+2026-05-06 10:37:10.204 15075-15075 SurfaceControl          com.wpspasswordmanager               I  ~SurfaceControl 0xb40000735e5a6210 Surface(name=7d51e3c InputMethod)/@0xd3fe8e6 - animation-leash of insets_animation#58318
+2026-05-06 10:37:10.204 15075-15075 SurfaceControl          com.wpspasswordmanager               I  nativeRelease 0xb40000735e5b26f0 count: 1 name: Surface(name=988fad2 StatusBar)/@0x15cc3b1 - animation-leash of insets_animation#58312
+2026-05-06 10:37:10.204 15075-15075 SurfaceControl          com.wpspasswordmanager               I  ~SurfaceControl 0xb40000735e5b26f0 Surface(name=988fad2 StatusBar)/@0x15cc3b1 - animation-leash of insets_animation#58312
+2026-05-06 10:37:10.212 15075-15103 SurfaceControl          com.wpspasswordmanager               I  SurfaceControl 0xb40000735e5a4290 Surface(name=988fad2 StatusBar)/@0x15cc3b1 - animation-leash of insets_animation#58323
+2026-05-06 10:37:10.212 15075-15103 SurfaceControl          com.wpspasswordmanager               I  SurfaceControl 0xb40000735e5a1b30 Surface(name=6def11f NavigationBar0)/@0xc657f3b - animation-leash of insets_animation#58325
+2026-05-06 10:37:10.315 15075-15075 InputEventReceiver      com.wpspasswordmanager               D  dispatchInputInterval 1000000
+2026-05-06 10:37:10.315 15075-15103 SurfaceControl          com.wpspasswordmanager               I  SurfaceControl 0xb40000735e5a6210 Surface(name=6def11f NavigationBar0)/@0xc657f3b - animation-leash of insets_animation#58327
+2026-05-06 10:37:10.316 15075-15103 SurfaceControl          com.wpspasswordmanager               I  SurfaceControl 0xb40000735e5a4530 Surface(name=988fad2 StatusBar)/@0x15cc3b1 - animation-leash of insets_animation#58328
+2026-05-06 10:37:10.327 15075-15075 HwForceDarkManager      com.wpspasswordmanager               I  isSystemInDarkMode isResUiModeYes: false, isDarkMode: false
+2026-05-06 10:37:10.328 15075-15075 VRI[MainActivity]       com.wpspasswordmanager               I  send MSG_WINDOW_FOCUS_CHANGED msg
+2026-05-06 10:37:10.333 15075-15075 HiTouch_Pr...reDetector com.wpspasswordmanager               D  onAttached:2
+2026-05-06 10:37:10.353 15075-15075 SurfaceControl          com.wpspasswordmanager               I  SurfaceControl 0xb40000735e5b26f0 com.wpspasswordmanager/com.wpspasswordmanager.ui.MainActivity#58330
+2026-05-06 10:37:10.354 15075-15075 SurfaceControl          com.wpspasswordmanager               I  SurfaceControl 0xb40000735e5a2a10 Surface(name=6def11f NavigationBar0)/@0xc657f3b - animation-leash of insets_animation#58327
+2026-05-06 10:37:10.354 15075-15075 SurfaceControl          com.wpspasswordmanager               I  SurfaceControl 0xb40000735e5a6c90 Surface(name=988fad2 StatusBar)/@0x15cc3b1 - animation-leash of insets_animation#58328
+2026-05-06 10:37:10.357 15075-15075 BufferQueueConsumer     com.wpspasswordmanager               I  [](id:3ae300000003,api:0,p:-1,c:15075) connect: controlledByApp=false
+2026-05-06 10:37:10.361 15075-15075 HwForceDarkManager      com.wpspasswordmanager               I  isSystemInDarkMode isResUiModeYes: false, isDarkMode: false
+2026-05-06 10:37:10.364 15075-15115 BufferQueueProducer     com.wpspasswordmanager               I  [VRI[MainActivity]#3(BLAST Consumer)3](id:3ae300000003,api:0,p:-1,c:15075) connect: api=1 producerControlledByApp=true
+2026-05-06 10:37:10.364 15075-15115 OpenGLRenderer          com.wpspasswordmanager               E  Unable to match the desired swap behavior.
+2026-05-06 10:37:10.373 15075-15075 HwForceDarkManager      com.wpspasswordmanager               I  setAllowedHwForceDark:false package:com.wpspasswordmanager mCurrProcessState:0 mIsPackageNameChange:false hwForceDarkState:0 isViewAllowedForceDark:true isLastHonorForceDark:false
+2026-05-06 10:37:10.379 15075-15075 HwViewRootImpl          com.wpspasswordmanager               I  removeInvalidNode all the node in jank list is out of time
+2026-05-06 10:37:10.383 15075-15075 SurfaceControl          com.wpspasswordmanager               I  nativeRelease 0xb40000735e5a55d0 count: 1 name: Surface(name=7d51e3c InputMethod)/@0xd3fe8e6 - animation-leash of insets_animation#58318
+2026-05-06 10:37:10.383 15075-15075 SurfaceControl          com.wpspasswordmanager               I  ~SurfaceControl 0xb40000735e5a55d0 Surface(name=7d51e3c InputMethod)/@0xd3fe8e6 - animation-leash of insets_animation#58318
+2026-05-06 10:37:10.384 15075-15075 VRI[MainActivity]       com.wpspasswordmanager               I  send MSG_WINDOW_FOCUS_CHANGED msg
+2026-05-06 10:37:10.392 15075-15075 SurfaceControl          com.wpspasswordmanager               I  nativeRelease 0xb40000735e5a2770 count: 1 name: Surface(name=988fad2 StatusBar)/@0x15cc3b1 - animation-leash of insets_animation#58323
+2026-05-06 10:37:10.392 15075-15075 SurfaceControl          com.wpspasswordmanager               I  ~SurfaceControl 0xb40000735e5a2770 Surface(name=988fad2 StatusBar)/@0x15cc3b1 - animation-leash of insets_animation#58323
+2026-05-06 10:37:10.397 15075-15115 OpenGLRenderer          com.wpspasswordmanager               D  disableOutlineDraw is true
+2026-05-06 10:37:10.399 15075-15075 SurfaceControl          com.wpspasswordmanager               I  nativeRelease 0xb40000735e5a1b30 count: 1 name: Surface(name=6def11f NavigationBar0)/@0xc657f3b - animation-leash of insets_animation#58325
+2026-05-06 10:37:10.399 15075-15075 SurfaceControl          com.wpspasswordmanager               I  ~SurfaceControl 0xb40000735e5a1b30 Surface(name=6def11f NavigationBar0)/@0xc657f3b - animation-leash of insets_animation#58325
+2026-05-06 10:37:10.400 15075-15075 SurfaceControl          com.wpspasswordmanager               I  nativeRelease 0xb40000735e5a4290 count: 1 name: Surface(name=988fad2 StatusBar)/@0x15cc3b1 - animation-leash of insets_animation#58323
+2026-05-06 10:37:10.400 15075-15075 SurfaceControl          com.wpspasswordmanager               I  ~SurfaceControl 0xb40000735e5a4290 Surface(name=988fad2 StatusBar)/@0x15cc3b1 - animation-leash of insets_animation#58323
+2026-05-06 10:37:10.401 15075-15075 SurfaceControl          com.wpspasswordmanager               I  nativeRelease 0xb40000735e5a2a10 count: 1 name: Surface(name=6def11f NavigationBar0)/@0xc657f3b - animation-leash of insets_animation#58327
+2026-05-06 10:37:10.401 15075-15075 SurfaceControl          com.wpspasswordmanager               I  ~SurfaceControl 0xb40000735e5a2a10 Surface(name=6def11f NavigationBar0)/@0xc657f3b - animation-leash of insets_animation#58327
+2026-05-06 10:37:10.401 15075-15075 SurfaceControl          com.wpspasswordmanager               I  nativeRelease 0xb40000735e5a6c90 count: 1 name: Surface(name=988fad2 StatusBar)/@0x15cc3b1 - animation-leash of insets_animation#58328
+2026-05-06 10:37:10.401 15075-15075 SurfaceControl          com.wpspasswordmanager               I  ~SurfaceControl 0xb40000735e5a6c90 Surface(name=988fad2 StatusBar)/@0x15cc3b1 - animation-leash of insets_animation#58328
+2026-05-06 10:37:10.459 15075-15075 VRI[MainActivity]       com.wpspasswordmanager               I  send MSG_WINDOW_FOCUS_CHANGED msg
+2026-05-06 10:37:10.464 15075-15114 WpsPasswor...pplication com.wpspasswordmanager               D  监听到文件写入完成事件: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:10.470 15075-15114 WpsPasswor...pplication com.wpspasswordmanager               D  [时间戳: 1778035030464] 监听到文件写入完成事件: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:10.476 15075-15075 WindowOnBackDispatcher  com.wpspasswordmanager               W  sendCancelIfRunning: isInProgress=falsecallback=android.view.ViewRootImpl$$ExternalSyntheticLambda20@3c64921
+2026-05-06 10:37:10.477 15075-15075 VRI[MainActivity]       com.wpspasswordmanager               I  dispatchDetachedFromWindow in doDie
+2026-05-06 10:37:10.478 15075-15114 WpsPasswor...pplication com.wpspasswordmanager               D  [时间戳: 1778035030471] 延迟 1000ms 执行密码写入: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:10.480 15075-15075 HiTouch_Pr...reDetector com.wpspasswordmanager               D  onDetached:false
+2026-05-06 10:37:10.482 15075-15115 BufferQueueProducer     com.wpspasswordmanager               I  [VRI[MainActivity]#3(BLAST Consumer)3](id:3ae300000003,api:1,p:15075,c:15075) disconnect: api 1
+2026-05-06 10:37:10.483 15075-15075 SurfaceControl          com.wpspasswordmanager               I  nativeRelease 0xb40000735e5b26f0 count: 5 name: com.wpspasswordmanager/com.wpspasswordmanager.ui.MainActivity#58330
+2026-05-06 10:37:10.487 15075-15114 WpsPasswor...pplication com.wpspasswordmanager               D  文件删除: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:10.489 15075-15721 BufferQueueConsumer     com.wpspasswordmanager               I  [VRI[MainActivity]#3(BLAST Consumer)3](id:3ae300000003,api:0,p:-1,c:15075) disconnect
+2026-05-06 10:37:10.489 15075-15721 SurfaceControl          com.wpspasswordmanager               I  ~SurfaceControl 0xb40000735e5b26f0 com.wpspasswordmanager/com.wpspasswordmanager.ui.MainActivity#58330
+2026-05-06 10:37:10.497 15075-15075 SurfaceControl          com.wpspasswordmanager               I  nativeRelease 0xb40000735e5a6210 count: 1 name: Surface(name=6def11f NavigationBar0)/@0xc657f3b - animation-leash of insets_animation#58327
+2026-05-06 10:37:10.497 15075-15075 SurfaceControl          com.wpspasswordmanager               I  ~SurfaceControl 0xb40000735e5a6210 Surface(name=6def11f NavigationBar0)/@0xc657f3b - animation-leash of insets_animation#58327
+2026-05-06 10:37:10.498 15075-15101 SurfaceControl          com.wpspasswordmanager               I  SurfaceControl 0xb40000735e5a1b30 Surface(name=6def11f NavigationBar0)/@0xc657f3b - animation-leash of insets_animation#58335
+2026-05-06 10:37:10.498 15075-15101 SurfaceControl          com.wpspasswordmanager               I  SurfaceControl 0xb40000735e5a3810 Surface(name=988fad2 StatusBar)/@0x15cc3b1 - animation-leash of insets_animation#58336
+2026-05-06 10:37:10.498 15075-15075 SurfaceControl          com.wpspasswordmanager               I  nativeRelease 0xb40000735e5a4530 count: 1 name: Surface(name=988fad2 StatusBar)/@0x15cc3b1 - animation-leash of insets_animation#58328
+2026-05-06 10:37:10.498 15075-15075 SurfaceControl          com.wpspasswordmanager               I  ~SurfaceControl 0xb40000735e5a4530 Surface(name=988fad2 StatusBar)/@0x15cc3b1 - animation-leash of insets_animation#58328
+2026-05-06 10:37:10.533 15075-15075 VRI[MainActivity]       com.wpspasswordmanager               I  send MSG_WINDOW_FOCUS_CHANGED msg
+2026-05-06 10:37:10.567 15075-15075 ImeFocusController      com.wpspasswordmanager               V  onWindowFocus: DecorView@41ecbe1[MainActivity] softInputMode=STATE_UNSPECIFIED|ADJUST_RESIZE
+2026-05-06 10:37:10.567 15075-15075 InputMethodManager      com.wpspasswordmanager               D  onViewFocusChangedInternal, view=DecorView@41ecbe1[MainActivity],focus=false,windowFocus=true,window=android.view.ViewRootImpl$W@4418d06,displayId=0,temporaryDetach=false,hasImeFocus=true
+2026-05-06 10:37:10.568 15075-15075 InputMethodManager      com.wpspasswordmanager               V  checkFocus: view=null next=DecorView@41ecbe1[MainActivity] force=false package=<none>
+2026-05-06 10:37:10.568 15075-15075 InputMethodManager      com.wpspasswordmanager               W  startInputReason = 1
+2026-05-06 10:37:10.568 15075-15075 InputMethodManager      com.wpspasswordmanager               V  Starting input: editorInfo=android.view.inputmethod.EditorInfo@b2cadfc ic=null
+2026-05-06 10:37:10.568 15075-15075 InputMethodManager      com.wpspasswordmanager               V  START INPUT: view=DecorView@41ecbe1[MainActivity],focus=false,windowFocus=true,window=android.view.ViewRootImpl$W@4418d06,displayId=0,temporaryDetach=false,hasImeFocus=true ic=null editorInfo=android.view.inputmethod.EditorInfo@b2cadfc startInputFlags=VIEW_HAS_FOCUS|INITIAL_CONNECTION
+2026-05-06 10:37:10.571 15075-15075 InputMethodManager      com.wpspasswordmanager               I  Starting input: Bind result=InputBindResult{result=SUCCESS_WITH_IME_SESSION method=com.android.internal.inputmethod.IInputMethodSession$Stub$Proxy@bf10c85 id=com.baidu.input_hihonor/com.baidu.input_honor.ImeService sequence=4450 virtualDisplayToScreenMatrix=null isInputMethodSuppressingSpellChecker=false}
+2026-05-06 10:37:10.572 15075-15075 VRI[MainActivity]       com.wpspasswordmanager               I  send MSG_WINDOW_FOCUS_CHANGED msg
+2026-05-06 10:37:10.574 15075-15075 ActivityThread          com.wpspasswordmanager               V  Handling launch of ActivityRecord{16c3b0b token=android.os.BinderProxy@b510ada {com.wpspasswordmanager/com.wpspasswordmanager.ui.ProxyActivity}}
+2026-05-06 10:37:10.585 15075-15075 ActivityThread          com.wpspasswordmanager               V  callActivityOnCreate
+2026-05-06 10:37:10.588 15075-15764 libMEOW                 com.wpspasswordmanager               D  meow new tls: 0xb4000074927151f0
+2026-05-06 10:37:10.588 15075-15764 libMEOW                 com.wpspasswordmanager               D  applied 1 plugins for [com.wpspasswordmanager]:
+2026-05-06 10:37:10.588 15075-15764 libMEOW                 com.wpspasswordmanager               D    plugin 1: [libMEOW_gift.so]: 0xb40000745a53e030
+2026-05-06 10:37:10.588 15075-15764 libMEOW                 com.wpspasswordmanager               D  rebuild call chain: 0xb400007492725200
+2026-05-06 10:37:10.588 15075-15764 libMEOW                 com.wpspasswordmanager               D  meow delete tls: 0xb4000074927151f0
+2026-05-06 10:37:10.594 15075-15075 NetworkManager          com.wpspasswordmanager               D  执行POST请求: path=/account/refresh-token
+2026-05-06 10:37:10.594 15075-15075 NetworkManager          com.wpspasswordmanager               D  请求URL: http://117.72.183.119:5202/account/refresh-token
+2026-05-06 10:37:10.597 15075-15075 NetworkManager          com.wpspasswordmanager               D  请求准备完成，开始发送
+2026-05-06 10:37:10.613 15075-15103 SurfaceControl          com.wpspasswordmanager               I  SurfaceControl 0xb40000735e5a6210 Surface(name=6def11f NavigationBar0)/@0xc657f3b - animation-leash of insets_animation#58335
+2026-05-06 10:37:10.613 15075-15103 SurfaceControl          com.wpspasswordmanager               I  SurfaceControl 0xb40000735e5a2f50 Surface(name=988fad2 StatusBar)/@0x15cc3b1 - animation-leash of insets_animation#58336
+2026-05-06 10:37:10.613 15075-15103 SurfaceControl          com.wpspasswordmanager               I  SurfaceControl 0xb40000735e5a5a30 Surface(name=7d51e3c InputMethod)/@0xd3fe8e6 - animation-leash of insets_animation#58342
+2026-05-06 10:37:10.713 15075-15122 NetworkManager          com.wpspasswordmanager               D  请求响应: code=200, message=
+2026-05-06 10:37:10.748 15075-15122 NetworkManager          com.wpspasswordmanager               D  响应成功: {"message":"操作成功","status":200,"data":{"token":"e3cf71a7-c32e-4674-aca0-569783bb1833","account":"xiaosn","name":"肖少南"}}
+2026-05-06 10:37:10.753 15075-15122 ProxyActivity           com.wpspasswordmanager               D  Token刷新成功
+2026-05-06 10:37:10.758 15075-15075 ProxyActivity           com.wpspasswordmanager               D  无障碍服务状态: true
+2026-05-06 10:37:10.763 15075-15075 ProxyActivity           com.wpspasswordmanager               D  悬浮窗权限状态: true
+2026-05-06 10:37:10.766 15075-15075 ProxyActivity           com.wpspasswordmanager               D  已选择 WPS 应用: cn.wps.moffice_eng
+2026-05-06 10:37:10.768 15075-15075 FileNameResolver        com.wpspasswordmanager               D  开始解析文件名，URI: content://com.wpspasswordmanager.fileprovider/public_documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:10.770 15075-15075 FileNameResolver        com.wpspasswordmanager               D  查询到DISPLAY_NAME: hjhju.docx
+2026-05-06 10:37:10.770 15075-15075 FileNameResolver        com.wpspasswordmanager               D  通过ContentResolver获取文件名: hjhju.docx
+2026-05-06 10:37:10.774 15075-15075 ProxyActivity           com.wpspasswordmanager               D  文件名解析成功，来源: ContentResolver
+2026-05-06 10:37:10.782 15075-15075 ProxyActivity           com.wpspasswordmanager               D  通过URI路径检测: URI路径=/public_documents/WpsManagement/hjhju.docx, 是否在WpsManagement=true
+2026-05-06 10:37:10.786 15075-15075 ProxyActivity           com.wpspasswordmanager               D  文件是否来自WpsManagement目录: true
+2026-05-06 10:37:10.790 15075-15075 ProxyActivity           com.wpspasswordmanager               D  文件名: hjhju.docx
+2026-05-06 10:37:10.794 15075-15075 ProxyActivity           com.wpspasswordmanager               D  文件 URI: content://com.wpspasswordmanager.fileprovider/public_documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:10.798 15075-15075 ProxyActivity           com.wpspasswordmanager               D  文件是否在WpsManagement目录中: true
+2026-05-06 10:37:10.802 15075-15075 ProxyActivity           com.wpspasswordmanager               D  文件标识: content://com.wpspasswordmanager.fileprovider/public_documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:10.806 15075-15075 ProxyActivity           com.wpspasswordmanager               D  传入的文件名: 'hjhju.docx'
+2026-05-06 10:37:10.809 15075-15075 ProxyActivity           com.wpspasswordmanager               D  文件名长度: 10
+2026-05-06 10:37:10.813 15075-15075 ProxyActivity           com.wpspasswordmanager               D  文件是否来自WpsManagement目录: true
+2026-05-06 10:37:10.817 15075-15075 ProxyActivity           com.wpspasswordmanager               D  文件是副本文件，直接执行打开流程
+2026-05-06 10:37:10.822 15075-15075 ProxyActivity           com.wpspasswordmanager               D  开始读取uid并存储到缓存，文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:10.826 15075-15075 ProxyActivity           com.wpspasswordmanager               D  文件存在: true
+2026-05-06 10:37:10.835 15075-15075 ProxyActivity           com.wpspasswordmanager               D  文件可读: true
+2026-05-06 10:37:10.839 15075-15075 ProxyActivity           com.wpspasswordmanager               D  文件大小: 1306 字节
+2026-05-06 10:37:10.840 15075-15075 FileMetaManager         com.wpspasswordmanager               D  开始获取文件uid，文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:10.843 15075-15075 FileMetaManager         com.wpspasswordmanager               D  尝试从文件读取uid: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:10.849 15075-15075 ZipExtraFieldManager    com.wpspasswordmanager               D  尝试从输入流读取uid
+2026-05-06 10:37:10.850 15075-15075 ZipExtraFieldManager    com.wpspasswordmanager               D  未找到WPPM uid数据
+2026-05-06 10:37:10.850 15075-15075 FileMetaManager         com.wpspasswordmanager               D  ZIP Extra Field未找到uid
+2026-05-06 10:37:10.854 15075-15075 ProxyActivity           com.wpspasswordmanager               D  本地文件中未找到uid
+2026-05-06 10:37:10.855 15075-15075 FileMetaFactory         com.wpspasswordmanager               I  创建新的uid: '1778035030854_7c8a1424-d1cb-4d38-bc21-eab885634fcd'
+2026-05-06 10:37:10.859 15075-15075 ProxyActivity           com.wpspasswordmanager               D  开始读取密码并存储到缓存，文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:10.863 15075-15075 ProxyActivity           com.wpspasswordmanager               D  文件存在: true
+2026-05-06 10:37:10.869 15075-15075 ProxyActivity           com.wpspasswordmanager               D  文件可读: true
+2026-05-06 10:37:10.873 15075-15075 ProxyActivity           com.wpspasswordmanager               D  文件大小: 1306 字节
+2026-05-06 10:37:10.873 15075-15075 FileMetaManager         com.wpspasswordmanager               D  开始读取密码，文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:10.874 15075-15075 FileMetaManager         com.wpspasswordmanager               D  尝试从文件读取密码: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:10.876 15075-15075 ZipExtraFieldManager    com.wpspasswordmanager               D  尝试从文件读取密码: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:10.879 15075-15075 ZipExtraFieldManager    com.wpspasswordmanager               D  未找到WPPM密码数据
+2026-05-06 10:37:10.879 15075-15075 FileMetaManager         com.wpspasswordmanager               D  ZIP Extra Field未找到密码
+2026-05-06 10:37:10.883 15075-15075 ProxyActivity           com.wpspasswordmanager               D  本地文件中未找到密码
+2026-05-06 10:37:10.887 15075-15075 ProxyActivity           com.wpspasswordmanager               D  开始初始化FileMeta对象并获取权限信息，文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:10.891 15075-15075 ProxyActivity           com.wpspasswordmanager               D  获取到token: 已获取
+2026-05-06 10:37:10.895 15075-15075 ProxyActivity           com.wpspasswordmanager               D  开始获取文档权限信息
+2026-05-06 10:37:10.895 15075-15075 NetworkManager          com.wpspasswordmanager               D  执行获取文档权限请求: docId=1778035030854_7c8a1424-d1cb-4d38-bc21-eab885634fcd
+2026-05-06 10:37:10.903 15075-15075 ProxyActivity           com.wpspasswordmanager               D  保存文件URI到WpsAccessibilityService: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:10.907 15075-15075 ProxyActivity           com.wpspasswordmanager               D  插件转换后唤起WPS的ContentURI: content://com.wpspasswordmanager.fileprovider/public_documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:10.911 15075-15075 ProxyActivity           com.wpspasswordmanager               D  文件MIME类型: application/vnd.openxmlformats-officedocument.wordprocessingml.document
+2026-05-06 10:37:10.915 15075-15075 ProxyActivity           com.wpspasswordmanager               D  使用用户选择的WPS包: cn.wps.moffice_eng
+2026-05-06 10:37:10.940 15075-15075 ProxyActivity           com.wpspasswordmanager               D  通过FileProvider启动WPS成功，包名: cn.wps.moffice_eng，文件: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:10.944 15075-15075 ProxyActivity           com.wpspasswordmanager               D  已授予WPS应用读写权限
+2026-05-06 10:37:10.948 15075-15075 ProxyActivity           com.wpspasswordmanager               D  已添加WPS特定参数，尝试阻止创建副本
+2026-05-06 10:37:10.964 15075-15075 ActivityThread          com.wpspasswordmanager               I  add activity client record, r= ActivityRecord{16c3b0b token=android.os.BinderProxy@b510ada {com.wpspasswordmanager/com.wpspasswordmanager.ui.ProxyActivity}} token= android.os.BinderProxy@b510ada
+2026-05-06 10:37:10.990 15075-15075 ActivityThread          com.wpspasswordmanager               D  Won't deliver top position change in state=1
+2026-05-06 10:37:11.001 15075-15075 ImeBackDispatcher       com.wpspasswordmanager               I  onReceiveResult dispatcher:android.window.WindowOnBackInvokedDispatcher@e56c406, resultCode:1
+2026-05-06 10:37:11.001 15075-15075 ImeBackDispatcher       com.wpspasswordmanager               E  Ime callback not found. Ignoring unregisterReceivedCallback. callbackId: 169994726
+2026-05-06 10:37:11.002 15075-15075 SurfaceControl          com.wpspasswordmanager               I  nativeRelease 0xb40000735e5a1b30 count: 1 name: Surface(name=6def11f NavigationBar0)/@0xc657f3b - animation-leash of insets_animation#58335
+2026-05-06 10:37:11.002 15075-15075 SurfaceControl          com.wpspasswordmanager               I  ~SurfaceControl 0xb40000735e5a1b30 Surface(name=6def11f NavigationBar0)/@0xc657f3b - animation-leash of insets_animation#58335
+2026-05-06 10:37:11.003 15075-15075 SurfaceControl          com.wpspasswordmanager               I  nativeRelease 0xb40000735e5a3810 count: 1 name: Surface(name=988fad2 StatusBar)/@0x15cc3b1 - animation-leash of insets_animation#58336
+2026-05-06 10:37:11.003 15075-15075 SurfaceControl          com.wpspasswordmanager               I  ~SurfaceControl 0xb40000735e5a3810 Surface(name=988fad2 StatusBar)/@0x15cc3b1 - animation-leash of insets_animation#58336
+2026-05-06 10:37:11.004 15075-15075 ActivityThread          com.wpspasswordmanager               D  Won't deliver top position change in state=1
+2026-05-06 10:37:11.030 15075-15075 HwViewRootImpl          com.wpspasswordmanager               I  removeInvalidNode jank list is null
+2026-05-06 10:37:11.031 15075-15075 RmeSchedManager         com.wpspasswordmanager               I  init Rme, version is: v1.0
+2026-05-06 10:37:11.031 15075-15075 RtgSched                com.wpspasswordmanager               D  resetRtgSchedHandle failed enable:0
+2026-05-06 10:37:11.227 15075-15122 ProxyActivity           com.wpspasswordmanager               D  获取文档权限响应: {"message":"操作成功","status":200,"data":{"ownerAccount":"xiaosn","ownerName":"肖少南","readAuth":true,"writeAuth":true}}
+2026-05-06 10:37:11.229 15075-15122 FileMetaFactory         com.wpspasswordmanager               D  initFileStateWithPermissions - FileMeta: filePath='/storage/emulated/0/Documents/WpsManagement/hjhju.docx', currentPassword='null', uid='1778035030854_7c8a1424-d1cb-4d38-bc21-eab885634fcd', ownerAccount='xiaosn', ownerName='肖少南', readAuth=true, writeAuth=true
+2026-05-06 10:37:11.233 15075-15122 ProxyActivity           com.wpspasswordmanager               D  FileMeta对象初始化成功，权限信息: readAuth=true, writeAuth=true, ownerAccount=xiaosn, ownerName=肖少南
+2026-05-06 10:37:11.483 15075-15075 WpsPasswor...pplication com.wpspasswordmanager               D  [时间戳: 1778035031478] 开始处理文件写入事件: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:11.492 15075-15075 WpsPasswor...pplication com.wpspasswordmanager               D  文件状态 - 存在: true, 可写: true, 大小: 1306 字节
+2026-05-06 10:37:11.492 15075-15075 FileMetaFactory         com.wpspasswordmanager               D  getWritePassword密码入参入参 '/storage/emulated/0/Documents/WpsManagement/hjhju.docx'
+2026-05-06 10:37:11.492 15075-15075 FileMetaFactory         com.wpspasswordmanager               D  [时间戳: 1778035031492] 无待定密码，使用当前密码执行写入操作
+2026-05-06 10:37:11.498 15075-15075 FileMetaManager         com.wpspasswordmanager               D  开始写入元数据到文件
+2026-05-06 10:37:11.500 15075-15075 ZipExtraFieldManager    com.wpspasswordmanager               D  [时间戳: 1778035031500] 尝试写入元数据到文件: /storage/emulated/0/Documents/WpsManagement/hjhju.docx, UID: '1778035030854_7c8a1424-d1cb-4d38-bc21-eab885634fcd', 密码: 'null'
+2026-05-06 10:37:11.505 15075-15075 ZipExtraFieldManager    com.wpspasswordmanager               D  [时间戳: 1778035031504] 开始删除旧的WPPM标记
+2026-05-06 10:37:11.510 15075-15075 WpsPasswor...pplication com.wpspasswordmanager               D  设置插件操作标志，时间戳: 1778035031505
+2026-05-06 10:37:11.510 15075-15075 ZipExtraFieldManager    com.wpspasswordmanager               D  尝试删除旧的WPPM标记
+2026-05-06 10:37:11.514 15075-15075 ZipExtraFieldManager    com.wpspasswordmanager               D  未找到WPPM标记
+2026-05-06 10:37:11.514 15075-15075 ZipExtraFieldManager    com.wpspasswordmanager               D  [时间戳: 1778035031514] 成功删除旧的WPPM标记
+2026-05-06 10:37:11.514 15075-15075 ZipExtraFieldManager    com.wpspasswordmanager               D  [时间戳: 1778035031514] 开始构建Extra Field数据
+2026-05-06 10:37:11.514 15075-15075 ZipExtraFieldManager    com.wpspasswordmanager               D  [时间戳: 1778035031514] UID数据构建完成，长度: 65 bytes
+2026-05-06 10:37:11.514 15075-15075 ZipExtraFieldManager    com.wpspasswordmanager               D  [时间戳: 1778035031514] 开始写入Extra Field数据到文件尾部
+2026-05-06 10:37:11.522 15075-15075 ZipExtraFieldManager    com.wpspasswordmanager               D  [时间戳: 1778035031521] 文件当前长度: 1307 bytes
+2026-05-06 10:37:11.522 15075-15075 ZipExtraFieldManager    com.wpspasswordmanager               D  [时间戳: 1778035031522] UID数据写入完成
+2026-05-06 10:37:11.522 15075-15075 ZipExtraFieldManager    com.wpspasswordmanager               D  [时间戳: 1778035031522] 数据写入完成，文件新长度: 1372 bytes
+2026-05-06 10:37:11.522 15075-15075 ZipExtraFieldManager    com.wpspasswordmanager               D  [时间戳: 1778035031522] 元数据写入成功
+2026-05-06 10:37:11.522 15075-15075 FileMetaManager         com.wpspasswordmanager               D  写入元数据到文件成功: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:11.528 15075-15103 SurfaceControl          com.wpspasswordmanager               I  SurfaceControl 0xb40000735e5a1c10 Surface(name=7d51e3c InputMethod)/@0xd3fe8e6 - animation-leash of insets_animation#58342
+2026-05-06 10:37:11.538 15075-15114 WpsPasswor...pplication com.wpspasswordmanager               D  监听到文件写入完成事件: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:11.545 15075-15114 WpsPasswor...pplication com.wpspasswordmanager               D  检测到插件操作，时间戳差: 33ms
+2026-05-06 10:37:11.549 15075-15075 FileMetaManager         com.wpspasswordmanager               D  找到 1 个WPPM标记
+2026-05-06 10:37:11.550 15075-15114 WpsPasswor...pplication com.wpspasswordmanager               D  跳过由插件引起的CLOSE_WRITE事件: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:11.555 15075-15114 WpsPasswor...pplication com.wpspasswordmanager               D  监听到文件写入完成事件: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:11.569 15075-15114 WpsPasswor...pplication com.wpspasswordmanager               D  检测到插件操作，时间戳差: 50ms
+2026-05-06 10:37:11.589 15075-15114 WpsPasswor...pplication com.wpspasswordmanager               D  跳过由插件引起的CLOSE_WRITE事件: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:11.620 15075-15114 WpsPasswor...pplication com.wpspasswordmanager               D  监听到文件写入完成事件: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:11.625 15075-15114 WpsPasswor...pplication com.wpspasswordmanager               D  检测到插件操作，时间戳差: 116ms
+2026-05-06 10:37:11.636 15075-15075 FileMetaManager         com.wpspasswordmanager               D  WPPM标记位置: 959, 内容（十六进制）: 57 50 50 4D 01 00 02 32 00 00 00 31 37 37 38 30 33 35 30 33 30 38 35 34 5F 37 63 38 61 31 34 32 34 2D 64 31 63 62 2D 34 64 33 38 2D 62 63 32 31 2D 65 61 62 38 38 35 36 33 34 66 63 64 06 C0 08 C3, 内容（字符）: WPPM...2...1778035030854_7c8a1424-d1cb-4d38-bc21-eab885634fcd....
+2026-05-06 10:37:11.642 15075-15114 WpsPasswor...pplication com.wpspasswordmanager               D  跳过由插件引起的CLOSE_WRITE事件: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:11.642 15075-15075 WpsPasswor...pplication com.wpspasswordmanager               D  文件写入事件处理完成: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:11.643 15075-15075 FileMetaFactory         com.wpspasswordmanager               D  getWritePassword密码入参入参 '/storage/emulated/0/Documents/WpsManagement/hjhju.docx'
+2026-05-06 10:37:11.643 15075-15075 FileMetaFactory         com.wpspasswordmanager               D  [时间戳: 1778035031643] 无待定密码，使用当前密码执行写入操作
+2026-05-06 10:37:11.648 15075-15075 WpsPasswor...pplication com.wpspasswordmanager               D  准备上报保存记录: docId=1778035030854_7c8a1424-d1cb-4d38-bc21-eab885634fcd, path=/storage/emulated/0/Documents/WpsManagement/hjhju.docx, beforePassword=null, afterPassword=null, possiblePassword=null
+2026-05-06 10:37:11.648 15075-15075 NetworkManager          com.wpspasswordmanager               D  执行保存记录上报请求: docId=1778035030854_7c8a1424-d1cb-4d38-bc21-eab885634fcd, path=/storage/emulated/0/Documents/WpsManagement/hjhju.docx, platform=android
+2026-05-06 10:37:11.648 15075-15075 NetworkManager          com.wpspasswordmanager               D  保存记录上报请求体: {"docId": "1778035030854_7c8a1424-d1cb-4d38-bc21-eab885634fcd","path": "/storage/emulated/0/Documents/WpsManagement/hjhju.docx","platform": "android"}
+2026-05-06 10:37:11.648 15075-15075 NetworkManager          com.wpspasswordmanager               D  执行POST请求: path=/doc/save/log
+2026-05-06 10:37:11.649 15075-15075 NetworkManager          com.wpspasswordmanager               D  请求URL: http://117.72.183.119:5202/doc/save/log
+2026-05-06 10:37:11.653 15075-15075 NetworkManager          com.wpspasswordmanager               D  请求准备完成，开始发送
+2026-05-06 10:37:11.654 15075-15075 SurfaceControl          com.wpspasswordmanager               I  nativeRelease 0xb40000735e5a6210 count: 1 name: Surface(name=6def11f NavigationBar0)/@0xc657f3b - animation-leash of insets_animation#58335
+2026-05-06 10:37:11.654 15075-15075 SurfaceControl          com.wpspasswordmanager               I  ~SurfaceControl 0xb40000735e5a6210 Surface(name=6def11f NavigationBar0)/@0xc657f3b - animation-leash of insets_animation#58335
+2026-05-06 10:37:11.654 15075-15075 SurfaceControl          com.wpspasswordmanager               I  nativeRelease 0xb40000735e5a5a30 count: 1 name: Surface(name=7d51e3c InputMethod)/@0xd3fe8e6 - animation-leash of insets_animation#58342
+2026-05-06 10:37:11.654 15075-15075 SurfaceControl          com.wpspasswordmanager               I  ~SurfaceControl 0xb40000735e5a5a30 Surface(name=7d51e3c InputMethod)/@0xd3fe8e6 - animation-leash of insets_animation#58342
+2026-05-06 10:37:11.655 15075-15075 SurfaceControl          com.wpspasswordmanager               I  nativeRelease 0xb40000735e5a2f50 count: 1 name: Surface(name=988fad2 StatusBar)/@0x15cc3b1 - animation-leash of insets_animation#58336
+2026-05-06 10:37:11.655 15075-15075 SurfaceControl          com.wpspasswordmanager               I  ~SurfaceControl 0xb40000735e5a2f50 Surface(name=988fad2 StatusBar)/@0x15cc3b1 - animation-leash of insets_animation#58336
+2026-05-06 10:37:11.657 15075-15075 InputMethodManager      com.wpspasswordmanager               I  handleMessage: MSG_SET_ACTIVE false, was true
+2026-05-06 10:37:11.658 15075-15075 InputMethodManager      com.wpspasswordmanager               I  handleMessage: MSG_UNBIND 4450 reason=SWITCH_CLIENT
+2026-05-06 10:37:11.658 15075-15075 InputMethodManager      com.wpspasswordmanager               V  Clearing all accessibility bindings
+2026-05-06 10:37:11.658 15075-15075 InputMethodManager      com.wpspasswordmanager               V  Clearing binding!
+2026-05-06 10:37:11.658 15075-15075 SurfaceControl          com.wpspasswordmanager               I  nativeRelease 0xb40000735e5a1c10 count: 1 name: Surface(name=7d51e3c InputMethod)/@0xd3fe8e6 - animation-leash of insets_animation#58342
+2026-05-06 10:37:11.658 15075-15075 SurfaceControl          com.wpspasswordmanager               I  ~SurfaceControl 0xb40000735e5a1c10 Surface(name=7d51e3c InputMethod)/@0xd3fe8e6 - animation-leash of insets_animation#58342
+2026-05-06 10:37:11.660 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
+2026-05-06 10:37:11.660 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
+2026-05-06 10:37:11.721 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，重置相关状态
+2026-05-06 10:37:11.722 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  优先使用已存储的本地文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:11.722 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:11.723 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：本地文件存在: true
+2026-05-06 10:37:11.723 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:11.726 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: true
+2026-05-06 10:37:11.728 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: true
+2026-05-06 10:37:11.728 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-05-06 10:37:11.735 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
+2026-05-06 10:37:11.735 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
+2026-05-06 10:37:11.761 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，重置相关状态
+2026-05-06 10:37:11.762 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  优先使用已存储的本地文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:11.762 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:11.763 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：本地文件存在: true
+2026-05-06 10:37:11.763 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:11.772 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: true
+2026-05-06 10:37:11.776 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: true
+2026-05-06 10:37:11.776 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-05-06 10:37:11.779 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 32, 包名: cn.wps.moffice_eng, 类名: cn.wps.moffice.documentmanager.PreStartActivity2
+2026-05-06 10:37:11.780 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  窗口状态改变: cn.wps.moffice.documentmanager.PreStartActivity2
+2026-05-06 10:37:11.838 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，重置相关状态
+2026-05-06 10:37:11.839 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  优先使用已存储的本地文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:11.839 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:11.840 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：本地文件存在: true
+2026-05-06 10:37:11.840 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:11.854 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: true
+2026-05-06 10:37:11.857 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: true
+2026-05-06 10:37:11.857 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-05-06 10:37:11.857 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  当前窗口类名: cn.wps.moffice.documentmanager.PreStartActivity2
+2026-05-06 10:37:11.861 15075-15075 ActivityThread          com.wpspasswordmanager               I  Remove activity client record, r= ActivityRecord{16c3b0b token=android.os.BinderProxy@b510ada {com.wpspasswordmanager/com.wpspasswordmanager.ui.ProxyActivity}} token= android.os.BinderProxy@b510ada
+2026-05-06 10:37:11.863 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
+2026-05-06 10:37:11.863 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
+2026-05-06 10:37:11.892 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，重置相关状态
+2026-05-06 10:37:11.893 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  优先使用已存储的本地文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:11.893 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:11.896 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：本地文件存在: true
+2026-05-06 10:37:11.896 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:11.898 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: true
+2026-05-06 10:37:11.902 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: true
+2026-05-06 10:37:11.902 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-05-06 10:37:11.903 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.LinearLayout
+2026-05-06 10:37:11.903 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.LinearLayout
+2026-05-06 10:37:11.923 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，重置相关状态
+2026-05-06 10:37:11.923 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  优先使用已存储的本地文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:11.923 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:11.924 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：本地文件存在: true
+2026-05-06 10:37:11.924 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:11.926 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: true
+2026-05-06 10:37:11.928 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: true
+2026-05-06 10:37:11.928 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-05-06 10:37:11.933 15075-15096 ZrHung.AppEyeUiProbe    com.wpspasswordmanager               D  not watching, wait.
+2026-05-06 10:37:12.008 15075-15122 NetworkManager          com.wpspasswordmanager               D  请求响应: code=200, message=
+2026-05-06 10:37:12.043 15075-15122 NetworkManager          com.wpspasswordmanager               D  响应成功: {"message":"操作成功","status":200,"data":"操作成功"}
+2026-05-06 10:37:12.048 15075-15122 WpsPasswor...pplication com.wpspasswordmanager               D  保存记录上报成功: {"message":"操作成功","status":200,"data":"操作成功"}
+2026-05-06 10:37:12.575 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
+2026-05-06 10:37:12.575 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
+2026-05-06 10:37:13.019 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，重置相关状态
+2026-05-06 10:37:13.021 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  优先使用已存储的本地文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:13.022 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:13.039 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：本地文件存在: true
+2026-05-06 10:37:13.039 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:13.045 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: true
+2026-05-06 10:37:13.069 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: true
+2026-05-06 10:37:13.069 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-05-06 10:37:13.070 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 32, 包名: cn.wps.moffice_eng, 类名: cn.wps.moffice.writer.multiactivity.Writer1
+2026-05-06 10:37:13.070 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  窗口状态改变: cn.wps.moffice.writer.multiactivity.Writer1
+2026-05-06 10:37:13.299 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，重置相关状态
+2026-05-06 10:37:13.303 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  优先使用已存储的本地文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:13.303 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:13.304 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：本地文件存在: true
+2026-05-06 10:37:13.304 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:13.306 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: true
+2026-05-06 10:37:13.313 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: true
+2026-05-06 10:37:13.313 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-05-06 10:37:13.313 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  当前窗口类名: cn.wps.moffice.writer.multiactivity.Writer1
+2026-05-06 10:37:13.314 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.view.View
+2026-05-06 10:37:13.314 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.view.View
+2026-05-06 10:37:13.367 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，重置相关状态
+2026-05-06 10:37:13.370 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  优先使用已存储的本地文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:13.370 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:13.370 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：本地文件存在: true
+2026-05-06 10:37:13.370 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:13.381 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: true
+2026-05-06 10:37:13.385 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: true
+2026-05-06 10:37:13.385 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-05-06 10:37:13.386 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 8, 包名: cn.wps.moffice_eng, 类名: android.view.View
+2026-05-06 10:37:13.386 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  视图获得焦点: android.view.View
+2026-05-06 10:37:13.462 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，重置相关状态
+2026-05-06 10:37:13.466 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  优先使用已存储的本地文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:13.466 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:13.466 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：本地文件存在: true
+2026-05-06 10:37:13.466 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:13.473 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: true
+2026-05-06 10:37:13.480 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: true
+2026-05-06 10:37:13.480 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-05-06 10:37:13.480 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 16384, 包名: cn.wps.moffice_eng, 类名: android.view.View
+2026-05-06 10:37:13.481 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
+2026-05-06 10:37:13.481 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
+2026-05-06 10:37:13.536 15075-15080 passwordmanager         com.wpspasswordmanager               W  Cleared Reference was only reachable from finalizer (only reported once)
+2026-05-06 10:37:13.538 15075-15080 passwordmanager         com.wpspasswordmanager               I  Background young concurrent copying GC freed 88454(4058KB) AllocSpace objects, 6(748KB) LOS objects, 43% free, 6600KB/11MB, paused 9.647ms,22us total 141.581ms, cpu time 24.851ms, interval 25.302s, foreground
+2026-05-06 10:37:13.561 15075-15082 System                  com.wpspasswordmanager               W  A resource failed to call close. 
+2026-05-06 10:37:13.585 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，重置相关状态
+2026-05-06 10:37:13.632 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  优先使用已存储的本地文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:13.632 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:13.633 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：本地文件存在: true
+2026-05-06 10:37:13.633 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:13.638 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: true
+2026-05-06 10:37:13.642 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: true
+2026-05-06 10:37:13.642 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-05-06 10:37:13.643 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 4096, 包名: cn.wps.moffice_eng, 类名: android.view.View
+2026-05-06 10:37:13.643 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
+2026-05-06 10:37:13.643 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
+2026-05-06 10:37:13.750 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，重置相关状态
+2026-05-06 10:37:13.754 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  优先使用已存储的本地文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:13.754 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:13.755 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：本地文件存在: true
+2026-05-06 10:37:13.756 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:13.763 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: true
+2026-05-06 10:37:13.771 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: true
+2026-05-06 10:37:13.771 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-05-06 10:37:13.778 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 16384, 包名: cn.wps.moffice_eng, 类名: android.view.View
+2026-05-06 10:37:13.779 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
+2026-05-06 10:37:13.779 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
+2026-05-06 10:37:13.852 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，重置相关状态
+2026-05-06 10:37:13.858 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  优先使用已存储的本地文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:13.858 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:13.860 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：本地文件存在: true
+2026-05-06 10:37:13.860 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:13.867 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: true
+2026-05-06 10:37:13.879 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: true
+2026-05-06 10:37:13.879 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-05-06 10:37:13.881 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
+2026-05-06 10:37:13.881 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
+2026-05-06 10:37:13.921 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，重置相关状态
+2026-05-06 10:37:13.935 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  优先使用已存储的本地文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:13.935 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:13.938 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：本地文件存在: true
+2026-05-06 10:37:13.938 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:13.947 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: true
+2026-05-06 10:37:13.952 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: true
+2026-05-06 10:37:13.952 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-05-06 10:37:13.953 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 4096, 包名: cn.wps.moffice_eng, 类名: android.widget.ListView
+2026-05-06 10:37:13.958 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.RelativeLayout
+2026-05-06 10:37:13.958 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.RelativeLayout
+2026-05-06 10:37:13.980 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，重置相关状态
+2026-05-06 10:37:13.983 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  优先使用已存储的本地文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:13.984 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:13.984 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：本地文件存在: true
+2026-05-06 10:37:13.985 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:13.990 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: true
+2026-05-06 10:37:13.992 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: true
+2026-05-06 10:37:13.992 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-05-06 10:37:13.993 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
+2026-05-06 10:37:13.993 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
+2026-05-06 10:37:14.077 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，重置相关状态
+2026-05-06 10:37:14.081 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  优先使用已存储的本地文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:14.081 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:14.082 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：本地文件存在: true
+2026-05-06 10:37:14.082 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:14.085 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: true
+2026-05-06 10:37:14.091 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: true
+2026-05-06 10:37:14.091 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-05-06 10:37:14.648 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.ImageView
+2026-05-06 10:37:14.649 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.ImageView
+2026-05-06 10:37:14.714 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，重置相关状态
+2026-05-06 10:37:14.717 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  优先使用已存储的本地文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:14.717 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:14.718 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：本地文件存在: true
+2026-05-06 10:37:14.718 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:14.725 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: true
+2026-05-06 10:37:14.729 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: true
+2026-05-06 10:37:14.729 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-05-06 10:37:14.749 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.RelativeLayout
+2026-05-06 10:37:14.749 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.RelativeLayout
+2026-05-06 10:37:14.769 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，重置相关状态
+2026-05-06 10:37:14.774 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  优先使用已存储的本地文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:14.774 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:14.774 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：本地文件存在: true
+2026-05-06 10:37:14.774 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:14.779 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: true
+2026-05-06 10:37:14.783 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: true
+2026-05-06 10:37:14.783 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-05-06 10:37:15.655 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.RelativeLayout
+2026-05-06 10:37:15.655 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.RelativeLayout
+2026-05-06 10:37:15.700 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，重置相关状态
+2026-05-06 10:37:15.705 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  优先使用已存储的本地文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:15.705 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:15.705 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：本地文件存在: true
+2026-05-06 10:37:15.705 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:15.712 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: true
+2026-05-06 10:37:15.722 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: true
+2026-05-06 10:37:15.723 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成
+2026-05-06 10:37:15.755 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  收到事件: 2048, 包名: cn.wps.moffice_eng, 类名: android.widget.FrameLayout
+2026-05-06 10:37:15.755 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  窗口内容改变: android.widget.FrameLayout
+2026-05-06 10:37:15.795 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  未检测到密码输入框，重置相关状态
+2026-05-06 10:37:15.800 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  优先使用已存储的本地文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:15.800 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  最终确定的文档路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:15.801 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：本地文件存在: true
+2026-05-06 10:37:15.802 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件路径: /storage/emulated/0/Documents/WpsManagement/hjhju.docx
+2026-05-06 10:37:15.808 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可写: true
+2026-05-06 10:37:15.810 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  调试：文件可读: true
+2026-05-06 10:37:15.811 15075-15075 WpsAccessibilityService com.wpspasswordmanager               D  文档路径检测完成

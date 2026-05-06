@@ -798,7 +798,15 @@ class ProxyActivity : AppCompatActivity() {
             val uid = readUidFromFile(file.absolutePath)
                 ?: FileMetaFactory.createUid()
             val password = readAndParsePassword(file.absolutePath, uid)
-            initFileMetaWithPermissions(file.absolutePath, password, uid)
+            
+            // 使用CountDownLatch等待权限信息获取完成
+            val latch = java.util.concurrent.CountDownLatch(1)
+            initFileMetaWithPermissions(file.absolutePath, password, uid) {
+                latch.countDown()
+            }
+            
+            // 等待权限信息获取完成，最多等待10秒
+            latch.await(10, java.util.concurrent.TimeUnit.SECONDS)
             callback(file)
         } catch (e: Exception) {
             LogManager.log(TAG, "处理文件失败: ${e.message}", "ERROR")
@@ -901,7 +909,7 @@ class ProxyActivity : AppCompatActivity() {
     /**
      * 初始化FileMeta对象并获取权限信息
      */
-    private fun initFileMetaWithPermissions(filePath: String, password: String?, uid: String) {
+    private fun initFileMetaWithPermissions(filePath: String, password: String?, uid: String, onComplete: () -> Unit = {}) {
         LogManager.log(TAG, "开始初始化FileMeta对象并获取权限信息，文件路径: $filePath", "DEBUG")
 
         try {
@@ -952,6 +960,8 @@ class ProxyActivity : AppCompatActivity() {
                             LogManager.log(TAG, "解析权限响应失败: ${e.message}", "ERROR")
                             // 解析失败时使用默认权限
                             initFileMetaWithDefaultPermissions(filePath, password, uid)
+                        } finally {
+                            onComplete()
                         }
                     }
 
@@ -959,12 +969,14 @@ class ProxyActivity : AppCompatActivity() {
                         LogManager.log(TAG, "获取文档权限失败: $error", "ERROR")
                         // 网络请求失败时使用默认权限
                         initFileMetaWithDefaultPermissions(filePath, password, uid)
+                        onComplete()
                     }
                 }
             )
         } catch (e: Exception) {
             LogManager.log(TAG, "初始化FileMeta对象失败: ${e.message}", "ERROR")
             initFileMetaWithDefaultPermissions(filePath, password, uid)
+            onComplete()
         }
     }
 
