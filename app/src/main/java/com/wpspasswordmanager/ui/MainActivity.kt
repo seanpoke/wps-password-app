@@ -656,7 +656,7 @@ class MainActivity : AppCompatActivity() {
         updateLoginButton()
         userInfoTextView.visibility = TextView.GONE
         
-        // 显示居中较小的提示弹窗
+        // 显示自适应的提示弹窗
         val builder = android.app.AlertDialog.Builder(this, R.style.Theme_WpsPasswordManager_LightDialog)
         builder.setTitle("登录过期")
         builder.setMessage("您的登录已过期，请重新登录")
@@ -668,11 +668,31 @@ class MainActivity : AppCompatActivity() {
         
         setupDialogButtons(dialog)
         
-        // 设置弹窗大小
+        // 设置弹窗自适应大小
         val window = dialog.window
-        window?.setLayout(600, 400) // 设置弹窗宽度为600px，高度为400px
-        window?.setGravity(android.view.Gravity.CENTER) // 设置弹窗居中
-        window?.setBackgroundDrawableResource(android.R.color.white)
+        if (window != null) {
+            val displayMetrics = resources.displayMetrics
+            val screenWidth = displayMetrics.widthPixels
+            val screenHeight = displayMetrics.heightPixels
+            
+            // 计算弹窗宽度为屏幕宽度的70%-85%，最小280dp，最大500dp
+            val minWidth = (280 * displayMetrics.density).toInt()
+            val maxWidth = (500 * displayMetrics.density).toInt()
+            val dialogWidth = Math.min(Math.max((screenWidth * 0.8).toInt(), minWidth), maxWidth)
+            
+            // 计算弹窗高度为屏幕高度的30%-40%，最小200dp，最大350dp
+            val minHeight = (200 * displayMetrics.density).toInt()
+            val maxHeight = (350 * displayMetrics.density).toInt()
+            val dialogHeight = Math.min(Math.max((screenHeight * 0.35).toInt(), minHeight), maxHeight)
+            
+            window.setLayout(dialogWidth, dialogHeight)
+            window.setGravity(android.view.Gravity.CENTER)
+            window.setBackgroundDrawableResource(android.R.color.white)
+            
+            // 设置弹窗内容内边距
+            val padding = (24 * displayMetrics.density).toInt()
+            window.decorView.setPadding(padding, padding, padding, padding)
+        }
     }
 
     override fun onStart() {
