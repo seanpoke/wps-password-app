@@ -40,7 +40,7 @@ class ProxyActivity : AppCompatActivity() {
             context.startActivity(intent)
         }
 
-        fun readPasswordFromFile(context: Context, filePath: String, uid: String): String? {
+        fun readPasswordFromFile(context: Context, filePath: String, uid: String, keyVersion: String? = null): String? {
             LogManager.log(TAG, "开始读取密码并存储到缓存，文件路径: $filePath", "DEBUG")
             try {
                 val file = File(filePath)
@@ -54,6 +54,19 @@ class ProxyActivity : AppCompatActivity() {
                     val token = getStaticTokenFromStorage(context)
                     LogManager.log(TAG, "获取到token: ${if (token.isNullOrEmpty()) "空" else "已获取"}", "DEBUG")
 
+                    // 如果未传入keyVersion，从文件读取或使用全局默认值
+                    val finalKeyVersion = if (!keyVersion.isNullOrEmpty()) {
+                        keyVersion
+                    } else {
+                        val fileKeyVersion = FileMetaManager.getInstance().getKeyVersionFromFile(context, filePath)
+                        if (!fileKeyVersion.isNullOrEmpty()) {
+                            fileKeyVersion
+                        } else {
+                            ConfigStorage.getInstance(context).getKeyVersion()
+                        }
+                    }
+                    LogManager.log(TAG, "使用的keyVersion: $finalKeyVersion", "DEBUG")
+
                     val latch = java.util.concurrent.CountDownLatch(1)
                     var resultPassword: String? = null
 
@@ -62,6 +75,7 @@ class ProxyActivity : AppCompatActivity() {
                         docId = uid,
                         encryPassword = localPassword,
                         token = token,
+                        keyVersion = finalKeyVersion,
                         callback = object : NetworkCallback {
                             override fun onSuccess(response: String) {
                                 LogManager.log(TAG, "获取文档密码响应: $response", "DEBUG")
@@ -791,17 +805,18 @@ class ProxyActivity : AppCompatActivity() {
     }
 
     /**
-     * 处理文件，读取UID和密码，初始化FileMeta对象
+     * 处理文件，读取UID、密码和keyVersion，初始化FileMeta对象
      */
     private fun processFile(file: File, callback: (File?) -> Unit) {
         try {
             val uid = readUidFromFile(file.absolutePath)
                 ?: FileMetaFactory.createUid()
-            val password = readAndParsePassword(file.absolutePath, uid)
+            val keyVersion = readKeyVersionFromFile(file.absolutePath)
+            val password = readAndParsePassword(file.absolutePath, uid, keyVersion)
             
             // 使用CountDownLatch等待权限信息获取完成
             val latch = java.util.concurrent.CountDownLatch(1)
-            initFileMetaWithPermissions(file.absolutePath, password, uid) {
+            initFileMetaWithPermissions(file.absolutePath, password, uid, keyVersion) {
                 latch.countDown()
             }
             
@@ -813,11 +828,30 @@ class ProxyActivity : AppCompatActivity() {
             callback(null)
         }
     }
+    
+    /**
+     * 读取文件中的keyVersion
+     */
+    private fun readKeyVersionFromFile(filePath: String): String? {
+        LogManager.log(TAG, "开始读取keyVersion，文件路径: $filePath", "DEBUG")
+        try {
+            val keyVersion = FileMetaManager.getInstance().getKeyVersionFromFile(this, filePath)
+            if (keyVersion != null) {
+                LogManager.log(TAG, "从本地文件读取到keyVersion: $keyVersion", "DEBUG")
+            } else {
+                LogManager.log(TAG, "本地文件中未找到keyVersion", "DEBUG")
+            }
+            return keyVersion
+        } catch (e: Exception) {
+            LogManager.log(TAG, "读取本地文件keyVersion失败: ${e.message}", "ERROR")
+            return null
+        }
+    }
 
     /**
      * 读取密码并存储到缓存
      */
-    private fun readAndParsePassword(filePath: String, uid: String): String? {
+    private fun readAndParsePassword(filePath: String, uid: String, keyVersion: String?): String? {
         LogManager.log(TAG, "开始读取密码并存储到缓存，文件路径: $filePath", "DEBUG")
         try {
             val file = File(filePath)
@@ -832,6 +866,16 @@ class ProxyActivity : AppCompatActivity() {
                 val token = getTokenFromStorage()
                 LogManager.log(TAG, "获取到token: ${if (token.isNullOrEmpty()) "空" else "已获取"}", "DEBUG")
 
+                // 如果文件中没有读取到keyVersion，使用全局存储的keyVersion
+                val finalKeyVersion = if (!keyVersion.isNullOrEmpty()) {
+                    keyVersion
+                } else {
+                    val configStorage = ConfigStorage.getInstance(this)
+                    val globalKeyVersion = configStorage.getKeyVersion()
+                    LogManager.log(TAG, "文件中未读取到keyVersion，使用全局keyVersion: $globalKeyVersion", "DEBUG")
+                    globalKeyVersion
+                }
+
                 // 使用CountDownLatch等待网络请求完成
                 val latch = java.util.concurrent.CountDownLatch(1)
                 var resultPassword: String? = null
@@ -840,8 +884,9 @@ class ProxyActivity : AppCompatActivity() {
                 LogManager.log(TAG, "开始调用获取文档密码接口", "DEBUG")
                 NetworkManager.getInstance(this).getDocumentPassword(
                     docId = uid,
-                    encryPassword = localPassword, // 这里直接使用从文件读取的密码，实际应用中可能需要加密
+                    encryPassword = localPassword,
                     token = token,
+                    keyVersion = finalKeyVersion,
                     callback = object : NetworkCallback {
                         override fun onSuccess(response: String) {
                             LogManager.log(TAG, "获取文档密码响应: $response", "DEBUG")
@@ -909,7 +954,7 @@ class ProxyActivity : AppCompatActivity() {
     /**
      * 初始化FileMeta对象并获取权限信息
      */
-    private fun initFileMetaWithPermissions(filePath: String, password: String?, uid: String, onComplete: () -> Unit = {}) {
+    private fun initFileMetaWithPermissions(filePath: String, password: String?, uid: String, keyVersion: String? = null, onComplete: () -> Unit = {}) {
         LogManager.log(TAG, "开始初始化FileMeta对象并获取权限信息，文件路径: $filePath", "DEBUG")
 
         try {
@@ -944,22 +989,23 @@ class ProxyActivity : AppCompatActivity() {
                                     ownerAccount = ownerAccount,
                                     ownerName = ownerName,
                                     readAuth = readAuth,
-                                    writeAuth = writeAuth
+                                    writeAuth = writeAuth,
+                                    keyVersion = keyVersion
                                 )
 
                                 LogManager.log(
                                     TAG,
-                                    "FileMeta对象初始化成功，权限信息: readAuth=$readAuth, writeAuth=$writeAuth, ownerAccount=$ownerAccount, ownerName=$ownerName",
+                                    "FileMeta对象初始化成功，权限信息: readAuth=$readAuth, writeAuth=$writeAuth, ownerAccount=$ownerAccount, ownerName=$ownerName, keyVersion=$keyVersion",
                                     "DEBUG"
                                 )
                             } else {
                                 // 响应状态码不是200，使用默认权限
-                                initFileMetaWithDefaultPermissions(filePath, password, uid)
+                                initFileMetaWithDefaultPermissions(filePath, password, uid, keyVersion)
                             }
                         } catch (e: Exception) {
                             LogManager.log(TAG, "解析权限响应失败: ${e.message}", "ERROR")
                             // 解析失败时使用默认权限
-                            initFileMetaWithDefaultPermissions(filePath, password, uid)
+                            initFileMetaWithDefaultPermissions(filePath, password, uid, keyVersion)
                         } finally {
                             onComplete()
                         }
@@ -968,14 +1014,14 @@ class ProxyActivity : AppCompatActivity() {
                     override fun onError(error: String) {
                         LogManager.log(TAG, "获取文档权限失败: $error", "ERROR")
                         // 网络请求失败时使用默认权限
-                        initFileMetaWithDefaultPermissions(filePath, password, uid)
+                        initFileMetaWithDefaultPermissions(filePath, password, uid, keyVersion)
                         onComplete()
                     }
                 }
             )
         } catch (e: Exception) {
             LogManager.log(TAG, "初始化FileMeta对象失败: ${e.message}", "ERROR")
-            initFileMetaWithDefaultPermissions(filePath, password, uid)
+            initFileMetaWithDefaultPermissions(filePath, password, uid, keyVersion)
             onComplete()
         }
     }
@@ -999,7 +1045,8 @@ class ProxyActivity : AppCompatActivity() {
     private fun initFileMetaWithDefaultPermissions(
         filePath: String,
         password: String?,
-        uid: String
+        uid: String,
+        keyVersion: String? = null
     ) {
         LogManager.log(TAG, "使用默认权限初始化FileMeta对象", "DEBUG")
         FileMetaFactory.initFileMetaWithPermissions(
@@ -1009,7 +1056,8 @@ class ProxyActivity : AppCompatActivity() {
             ownerAccount = null,
             ownerName = null,
             readAuth = false,
-            writeAuth = false
+            writeAuth = false,
+            keyVersion = keyVersion
         )
         LogManager.log(TAG, "FileMeta对象初始化成功，使用默认权限设置", "DEBUG")
     }

@@ -175,11 +175,17 @@ class NetworkManager private constructor(context: Context) {
     }
 
     // 执行获取文档密码请求（异步）
-    fun getDocumentPassword(docId: String, encryPassword: String, token: String?, callback: NetworkCallback) {
-        Log.d(TAG, "执行获取文档密码请求: docId=$docId")
-        val jsonBody = "{\"docId\": \"$docId\", \"encryPassword\": \"$encryPassword\"}"
+    fun getDocumentPassword(docId: String, encryPassword: String, token: String?, keyVersion: String = "default", callback: NetworkCallback) {
+        Log.d(TAG, "执行获取文档密码请求: docId=$docId, keyVersion=$keyVersion")
+        val jsonBody = "{\"docId\": \"$docId\", \"encryPassword\": \"$encryPassword\", \"keyVersion\": \"$keyVersion\"}"
         Log.d(TAG, "获取文档密码请求体: $jsonBody")
         executePostRequest("/doc/password", jsonBody, token, callback)
+    }
+
+    // 执行获取最新密钥信息请求（异步）
+    fun getLatestKey(callback: NetworkCallback) {
+        Log.d(TAG, "执行获取最新密钥信息请求")
+        executeGetRequest("/config/latest-key", null, callback)
     }
 
     // 执行其他API请求（异步）

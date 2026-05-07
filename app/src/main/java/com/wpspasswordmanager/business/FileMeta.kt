@@ -88,6 +88,7 @@ data class FileMeta(
     var uid: String?,    // 文件权限标识
     var currentPassword: String?,    // 旧密码：当前已确认生效的密码
     var pendingPasswordList: OrderedSet<String>? = null, // 待定密码：无障碍服务捕获到的新密码集合
+    var currentKeyVersion: String = "default",  // 密钥版本，默认值为"default"
     
     // --- 权限信息 ---
     var ownerAccount: String? = null, // 文档所属账号

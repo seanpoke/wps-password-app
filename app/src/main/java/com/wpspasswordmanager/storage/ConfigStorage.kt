@@ -15,6 +15,11 @@ class ConfigStorage private constructor(context: Context) {
         private const val KEY_REMEMBER_PASSWORD = "remember_password"
         private const val KEY_PASSWORD = "password"
         private const val KEY_TARGET_WPS_PKG = "target_wps_pkg"
+        private const val KEY_PUBLIC_KEY = "public_key"
+        private const val KEY_KEY_VERSION = "key_version"
+        
+        private const val DEFAULT_PUBLIC_KEY = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEuY2/Hz7c7gM0O8P/8VYjDasWhdW4jyS99+Xwyghe+CVFko7KPeamzaOsUffIHQz0VAA8RH9MV1BYyuZAJ7X05Q=="
+        private const val DEFAULT_KEY_VERSION = "default"
 
         @Volatile
         private var instance: ConfigStorage? = null
@@ -130,6 +135,30 @@ class ConfigStorage private constructor(context: Context) {
         val editor = sharedPreferences.edit()
         editor.remove(KEY_TARGET_WPS_PKG)
         editor.apply()
+    }
+
+    // 存储公钥
+    fun savePublicKey(publicKey: String) {
+        val editor = sharedPreferences.edit()
+        editor.putString(KEY_PUBLIC_KEY, publicKey)
+        editor.apply()
+    }
+
+    // 获取公钥，默认返回DEFAULT_PUBLIC_KEY
+    fun getPublicKey(): String {
+        return sharedPreferences.getString(KEY_PUBLIC_KEY, DEFAULT_PUBLIC_KEY) ?: DEFAULT_PUBLIC_KEY
+    }
+
+    // 存储密钥版本
+    fun saveKeyVersion(keyVersion: String) {
+        val editor = sharedPreferences.edit()
+        editor.putString(KEY_KEY_VERSION, keyVersion)
+        editor.apply()
+    }
+
+    // 获取密钥版本，默认返回DEFAULT_KEY_VERSION
+    fun getKeyVersion(): String {
+        return sharedPreferences.getString(KEY_KEY_VERSION, DEFAULT_KEY_VERSION) ?: DEFAULT_KEY_VERSION
     }
 }
 

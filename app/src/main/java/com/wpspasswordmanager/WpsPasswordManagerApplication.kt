@@ -39,12 +39,56 @@ class WpsPasswordManagerApplication : Application() {
         instance = this
 
         // 初始化 LogManager 的上下文提供者
-        com.wpspasswordmanager.utils.LogManager.ContextProvider.initialize(this)
+        LogManager.ContextProvider.initialize(this)
         // 记录应用启动日志
-        com.wpspasswordmanager.utils.LogManager.log("Application", "WPS Password Manager started", "INFO")
+        LogManager.log("Application", "WPS Password Manager started", "INFO")
+
+        // 获取最新密钥信息
+        fetchLatestKeyInfo()
 
         // 初始化文件观察者
         initFileObserver()
+    }
+    
+    /**
+     * 获取最新密钥信息并持久化存储
+     */
+    private fun fetchLatestKeyInfo() {
+        LogManager.log(TAG, "开始获取最新密钥信息", "DEBUG")
+        NetworkManager.getInstance(this).getLatestKey(object : com.wpspasswordmanager.network.NetworkCallback {
+            override fun onSuccess(response: String) {
+                try {
+                    val json = org.json.JSONObject(response)
+                    if (json.getInt("status") == 200) {
+                        val data = json.getJSONObject("data")
+                        val keyVersion = data.optString("keyVersion", "default")
+                        val publicKey = data.optString("publicKey", "")
+                        
+                        LogManager.log(TAG, "获取最新密钥信息成功: keyVersion=$keyVersion, publicKey=${if (publicKey.isNotEmpty()) "已获取" else "空"}", "DEBUG")
+                        
+                        // 持久化存储到本地
+                        val configStorage = ConfigStorage.getInstance(this@WpsPasswordManagerApplication)
+                        if (keyVersion.isNotEmpty()) {
+                            configStorage.saveKeyVersion(keyVersion)
+                            LogManager.log(TAG, "keyVersion已保存到本地存储", "DEBUG")
+                        }
+                        if (publicKey.isNotEmpty()) {
+                            configStorage.savePublicKey(publicKey)
+                            LogManager.log(TAG, "publicKey已保存到本地存储", "DEBUG")
+                        }
+                    } else {
+                        LogManager.log(TAG, "获取最新密钥信息失败，响应状态码不是200", "ERROR")
+                    }
+                } catch (e: Exception) {
+                    LogManager.log(TAG, "解析密钥信息响应失败: ${e.message}", "ERROR")
+                }
+            }
+
+            override fun onError(error: String) {
+                LogManager.log(TAG, "获取最新密钥信息失败: $error", "ERROR")
+                // 网络请求失败时使用默认值，ConfigStorage已设置默认值
+            }
+        })
     }
 
     /**

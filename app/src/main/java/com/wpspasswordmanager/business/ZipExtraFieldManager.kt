@@ -18,8 +18,8 @@ object EccEncryptor {
     private const val CURVE_NAME = "secp256r1"
     private const val PROVIDER = "BC"
     private const val AES_ALGORITHM = "AES/CBC/PKCS5Padding"
-    // 固定的服务器公钥
-    private const val SERVER_PUBLIC_KEY = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEuY2/Hz7c7gM0O8P/8VYjDasWhdW4jyS99+Xwyghe+CVFko7KPeamzaOsUffIHQz0VAA8RH9MV1BYyuZAJ7X05Q=="
+    // 默认的服务器公钥（当无法从配置获取时使用）
+    private const val DEFAULT_PUBLIC_KEY = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEuY2/Hz7c7gM0O8P/8VYjDasWhdW4jyS99+Xwyghe+CVFko7KPeamzaOsUffIHQz0VAA8RH9MV1BYyuZAJ7X05Q=="
     
     init {
         // 添加BouncyCastle Provider
@@ -33,14 +33,30 @@ object EccEncryptor {
     }
     
     /**
+     * 获取当前使用的公钥
+     * 优先从ConfigStorage获取，若获取失败则使用默认公钥
+     */
+    private fun getPublicKey(): String {
+        return try {
+            val context = WpsPasswordManagerApplication.instance
+            val publicKey = com.wpspasswordmanager.storage.ConfigStorage.getInstance(context).getPublicKey()
+            Log.d("EccEncryptor", "从配置获取公钥成功")
+            publicKey
+        } catch (e: Exception) {
+            Log.w("EccEncryptor", "从配置获取公钥失败，使用默认公钥: ${e.message}")
+            DEFAULT_PUBLIC_KEY
+        }
+    }
+    
+    /**
      * 使用服务器公钥加密密码
      * @param password 原始密码字符串
      * @return Base64编码的加密数据，失败返回null
      */
     fun encryptPassword(password: String): String? {
         try {
-            // 1. 解析服务器公钥
-            val publicKeyBytes = Base64.getDecoder().decode(SERVER_PUBLIC_KEY)
+            // 1. 获取并解析服务器公钥（优先从配置获取）
+            val publicKeyBytes = Base64.getDecoder().decode(getPublicKey())
             
             // 尝试使用BouncyCastle Provider
             var keyFactory: KeyFactory
@@ -131,6 +147,7 @@ class ZipExtraFieldManager private constructor() {
         private const val WPS_PASSWORD_VERSION = 1
         private const val METADATA_TYPE_PASSWORD = 1  // 元数据类型：1=密码
         private const val METADATA_TYPE_UID = 2  // 元数据类型：2=uid
+        private const val METADATA_TYPE_KEY_VERSION = 3  // 元数据类型：3=keyVersion
         private const val MAX_RETRY_COUNT = 5
         private const val RETRY_DELAY_MS = 1000
 
@@ -147,7 +164,7 @@ class ZipExtraFieldManager private constructor() {
     /**
      * 追加元数据到文件尾部
      */
-    fun appendMetaDataToFileEnd(filePath: String, uid: String?, password: String?): Boolean {
+    fun appendMetaDataToFileEnd(filePath: String, uid: String?, password: String?, keyVersion: String? = null): Boolean {
         val file = File(filePath)
         if (!file.exists() || !file.canWrite()) {
             Log.e(
@@ -224,6 +241,18 @@ class ZipExtraFieldManager private constructor() {
             } else {
                 ByteArray(0)
             }
+            
+            // 构建keyVersion数据（如果存在）
+            val keyVersionData = if (!keyVersion.isNullOrEmpty()) {
+                val keyVersionBytes = buildExtraFieldData(METADATA_TYPE_KEY_VERSION, keyVersion)
+                Log.d(
+                    TAG,
+                    "[时间戳: ${System.currentTimeMillis()}] keyVersion数据构建完成，长度: ${keyVersionBytes.size} bytes"
+                )
+                keyVersionBytes
+            } else {
+                ByteArray(0)
+            }
 
             // 写入到文件尾部
             Log.d(
@@ -256,7 +285,16 @@ class ZipExtraFieldManager private constructor() {
                     )
                 }
                 
-                val newFileLength = fileLength + uidData.size + passwordData.size
+                // 写入keyVersion数据
+                if (keyVersionData.isNotEmpty()) {
+                    raf.write(keyVersionData)
+                    Log.d(
+                        TAG,
+                        "[时间戳: ${System.currentTimeMillis()}] keyVersion数据写入完成"
+                    )
+                }
+                
+                val newFileLength = fileLength + uidData.size + passwordData.size + keyVersionData.size
                 Log.d(
                     TAG,
                     "[时间戳: ${System.currentTimeMillis()}] 数据写入完成，文件新长度: $newFileLength bytes"
@@ -721,6 +759,104 @@ class ZipExtraFieldManager private constructor() {
     }
 
     /**
+     * 从输入流读取ZIP Extra Field中的keyVersion（直接流读取模式）
+     * 按照读数据.md文档要求：从文件尾部读取1KB数据来查找元数据块
+     */
+    fun readKeyVersionFromInputStream(inputStream: InputStream): String? {
+        try {
+            Log.d(TAG, "尝试从输入流读取keyVersion")
+
+            // 将输入流转换为字节数组以支持从尾部搜索
+            val byteArray = inputStream.readBytes()
+            val fileLength = byteArray.size.toLong()
+
+            if (fileLength < 20) { // 最小Extra Field大小
+                Log.d(TAG, "文件太小，无法包含keyVersion数据")
+                return null
+            }
+
+            // 按照读数据.md文档要求：从文件尾部读取1KB数据
+            val bufferSize = 1024
+            val startPosition = maxOf(0, fileLength - bufferSize).toInt()
+            val readSize = (fileLength - startPosition).toInt()
+            val buffer = ByteArray(bufferSize)
+
+            // 从字节数组中复制数据到缓冲区
+            System.arraycopy(byteArray, startPosition, buffer, 0, readSize)
+
+            // 按照C++实现，从后向前搜索WPPM签名
+            // 查找所有WPPM签名，找到类型为3的keyVersion元数据
+            val signatureBytes = WPS_PASSWORD_SIGNATURE.toByteArray()
+            val signatureLength = signatureBytes.size
+
+            // 从后向前搜索，找到最后一个类型为3的keyVersion元数据
+            for (i in readSize - signatureLength downTo 0) {
+                var match = true
+                for (j in 0 until signatureLength) {
+                    if (buffer[i + j] != signatureBytes[j]) {
+                        match = false
+                        break
+                    }
+                }
+                if (match) {
+                    Log.d(TAG, "找到WPPM签名，位置: ${startPosition + i}")
+
+                    // 计算实际数据位置
+                    val dataPosition = startPosition + i
+
+                    // 检查剩余数据长度是否足够
+                    if (fileLength - dataPosition < 15) { // Magic(4) + Version(2) + Type(1) + DataLength(4) + Checksum(4) = 15
+                        Log.w(TAG, "数据不足，无法解析")
+                        continue
+                    }
+
+                    // 读取元数据块头部信息
+                    val dataInputStream = ByteArrayInputStream(
+                        byteArray,
+                        dataPosition,
+                        (fileLength - dataPosition).toInt()
+                    )
+
+                    // 读取Magic（4字节）
+                    val magic = ByteArray(4)
+                    dataInputStream.read(magic)
+
+                    // 读取Version（2字节）
+                    val versionBytes = ByteArray(2)
+                    dataInputStream.read(versionBytes)
+                    val version = byteArrayToShort(versionBytes)
+
+                    // 读取Type（1字节）
+                    val type = dataInputStream.read().toByte()
+                    Log.d(TAG, "元数据类型: $type, 版本: $version")
+
+                    if (type == METADATA_TYPE_KEY_VERSION.toByte()) {
+                        // 找到keyVersion类型，重新创建输入流解析数据
+                        val keyVersionInputStream = ByteArrayInputStream(
+                            byteArray,
+                            dataPosition,
+                            (fileLength - dataPosition).toInt()
+                        )
+                        val keyVersion = parseExtraFieldDataForKeyVersion(keyVersionInputStream)
+                        if (keyVersion != null) {
+                            Log.d(TAG, "成功读取keyVersion: $keyVersion")
+                            return keyVersion
+                        }
+                    } else {
+                        Log.w(TAG, "跳过非keyVersion类型的元数据: $type")
+                    }
+                }
+            }
+
+            Log.d(TAG, "未找到WPPM keyVersion数据")
+            return null
+        } catch (e: Exception) {
+            Log.e(TAG, "从输入流读取keyVersion失败", e)
+            return null
+        }
+    }
+
+    /**
      * 检测文件是否被锁定
      */
     private fun isFileLocked(file: File): Boolean {
@@ -1015,6 +1151,84 @@ class ZipExtraFieldManager private constructor() {
             }
 
             // 直接返回UTF-8编码的uid（文档中Data部分是明文UTF-8）
+            return String(data, Charsets.UTF_8)
+        } catch (e: Exception) {
+            Log.e(TAG, "解析Extra Field数据失败", e)
+            return null
+        }
+    }
+
+    /**
+     * 解析Extra Field数据（从InputStream读取）用于keyVersion
+     * 按照读数据.md文档格式：Magic(4) + Version(2) + Type(1) + DataLength(4) + Data(N) + Checksum(4)
+     */
+    private fun parseExtraFieldDataForKeyVersion(inputStream: InputStream): String? {
+        try {
+            // 读取Magic（4字节）
+            val magic = ByteArray(4)
+            inputStream.read(magic)
+            if (!String(magic).equals(WPS_PASSWORD_SIGNATURE)) {
+                Log.d(TAG, "Magic不匹配")
+                return null
+            }
+
+            // 读取Version（2字节）
+            val versionBytes = ByteArray(2)
+            inputStream.read(versionBytes)
+            val version = byteArrayToShort(versionBytes)
+            if (version != WPS_PASSWORD_VERSION.toShort()) {
+                Log.w(TAG, "版本不匹配: $version")
+            }
+
+            // 读取Type（1字节）
+            val type = inputStream.read().toByte()
+            if (type != METADATA_TYPE_KEY_VERSION.toByte()) {
+                Log.w(TAG, "类型不是keyVersion: $type")
+                return null
+            }
+
+            // 读取Data Length（4字节）
+            val dataLengthBytes = ByteArray(4)
+            inputStream.read(dataLengthBytes)
+            val dataLength = byteArrayToInt(dataLengthBytes)
+            Log.d(TAG, "Data Length: $dataLength")
+
+            // 检查输入流是否有足够的数据
+            if (dataLength > 10000) {
+                Log.w(TAG, "Data Length异常: $dataLength")
+                return null
+            }
+
+            // 读取Data（keyVersion数据，UTF-8编码）
+            val data = ByteArray(dataLength)
+            val bytesRead = inputStream.read(data)
+            if (bytesRead != dataLength) {
+                Log.w(TAG, "读取Data失败，期望: $dataLength, 实际: $bytesRead")
+                return null
+            }
+
+            // 读取Checksum（4字节，CRC32）
+            val checksum = ByteArray(4)
+            val checksumRead = inputStream.read(checksum)
+            if (checksumRead != 4) {
+                Log.w(TAG, "读取Checksum失败，期望: 4, 实际: $checksumRead")
+                return null
+            }
+
+            // 验证CRC32校验和（计算范围：Magic到Data部分）
+            val calculatedChecksum = calculateCRC32Checksum(
+                magic,
+                versionBytes,
+                byteArrayOf(type),
+                dataLengthBytes,
+                data
+            )
+            if (!checksum.contentEquals(calculatedChecksum)) {
+                Log.e(TAG, "CRC32校验和不匹配，数据可能已损坏")
+                return null
+            }
+
+            // 直接返回UTF-8编码的keyVersion（文档中Data部分是明文UTF-8）
             return String(data, Charsets.UTF_8)
         } catch (e: Exception) {
             Log.e(TAG, "解析Extra Field数据失败", e)

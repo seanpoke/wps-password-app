@@ -20,12 +20,17 @@ object FileMetaFactory {
     /**
      * 带权限信息的初始化
      */
-    fun initFileMetaWithPermissions(filePath: String, oldPass: String?, uid: String?, ownerAccount: String?, ownerName: String?, readAuth: Boolean, writeAuth: Boolean) {
+    fun initFileMetaWithPermissions(filePath: String, oldPass: String?, uid: String?, ownerAccount: String?, ownerName: String?, readAuth: Boolean, writeAuth: Boolean, keyVersion: String? = null) {
         val finalUid = if (uid.isNullOrEmpty()) createUid() else uid
+        
+        // 优先从文件元数据读取keyVersion，若未读取到则使用默认值"default"
+        val finalKeyVersion = keyVersion ?: "default"
+        
         val fileMeta = FileMeta(
             filePath = filePath,
             uid = finalUid,
             currentPassword = oldPass,
+            currentKeyVersion = finalKeyVersion,
             ownerAccount = ownerAccount,
             ownerName = ownerName,
             readAuth = readAuth,
@@ -35,7 +40,7 @@ object FileMetaFactory {
         // 输出日志
         Log.d(
             TAG,
-            "initFileStateWithPermissions - FileMeta: filePath='$filePath', currentPassword='${oldPass ?: "null"}', uid='$finalUid', ownerAccount='${ownerAccount ?: "null"}', ownerName='${ownerName ?: "null"}', readAuth=$readAuth, writeAuth=$writeAuth"
+            "initFileStateWithPermissions - FileMeta: filePath='$filePath', currentPassword='${oldPass ?: "null"}', uid='$finalUid', keyVersion='$finalKeyVersion', ownerAccount='${ownerAccount ?: "null"}', ownerName='${ownerName ?: "null"}', readAuth=$readAuth, writeAuth=$writeAuth"
         )
     }
 
