@@ -2,6 +2,7 @@ package com.wpspasswordmanager.network
 
 import android.content.Context
 import android.util.Log
+import com.wpspasswordmanager.business.EccEncryptor
 import com.wpspasswordmanager.storage.ConfigStorage
 import com.wpspasswordmanager.storage.ServerConfig
 import okhttp3.*
@@ -200,20 +201,36 @@ class NetworkManager private constructor(context: Context) {
     // 执行保存记录上报请求（异步）
     fun reportSaveLog(docId: String, path: String, beforePassword: String? = null, afterPassword: String? = null, possiblePassword: List<String>? = null, platform: String = "android", token: String? = null, callback: NetworkCallback) {
         Log.d(TAG, "执行保存记录上报请求: docId=$docId, path=$path, platform=$platform")
+        
+        val keyVersion = configStorage.getKeyVersion()
+        
+        val encryptedBeforePassword = beforePassword?.let { 
+            EccEncryptor.encryptPassword(it) 
+        }
+        val encryptedAfterPassword = afterPassword?.let { 
+            EccEncryptor.encryptPassword(it) 
+        }
+        val encryptedPossiblePassword = possiblePassword?.mapNotNull { 
+            EccEncryptor.encryptPassword(it) 
+        }
+        
         val jsonBody = buildString {
             append("{")
             append("\"docId\": \"$docId\",")
             append("\"path\": \"$path\",")
+            append("\"keyVersion\": \"$keyVersion\",")
             append("\"platform\": \"$platform\"")
-            beforePassword?.let { append(", \"beforePassword\": \"$it\"") }
-            afterPassword?.let { append(", \"afterPassword\": \"$it\"") }
-            possiblePassword?.let {
-                append(", \"possiblePasword\": [")
-                it.forEachIndexed { index, password ->
-                    if (index > 0) append(", ")
-                    append("\"$password\"")
+            encryptedBeforePassword?.let { append(", \"beforePassword\": \"$it\"") }
+            encryptedAfterPassword?.let { append(", \"afterPassword\": \"$it\"") }
+            encryptedPossiblePassword?.let { passwords ->
+                if (passwords.isNotEmpty()) {
+                    append(", \"possiblePasword\": [")
+                    passwords.forEachIndexed { index, password ->
+                        if (index > 0) append(", ")
+                        append("\"$password\"")
+                    }
+                    append("]")
                 }
-                append("]")
             }
             append("}")
         }
