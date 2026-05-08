@@ -52,7 +52,7 @@ class FloatingButtonService : Service() {
         try {
             // 使用AppNotificationManager创建通知，确保通知频道已创建
             val notification = androidx.core.app.NotificationCompat.Builder(this, "operation_channel")
-                .setContentTitle("WPS密码管理器")
+                .setContentTitle("文档密码管理")
                 .setContentText("悬浮按钮服务正在运行")
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setPriority(androidx.core.app.NotificationCompat.PRIORITY_LOW)

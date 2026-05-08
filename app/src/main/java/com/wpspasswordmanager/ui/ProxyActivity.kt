@@ -26,7 +26,6 @@ class ProxyActivity : AppCompatActivity() {
 
     companion object {
         private const val TAG = "ProxyActivity"
-        private const val WPS_MANAGEMENT_DIR = "WpsManagement"
 
         fun openFileWithWps(context: Context, file: File) {
             val intent = Intent(context, ProxyActivity::class.java)
@@ -775,36 +774,6 @@ class ProxyActivity : AppCompatActivity() {
     }
 
     /**
-     * 处理外部传入的ContentURI，执行文件拷贝和处理流程
-     */
-    private fun processExternalContentUri(uri: Uri, originalFileName: String, isInWpsManagement: Boolean, callback: (File?) -> Unit) {
-        try {
-            val documentsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOCUMENTS)
-            val wpsManagementDir = File(documentsDir, "WpsManagement")
-
-            if (!wpsManagementDir.exists()) {
-                wpsManagementDir.mkdirs()
-                LogManager.log(TAG, "创建 WpsManagement 目录: ${wpsManagementDir.absolutePath}", "DEBUG")
-            }
-
-            val targetFile = File(wpsManagementDir, originalFileName)
-            
-            if (!isInWpsManagement && !targetFile.exists()) {
-                if (!copyFileFromContentUri(uri, targetFile)) {
-                    LogManager.log(TAG, "文件拷贝失败: ${targetFile.absolutePath}", "DEBUG")
-                    callback(null)
-                    return
-                }
-            }
-            
-            processFile(targetFile, callback)
-        } catch (e: Exception) {
-            LogManager.log(TAG, "处理ContentURI失败: ${e.message}", "ERROR")
-            callback(null)
-        }
-    }
-
-    /**
      * 处理文件，读取UID、密码和keyVersion，初始化FileMeta对象
      */
     private fun processFile(file: File, callback: (File?) -> Unit) {
@@ -866,14 +835,19 @@ class ProxyActivity : AppCompatActivity() {
                 val token = getTokenFromStorage()
                 LogManager.log(TAG, "获取到token: ${if (token.isNullOrEmpty()) "空" else "已获取"}", "DEBUG")
 
-                // 如果文件中没有读取到keyVersion，使用全局存储的keyVersion
+                // 如果文件中没有读取到keyVersion，使用全局存储的keyVersion，若仍为空则使用默认值"default"
                 val finalKeyVersion = if (!keyVersion.isNullOrEmpty()) {
                     keyVersion
                 } else {
                     val configStorage = ConfigStorage.getInstance(this)
                     val globalKeyVersion = configStorage.getKeyVersion()
-                    LogManager.log(TAG, "文件中未读取到keyVersion，使用全局keyVersion: $globalKeyVersion", "DEBUG")
-                    globalKeyVersion
+                    if (!globalKeyVersion.isNullOrEmpty()) {
+                        LogManager.log(TAG, "文件中未读取到keyVersion，使用全局keyVersion: $globalKeyVersion", "DEBUG")
+                        globalKeyVersion
+                    } else {
+                        LogManager.log(TAG, "文件和全局存储中均未读取到keyVersion，使用默认值: default", "DEBUG")
+                        "default"
+                    }
                 }
 
                 // 使用CountDownLatch等待网络请求完成

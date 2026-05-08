@@ -22,7 +22,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:layout_marginBottom="32dp"
-        android:text="WPS密码管理"
+        android:text="文档密码管理"
         android:textSize="24sp"
         android:textStyle="bold" />
 
