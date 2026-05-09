@@ -95,6 +95,8 @@ class HeartbeatService : Service() {
                     val intent = Intent("com.wpspasswordmanager.ACTION_SESSION_EXPIRED")
                     sendBroadcast(intent)
                 }
+
+                override fun onComplete() {}
             })
         }
     }

@@ -3,6 +3,9 @@ plugins {
     id 'org.jetbrains.kotlin.android'
 }
 
+def date = new Date()
+def formattedDate = date.format('yyyyMMdd')
+
 android {
     namespace 'com.wpspasswordmanager'
     compileSdk 34
@@ -11,8 +14,8 @@ android {
         applicationId "com.wpspasswordmanager"
         minSdk 26
         targetSdk 34
-        versionCode 1
-        versionName "1.0"
+        versionCode date.getTime() / 1000 as int
+        versionName "1.0.${formattedDate}"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }

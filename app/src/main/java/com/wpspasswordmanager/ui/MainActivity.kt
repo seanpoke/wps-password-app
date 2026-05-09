@@ -148,6 +148,8 @@ class MainActivity : AppCompatActivity() {
                         handle401Error()
                     }
                 }
+
+                override fun onComplete() {}
             })
         }
     }
@@ -191,6 +193,19 @@ class MainActivity : AppCompatActivity() {
         val addDocumentButton = findViewById<Button>(R.id.fab_add_document)
         addDocumentButton.setOnClickListener {
             showCreateDocumentDialog()
+        }
+
+        // 初始化版本号
+        initVersion()
+    }
+
+    private fun initVersion() {
+        val versionTextView = findViewById<TextView>(R.id.version_text_view)
+        try {
+            val packageInfo = packageManager.getPackageInfo(packageName, 0)
+            versionTextView.text = "版本 ${packageInfo.versionName}"
+        } catch (e: Exception) {
+            versionTextView.text = "版本未知"
         }
     }
 
@@ -461,6 +476,8 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
+
+            override fun onComplete() {}
         })
     }
 
@@ -591,6 +608,8 @@ class MainActivity : AppCompatActivity() {
                         completeLogout(username)
                     }
                 }
+
+                override fun onComplete() {}
             })
         } else {
             clearButtonTimeout()
@@ -720,6 +739,8 @@ class MainActivity : AppCompatActivity() {
                         handle401Error()
                     }
                 }
+
+                override fun onComplete() {}
             })
         }
     }

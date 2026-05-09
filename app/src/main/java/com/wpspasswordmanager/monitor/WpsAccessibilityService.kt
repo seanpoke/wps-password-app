@@ -365,7 +365,7 @@ class WpsAccessibilityService : AccessibilityService() {
                 className.contains("MainActivity")
 
         if (isFileListScreen) {
-            Log.d(TAG, "检测到回退到文件列表页，尝试写入密码")
+            Log.d(TAG, "检测到回退到文件列表页，尝试清理入资源")
             // 重置状态
             isDocumentOpened = false
             hasClickedShowPassword = false

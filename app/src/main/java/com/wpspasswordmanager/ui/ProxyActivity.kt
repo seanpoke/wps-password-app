@@ -102,6 +102,8 @@ class ProxyActivity : AppCompatActivity() {
                                 resultPassword = null
                                 latch.countDown()
                             }
+
+                            override fun onComplete() {}
                         }
                     )
 
@@ -301,6 +303,8 @@ class ProxyActivity : AppCompatActivity() {
                     isTokenValid = false
                     latch.countDown()
                 }
+
+                override fun onComplete() {}
             })
 
             // 等待网络请求完成，最多等待5秒
@@ -888,6 +892,8 @@ class ProxyActivity : AppCompatActivity() {
                             resultPassword = null
                             latch.countDown()
                         }
+
+                        override fun onComplete() {}
                     }
                 )
 
@@ -991,6 +997,8 @@ class ProxyActivity : AppCompatActivity() {
                         initFileMetaWithDefaultPermissions(filePath, password, uid, keyVersion)
                         onComplete()
                     }
+
+                    override fun onComplete() {}
                 }
             )
         } catch (e: Exception) {

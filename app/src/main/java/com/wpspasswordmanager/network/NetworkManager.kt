@@ -86,6 +86,7 @@ class NetworkManager private constructor(context: Context) {
         okHttpClient.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 callback.onError(e.message ?: "Network error")
+                callback.onComplete()
             }
 
             override fun onResponse(call: Call, response: Response) {
@@ -94,6 +95,7 @@ class NetworkManager private constructor(context: Context) {
                 } else {
                     callback.onError("HTTP ${response.code}: ${response.message}")
                 }
+                callback.onComplete()
             }
         })
     }
@@ -128,6 +130,7 @@ class NetworkManager private constructor(context: Context) {
             override fun onFailure(call: Call, e: IOException) {
                 Log.e(TAG, "请求失败: ${e.message}")
                 callback.onError(e.message ?: "Network error")
+                callback.onComplete()
             }
 
             override fun onResponse(call: Call, response: Response) {
@@ -146,6 +149,7 @@ class NetworkManager private constructor(context: Context) {
                         callback.onError(errorMessage)
                     }
                 }
+                callback.onComplete()
             }
         })
     }
@@ -243,4 +247,5 @@ class NetworkManager private constructor(context: Context) {
 interface NetworkCallback {
     fun onSuccess(response: String)
     fun onError(error: String)
+    fun onComplete() {}
 }

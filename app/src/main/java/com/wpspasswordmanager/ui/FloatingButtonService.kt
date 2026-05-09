@@ -427,6 +427,8 @@ class FloatingButtonService : Service() {
                     showPermissionTreeDialog(ldapItems)
                 }
             }
+
+            override fun onComplete() {}
         })
     }
 
@@ -730,6 +732,8 @@ class FloatingButtonService : Service() {
                             Toast.makeText(this@FloatingButtonService, "权限更新失败: $error", Toast.LENGTH_SHORT).show()
                         }
                     }
+
+                    override fun onComplete() {}
                 })
             }
 

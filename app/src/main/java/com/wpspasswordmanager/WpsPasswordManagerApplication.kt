@@ -88,6 +88,8 @@ class WpsPasswordManagerApplication : Application() {
                 LogManager.log(TAG, "获取最新密钥信息失败: $error", "ERROR")
                 // 网络请求失败时使用默认值，ConfigStorage已设置默认值
             }
+
+            override fun onComplete() {}
         })
     }
 
@@ -283,6 +285,19 @@ class WpsPasswordManagerApplication : Application() {
                                 
                                 override fun onError(error: String) {
                                     LogManager.log(TAG, "保存记录上报失败: $error", "ERROR")
+                                }
+                                
+                                override fun onComplete() {
+                                    // 无论上报成功还是失败，都更新FileMeta中的currentPassword为afterPassword的值
+                                    val updatedFileMeta = FileMetaFactory.getFileMeta(filePath)
+                                    if (updatedFileMeta != null && afterPassword != null) {
+                                        updatedFileMeta.currentPassword = afterPassword
+                                        LogManager.log(TAG, "上报完成后更新currentPassword: $afterPassword", "DEBUG")
+                                        
+                                        // 清空pendingPasswordList
+                                        updatedFileMeta.pendingPasswordList?.clear()
+                                        LogManager.log(TAG, "上报完成后清空pendingPasswordList", "DEBUG")
+                                    }
                                 }
                             }
                         )
