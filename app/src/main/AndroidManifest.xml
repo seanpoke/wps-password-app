@@ -20,6 +20,17 @@
             <action android:name="android.intent.action.VIEW_DOCUMENT" />
             <data android:mimeType="*/*" />
         </intent>
+        
+        <!-- 明确声明要查询的 WPS 相关包名 -->
+        <package android:name="cn.wps.moffice" />
+        <package android:name="cn.wps.moffice_eng" />
+        <package android:name="cn.wps.moffice_i18n" />
+        <package android:name="com.wps.moffice" />
+        <package android:name="com.wps.moffice.lite" />
+        <package android:name="com.kingsoft.moffice" />
+        <package android:name="com.xiaomi.wpslauncher" />
+        <package android:name="com.xiaomi.miui.wps" />
+        <package android:name="com.miui.wps" />
     </queries>
 
     <uses-permission android:name="android.permission.INTERNET" />

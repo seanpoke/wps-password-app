@@ -28,7 +28,13 @@ class FloatingButtonService : Service() {
 
     companion object {
         private const val TAG = "FloatingButtonService"
+        private const val DEFAULT_MARGIN_RATIO = 0.05
+        private const val VERTICAL_POSITION_RATIO = 0.18
+        private const val MIN_MARGIN_DP = 16
     }
+
+    data class ScreenMetrics(val width: Int, val height: Int)
+    data class Position(val x: Int, val y: Int)
 
     private lateinit var windowManager: WindowManager
     private lateinit var floatingView: View
@@ -125,6 +131,38 @@ class FloatingButtonService : Service() {
         }
     }
 
+    private fun getScreenMetrics(): ScreenMetrics {
+        val displayMetrics = resources.displayMetrics
+        val screenWidth = displayMetrics.widthPixels
+        val screenHeight = displayMetrics.heightPixels
+        return ScreenMetrics(screenWidth, screenHeight)
+    }
+
+    private fun calculateOptimalPosition(screenMetrics: ScreenMetrics): Position {
+        val density = resources.displayMetrics.density
+        val minMargin = (MIN_MARGIN_DP * density).toInt()
+
+        val x = minMargin
+        val y = (screenMetrics.height * VERTICAL_POSITION_RATIO).toInt()
+
+        return Position(x, y)
+    }
+
+    private fun constrainPositionToScreen(params: WindowManager.LayoutParams, view: View) {
+        val screenMetrics = getScreenMetrics()
+        val density = resources.displayMetrics.density
+        val minMargin = (MIN_MARGIN_DP * density).toInt()
+
+        val viewWidth = view.width
+        val viewHeight = view.height
+
+        val maxX = screenMetrics.width - viewWidth - minMargin
+        val maxY = screenMetrics.height - viewHeight - minMargin
+
+        params.x = params.x.coerceIn(minMargin, maxX.coerceAtLeast(minMargin))
+        params.y = params.y.coerceIn(minMargin, maxY.coerceAtLeast(minMargin))
+    }
+
     private fun initFloatingButton() {
         // 检查权限
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -155,8 +193,10 @@ class FloatingButtonService : Service() {
         )
 
         params.gravity = Gravity.TOP or Gravity.END
-        params.x = 0
-        params.y = 100
+        val screenMetrics = getScreenMetrics()
+        val initialPosition = calculateOptimalPosition(screenMetrics)
+        params.x = initialPosition.x
+        params.y = initialPosition.y
 
         val generatePasswordButton = floatingView.findViewById<Button>(R.id.generate_password_button)
         generatePasswordButton.setOnClickListener {
@@ -197,6 +237,7 @@ class FloatingButtonService : Service() {
                     try {
                         params.x = event.rawX.toInt() - floatingView.width / 2
                         params.y = event.rawY.toInt() - floatingView.height / 2
+                        constrainPositionToScreen(params, floatingView)
                         windowManager.updateViewLayout(floatingView, params)
                     } catch (e: Exception) {
                         Log.e(TAG, "更新悬浮按钮位置失败", e)
@@ -211,6 +252,8 @@ class FloatingButtonService : Service() {
 
         try {
             windowManager.addView(floatingView, params)
+            constrainPositionToScreen(params, floatingView)
+            windowManager.updateViewLayout(floatingView, params)
             isFloatingButtonVisible = true
             Log.d(TAG, "悬浮按钮添加成功")
         } catch (e: Exception) {

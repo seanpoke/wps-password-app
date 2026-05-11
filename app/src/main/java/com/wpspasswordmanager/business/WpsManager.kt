@@ -11,6 +11,14 @@ object WpsManager {
 
     private val WPS_KEYWORDS = listOf("wps", "moffice", "kingsoft")
     private val WPS_LABEL_KEYWORDS = listOf("wps", "金山", "office")
+    private val WPS_PACKAGE_PATTERNS = listOf(
+        "cn.wps",
+        "com.wps",
+        "com.kingsoft",
+        "com.xiaomi.wps",
+        "com.miui.wps",
+        "com.xiaomi.wpslauncher"
+    )
 
     private val NON_WPS_PACKAGES = setOf(
         "com.hihonor.fileservice",
@@ -89,18 +97,30 @@ object WpsManager {
     }
 
     private fun isWpsApplication(packageName: String, label: String, processName: String): Boolean {
-        if (WPS_KEYWORDS.any { packageName.contains(it) } || WPS_KEYWORDS.any { processName.contains(it) }) {
+        LogManager.log(TAG, "  检查应用: pkg=$packageName, label=$label, process=$processName", "DEBUG")
+        
+        // 检查包名模式
+        val patternMatch = WPS_PACKAGE_PATTERNS.any { packageName.contains(it) }
+        if (patternMatch) {
+            LogManager.log(TAG, "  ✓ 包名模式匹配", "DEBUG")
             return true
         }
         
-        if (WPS_LABEL_KEYWORDS.any { label.contains(it) }) {
+        // 检查关键字
+        val keywordMatch = WPS_KEYWORDS.any { packageName.contains(it) } || WPS_KEYWORDS.any { processName.contains(it) }
+        if (keywordMatch) {
+            LogManager.log(TAG, "  ✓ 关键字匹配", "DEBUG")
             return true
         }
         
-        if (packageName.contains("cn.wps") || packageName.contains("com.wps")) {
+        // 检查标签
+        val labelMatch = WPS_LABEL_KEYWORDS.any { label.contains(it) }
+        if (labelMatch) {
+            LogManager.log(TAG, "  ✓ 标签匹配", "DEBUG")
             return true
         }
         
+        LogManager.log(TAG, "  ✗ 不匹配", "DEBUG")
         return false
     }
 

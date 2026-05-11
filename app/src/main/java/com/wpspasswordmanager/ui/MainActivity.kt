@@ -43,7 +43,8 @@ class MainActivity : AppCompatActivity() {
     private val SAF_REQUEST_CODE = 103
     private val TAG = "MainActivity"
     
-    private var clickCount = 0
+    private var permissionTitleClickCount = 0
+    private var appTitleClickCount = 0
     private var migrationButtonVisible = false
     private lateinit var permissionStatusTitle: TextView
 
@@ -204,7 +205,7 @@ class MainActivity : AppCompatActivity() {
         // 初始化标题点击事件
         val appTitle = findViewById<TextView>(R.id.app_title)
         appTitle.setOnClickListener {
-            handleTitleClick()
+            handleAppTitleClick()
         }
 
         // 初始化新建文档按钮
@@ -262,7 +263,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         permissionStatusTitle.setOnClickListener {
-            handleTitleClick()
+            handlePermissionTitleClick()
         }
     }
 
@@ -297,19 +298,29 @@ class MainActivity : AppCompatActivity() {
         buttonTimeoutTimer?.removeCallbacksAndMessages(null)
     }
 
-    private fun handleTitleClick() {
-        clickCount++
+    private fun handlePermissionTitleClick() {
+        permissionTitleClickCount++
         
         if (migrationButtonVisible) {
             migrationButton.visibility = View.GONE
             migrationButtonVisible = false
-            clickCount = 0
+            permissionTitleClickCount = 0
         } else {
-            if (clickCount >= 3) {
+            if (permissionTitleClickCount >= 3) {
                 migrationButton.visibility = View.VISIBLE
                 migrationButtonVisible = true
-                clickCount = 0
+                permissionTitleClickCount = 0
             }
+        }
+    }
+
+    private fun handleAppTitleClick() {
+        appTitleClickCount++
+        
+        if (appTitleClickCount >= 3) {
+            val intent = Intent(this, LogActivity::class.java)
+            startActivity(intent)
+            appTitleClickCount = 0
         }
     }
 
