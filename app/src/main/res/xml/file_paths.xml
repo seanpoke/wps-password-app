@@ -1,5 +1,6 @@
 <paths>
     <cache-path name="wps_cache" path="." />
     <external-files-path name="documents" path="Documents" />
+    <external-files-path name="cache_view" path="cacheView" />
     <external-path name="public_documents" path="Documents" />
 </paths>

@@ -103,6 +103,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // 清理cache目录
+        clearCacheDirectory()
+
         // 初始化存储和网络管理
         configStorage = ConfigStorage.getInstance(this)
         networkManager = NetworkManager.getInstance(this)
@@ -1670,5 +1673,64 @@ class MainActivity : AppCompatActivity() {
             "txt" -> "text/plain"
             else -> "application/octet-stream"
         }
+    }
+
+    private fun clearCacheDirectory() {
+        Thread {
+            try {
+                val cacheDir = File(applicationContext.getExternalFilesDir(null), "cacheView")
+
+                if (cacheDir.exists() && cacheDir.isDirectory) {
+                    val files = cacheDir.listFiles()
+                    if (files != null) {
+                        for (file in files) {
+                            if (file.isFile) {
+                                if (file.delete()) {
+                                    LogManager.log(TAG, "已删除cacheView目录文件: ${file.name}", "DEBUG")
+                                } else {
+                                    LogManager.log(TAG, "删除cacheView目录文件失败: ${file.name}", "WARN")
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                LogManager.log(TAG, "清理cacheView目录失败: ${e.message}", "ERROR")
+            }
+        }.start()
+
+        startCacheCleanupTimer()
+    }
+
+    private fun startCacheCleanupTimer() {
+        val cleanupHandler = android.os.Handler(android.os.Looper.getMainLooper())
+        val cleanupRunnable = object : Runnable {
+            override fun run() {
+                Thread {
+                    try {
+                        val cacheDir = File(applicationContext.getExternalFilesDir(null), "cacheView")
+
+                        if (cacheDir.exists() && cacheDir.isDirectory) {
+                            val files = cacheDir.listFiles()
+                            if (files != null) {
+                                for (file in files) {
+                                    if (file.isFile) {
+                                        if (file.delete()) {
+                                            LogManager.log(TAG, "定时清理cacheView目录文件: ${file.name}", "DEBUG")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } catch (e: Exception) {
+                        LogManager.log(TAG, "定时清理cacheView目录失败: ${e.message}", "ERROR")
+                    }
+                }.start()
+
+                cleanupHandler.postDelayed(this, 10 * 60 * 1000)
+            }
+        }
+
+        cleanupHandler.postDelayed(cleanupRunnable, 10 * 60 * 1000)
     }
 }

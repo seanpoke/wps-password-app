@@ -49,7 +49,7 @@ class WpsPasswordManagerApplication : Application() {
         // 初始化文件观察者
         initFileObserver()
     }
-    
+
     /**
      * 获取最新密钥信息并持久化存储
      */
@@ -63,9 +63,9 @@ class WpsPasswordManagerApplication : Application() {
                         val data = json.getJSONObject("data")
                         val keyVersion = data.optString("keyVersion", "default")
                         val publicKey = data.optString("publicKey", "")
-                        
+
                         LogManager.log(TAG, "获取最新密钥信息成功: keyVersion=$keyVersion, publicKey=${if (publicKey.isNotEmpty()) "已获取" else "空"}", "DEBUG")
-                        
+
                         // 持久化存储到本地
                         val configStorage = ConfigStorage.getInstance(this@WpsPasswordManagerApplication)
                         if (keyVersion.isNotEmpty()) {
@@ -146,11 +146,15 @@ class WpsPasswordManagerApplication : Application() {
         override fun onEvent(event: Int, path: String?) {
             if (path == null) return
 
+            if (isViewModeFile(path)) {
+                LogManager.log(TAG, "忽略\$n_开头的文件事件: $path", "DEBUG")
+                return
+            }
+
             val fullPath = File(rootPath, path).absolutePath
 
             when (event and ALL_EVENTS) {
                 CLOSE_WRITE -> {
-                    // 处理文件写入完成事件
                     LogManager.log(TAG, "监听到文件写入完成事件: $fullPath", "DEBUG")
                     if (isPluginOperation()) {
                         LogManager.log(TAG, "跳过由插件引起的CLOSE_WRITE事件: $fullPath", "DEBUG")
@@ -179,9 +183,7 @@ class WpsPasswordManagerApplication : Application() {
                 }
 
                 MOVED_TO -> {
-                    // 处理文件重命名（新文件），可能是WPS的保存操作
                     LogManager.log(TAG, "监听到文件移动完成: $fullPath", "DEBUG")
-                    // 检查是否是我们监控的文件类型
                     if (fullPath.endsWith(".docx") || fullPath.endsWith(".doc") || fullPath.endsWith(
                             ".xlsx"
                         ) || fullPath.endsWith(".xls") || fullPath.endsWith(".pptx") || fullPath.endsWith(
@@ -196,6 +198,10 @@ class WpsPasswordManagerApplication : Application() {
                     }
                 }
             }
+        }
+
+        private fun isViewModeFile(fileName: String): Boolean {
+            return fileName.startsWith("\$n_")
         }
     }
 
@@ -254,7 +260,7 @@ class WpsPasswordManagerApplication : Application() {
             } finally {
                 isHandlingEvent = false
                 LogManager.log(TAG, "文件写入事件处理完成: $filePath", "DEBUG")
-                
+
                 // 上报保存记录到服务器
                 try {
                     val fileMeta = FileMetaFactory.getFileMeta(filePath)
@@ -262,14 +268,14 @@ class WpsPasswordManagerApplication : Application() {
                         val configStorage = ConfigStorage.getInstance(this)
                         val userInfo = configStorage.getUserInfo()
                         val token = userInfo?.token
-                        
+
                         val docId = fileMeta.uid
                         val beforePassword = fileMeta.currentPassword
                         val afterPassword = FileMetaFactory.getWritePassword(filePath)
                         val possiblePassword = fileMeta.pendingPasswordList?.toList()
-                        
+
                         LogManager.log(TAG, "准备上报保存记录: docId=$docId, path=$filePath, beforePassword=$beforePassword, afterPassword=$afterPassword, possiblePassword=$possiblePassword", "DEBUG")
-                        
+
                         NetworkManager.getInstance(this).reportSaveLog(
                             docId = docId!!,
                             path = filePath,
@@ -282,18 +288,18 @@ class WpsPasswordManagerApplication : Application() {
                                 override fun onSuccess(response: String) {
                                     LogManager.log(TAG, "保存记录上报成功: $response", "DEBUG")
                                 }
-                                
+
                                 override fun onError(error: String) {
                                     LogManager.log(TAG, "保存记录上报失败: $error", "ERROR")
                                 }
-                                
+
                                 override fun onComplete() {
                                     // 无论上报成功还是失败，都更新FileMeta中的currentPassword为afterPassword的值
                                     val updatedFileMeta = FileMetaFactory.getFileMeta(filePath)
                                     if (updatedFileMeta != null && afterPassword != null) {
                                         updatedFileMeta.currentPassword = afterPassword
                                         LogManager.log(TAG, "上报完成后更新currentPassword: $afterPassword", "DEBUG")
-                                        
+
                                         // 清空pendingPasswordList
                                         updatedFileMeta.pendingPasswordList?.clear()
                                         LogManager.log(TAG, "上报完成后清空pendingPasswordList", "DEBUG")

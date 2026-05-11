@@ -476,18 +476,166 @@ class ProxyActivity : AppCompatActivity() {
                 forwardToWps(localFile, uri)
             }
         } else {
-            val documentsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOCUMENTS)
-            val wpsManagementDir = File(documentsDir, "WpsManagement")
-            val targetFile = File(wpsManagementDir, fileName)
-            
-            if (targetFile.exists() && targetFile.length() > 0) {
-                LogManager.log(TAG, "插件目录中存在同名文件，显示【文档已存在】弹窗", "DEBUG")
-                showFileExistsDialog(uri, fileName)
-            } else {
-                LogManager.log(TAG, "插件目录中不存在同名文件，显示【文档保存】弹窗", "DEBUG")
-                val isHashName = FileNameResolver.isHashFileName(fileName)
-                showSaveFileDialog(uri, fileName, isHashName)
+            LogManager.log(TAG, "文件不在当前插件目录，显示【打开方式】弹窗", "DEBUG")
+            showOpenModeDialog(uri, fileName)
+        }
+    }
+
+    private fun showOpenModeDialog(uri: Uri, fileName: String) {
+        val dialogBuilder = android.app.AlertDialog.Builder(this, R.style.Theme_WpsPasswordManager_LightDialog)
+        dialogBuilder.setTitle("打开方式")
+
+        val inputLayout = android.widget.LinearLayout(this)
+        inputLayout.orientation = android.widget.LinearLayout.VERTICAL
+        inputLayout.setPadding(48, 24, 48, 16)
+
+        val titleLabel = android.widget.TextView(this)
+        titleLabel.text = "请选择打开方式"
+        titleLabel.setTextColor(resources.getColor(android.R.color.black))
+        titleLabel.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 16f)
+        inputLayout.addView(titleLabel)
+
+        val fileNameLabel = android.widget.TextView(this)
+        fileNameLabel.text = "文件: $fileName"
+        fileNameLabel.setTextColor(resources.getColor(android.R.color.darker_gray))
+        fileNameLabel.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 14f)
+        val fileNameParams = android.widget.LinearLayout.LayoutParams(
+            android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        fileNameParams.topMargin = 12
+        fileNameLabel.layoutParams = fileNameParams
+        inputLayout.addView(fileNameLabel)
+
+        dialogBuilder.setView(inputLayout)
+
+        dialogBuilder.setPositiveButton("编辑") { dialog, which ->
+            dialog.dismiss()
+            LogManager.log(TAG, "用户选择【编辑】模式", "DEBUG")
+            handleEditMode(uri, fileName)
+        }
+
+        dialogBuilder.setNegativeButton("查看") { dialog, which ->
+            dialog.dismiss()
+            LogManager.log(TAG, "用户选择【查看】模式", "DEBUG")
+            openFileInViewMode(uri, fileName)
+        }
+
+        dialogBuilder.setNeutralButton("取消") { dialog, which ->
+            dialog.dismiss()
+            finish()
+        }
+
+        val dialog = dialogBuilder.create()
+        dialog.show()
+
+        setupDialogButtons(dialog)
+
+        val window = dialog.window
+        if (window != null) {
+            val displayMetrics = resources.displayMetrics
+            val dialogWidth = (displayMetrics.widthPixels * 0.85).toInt()
+            window.setLayout(dialogWidth, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
+            window.setGravity(android.view.Gravity.CENTER)
+            window.setBackgroundDrawableResource(android.R.color.white)
+        }
+    }
+
+    private fun handleEditMode(uri: Uri, fileName: String) {
+        val documentsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOCUMENTS)
+        val wpsManagementDir = File(documentsDir, "WpsManagement")
+        val targetFile = File(wpsManagementDir, fileName)
+
+        if (targetFile.exists() && targetFile.length() > 0) {
+            LogManager.log(TAG, "插件目录中存在同名文件，显示【文档已存在】弹窗", "DEBUG")
+            showFileExistsDialog(uri, fileName)
+        } else {
+            LogManager.log(TAG, "插件目录中不存在同名文件，显示【文档保存】弹窗", "DEBUG")
+            val isHashName = FileNameResolver.isHashFileName(fileName)
+            showSaveFileDialog(uri, fileName, isHashName)
+        }
+    }
+
+    private fun openFileInViewMode(uri: Uri, fileName: String) {
+        val cacheDir = File(getExternalFilesDir(null), "cacheView")
+
+        if (!cacheDir.exists()) {
+            cacheDir.mkdirs()
+            LogManager.log(TAG, "创建cacheView目录: ${cacheDir.absolutePath}", "DEBUG")
+        }
+
+        val targetFileName = generateViewModeFileName(cacheDir, fileName)
+        val targetFile = File(cacheDir, targetFileName)
+
+        val loadingBuilder = android.app.AlertDialog.Builder(this, R.style.Theme_WpsPasswordManager_LightDialog)
+        loadingBuilder.setMessage("正在准备文件...")
+        loadingBuilder.setCancelable(false)
+        val loadingDialog = loadingBuilder.create()
+        loadingDialog.show()
+
+        Thread {
+            try {
+                val copySuccess = copyFileFromContentUri(uri, targetFile)
+                runOnUiThread {
+                    loadingDialog.dismiss()
+                    if (copySuccess) {
+                        LogManager.log(TAG, "查看模式文件拷贝成功: ${targetFile.absolutePath}", "DEBUG")
+                        processFile(targetFile) { localFile ->
+                            if (localFile != null) {
+                                saveFileUriToPreferences(localFile.absolutePath)
+                            } else {
+                                saveFileUriToPreferences(uri.toString())
+                            }
+                            forwardToWps(localFile, uri)
+                        }
+                    } else {
+                        android.widget.Toast.makeText(this, "文件准备失败", android.widget.Toast.LENGTH_SHORT).show()
+                        forwardToWps(null, uri)
+                    }
+                }
+            } catch (e: Exception) {
+                runOnUiThread {
+                    loadingDialog.dismiss()
+                    android.widget.Toast.makeText(this, "文件操作失败", android.widget.Toast.LENGTH_SHORT).show()
+                    LogManager.log(TAG, "查看模式文件操作失败: ${e.message}", "ERROR")
+                    forwardToWps(null, uri)
+                }
             }
+        }.start()
+    }
+
+    private fun generateViewModeFileName(cacheDir: File, originalFileName: String): String {
+        val prefix = "\$n_"
+        val baseFileName = prefix + originalFileName
+        
+        val existingFile = File(cacheDir, baseFileName)
+        if (!existingFile.exists()) {
+            LogManager.log(TAG, "cache目录中不存在同名文件，使用新文件名: $baseFileName", "DEBUG")
+            return baseFileName
+        }
+
+        if (existingFile.delete()) {
+            LogManager.log(TAG, "成功删除cache目录中的旧文件: ${existingFile.absolutePath}", "DEBUG")
+            return baseFileName
+        } else {
+            val timestamp = System.currentTimeMillis()
+            val extensionIndex = originalFileName.lastIndexOf('.')
+            val nameWithoutExtension = if (extensionIndex > 0) {
+                originalFileName.substring(0, extensionIndex)
+            } else {
+                originalFileName
+            }
+            val extension = if (extensionIndex > 0) {
+                originalFileName.substring(extensionIndex)
+            } else {
+                ""
+            }
+            
+            val dateFormat = java.text.SimpleDateFormat("HHmmssSSS", java.util.Locale.getDefault())
+            val timeStr = dateFormat.format(java.util.Date(timestamp))
+            val newFileName = "$prefix$nameWithoutExtension" + "_$timeStr$extension"
+            LogManager.log(TAG, "删除旧文件失败，使用带时间戳的文件名: $newFileName", "DEBUG")
+            return newFileName
         }
     }
 
