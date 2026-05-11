@@ -495,17 +495,17 @@ class ProxyActivity : AppCompatActivity() {
         titleLabel.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 16f)
         inputLayout.addView(titleLabel)
 
-        val fileNameLabel = android.widget.TextView(this)
-        fileNameLabel.text = "文件: $fileName"
-        fileNameLabel.setTextColor(resources.getColor(android.R.color.darker_gray))
-        fileNameLabel.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 14f)
-        val fileNameParams = android.widget.LinearLayout.LayoutParams(
+        val tipLabel = android.widget.TextView(this)
+        tipLabel.text = "在查看模式下，对文档的任何编辑行为都不会被插件保存"
+        tipLabel.setTextColor(resources.getColor(android.R.color.darker_gray))
+        tipLabel.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 14f)
+        val tipParams = android.widget.LinearLayout.LayoutParams(
             android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
             android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
         )
-        fileNameParams.topMargin = 12
-        fileNameLabel.layoutParams = fileNameParams
-        inputLayout.addView(fileNameLabel)
+        tipParams.topMargin = 24
+        tipLabel.layoutParams = tipParams
+        inputLayout.addView(tipLabel)
 
         dialogBuilder.setView(inputLayout)
 
