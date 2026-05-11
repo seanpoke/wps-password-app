@@ -12,6 +12,7 @@ import android.widget.ListView
 import android.widget.Spinner
 import android.widget.ArrayAdapter
 import android.widget.TextView
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.wpspasswordmanager.R
@@ -31,18 +32,27 @@ import com.wpspasswordmanager.storage.ServerConfig
 import com.wpspasswordmanager.storage.UserInfo
 import com.google.gson.Gson
 import com.wpspasswordmanager.utils.LogManager
+import com.wpspasswordmanager.DirectoryMigrationManager
 import java.io.File
 import java.io.FileOutputStream
 
 class MainActivity : AppCompatActivity() {
     private val OVERLAY_PERMISSION_REQUEST_CODE = 100
     private val QUERY_ALL_PACKAGES_REQUEST_CODE = 101
+    private val STORAGE_PERMISSION_REQUEST_CODE = 102
+    private val SAF_REQUEST_CODE = 103
     private val TAG = "MainActivity"
+    
+    private var clickCount = 0
+    private var migrationButtonVisible = false
+    private lateinit var permissionStatusTitle: TextView
 
     private lateinit var accessibilityStatus: TextView
     private lateinit var overlayStatus: TextView
     private lateinit var enableAccessibilityButton: Button
     private lateinit var enableOverlayButton: Button
+    private lateinit var migrationStatus: TextView
+    private lateinit var migrationButton: Button
 
     // 配置管理UI元素
     private lateinit var ipAddressInput: EditText
@@ -113,8 +123,8 @@ class MainActivity : AppCompatActivity() {
         // 加载已保存的配置
         loadSavedConfig()
 
-        // 检查并请求 QUERY_ALL_PACKAGES 权限（Android 11+）
-        checkAndRequestQueryAllPackagesPermission()
+        // 检查并请求存储权限（QUERY_ALL_PACKAGES 权限在存储权限回调中请求）
+        checkAndRequestStoragePermission()
 
         // 初始化会话过期广播接收器
         sessionExpiredReceiver = object : android.content.BroadcastReceiver() {
@@ -159,6 +169,11 @@ class MainActivity : AppCompatActivity() {
         overlayStatus = findViewById(R.id.overlay_status)
         enableAccessibilityButton = findViewById(R.id.enable_accessibility_button)
         enableOverlayButton = findViewById(R.id.enable_overlay_button)
+        migrationStatus = findViewById(R.id.migration_status)
+        migrationButton = findViewById(R.id.migration_button)
+        permissionStatusTitle = findViewById(R.id.permission_status_title)
+        
+        migrationButton.visibility = View.GONE
 
         // 初始化配置管理UI元素
         ipAddressInput = findViewById(R.id.ip_address_input)
@@ -209,23 +224,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun handleTitleClick() {
-        titleClickCount++
-        
-        // 重置计时器
-        titleClickTimer?.removeCallbacksAndMessages(null)
-        titleClickTimer = android.os.Handler()
-        titleClickTimer?.postDelayed({
-            titleClickCount = 0
-        }, 1000) // 1秒内点击3次
-        
-        // 连续点击3次，打开日志页面
-        if (titleClickCount == 3) {
-            val intent = Intent(this, LogActivity::class.java)
-            startActivity(intent)
-            titleClickCount = 0
-        }
-    }
+
 
     private fun setupClickListeners() {
         enableAccessibilityButton.setOnClickListener {
@@ -253,6 +252,14 @@ class MainActivity : AppCompatActivity() {
 
         installWpsButton.setOnClickListener {
             openWpsInMarket()
+        }
+
+        migrationButton.setOnClickListener {
+            executeDirectoryMigration()
+        }
+
+        permissionStatusTitle.setOnClickListener {
+            handleTitleClick()
         }
     }
 
@@ -285,6 +292,69 @@ class MainActivity : AppCompatActivity() {
 
     private fun clearButtonTimeout() {
         buttonTimeoutTimer?.removeCallbacksAndMessages(null)
+    }
+
+    private fun handleTitleClick() {
+        clickCount++
+        
+        if (migrationButtonVisible) {
+            migrationButton.visibility = View.GONE
+            migrationButtonVisible = false
+            clickCount = 0
+        } else {
+            if (clickCount >= 3) {
+                migrationButton.visibility = View.VISIBLE
+                migrationButtonVisible = true
+                clickCount = 0
+            }
+        }
+    }
+
+    private fun executeDirectoryMigration() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            requestDocumentsAccess()
+        } else {
+            performMigration()
+        }
+    }
+
+    private fun requestDocumentsAccess() {
+        LogManager.log(TAG, "请求 Documents 目录访问权限 (SAF)", "DEBUG")
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        intent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+        intent.addFlags(Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
+        startActivityForResult(intent, SAF_REQUEST_CODE)
+    }
+
+    private fun performMigration() {
+        migrationButton.isEnabled = false
+        migrationButton.text = "执行中..."
+        migrationStatus.text = "目录迁移: 正在执行..."
+        migrationStatus.setTextColor(resources.getColor(android.R.color.holo_orange_dark))
+
+        DirectoryMigrationManager.execute(this, object : DirectoryMigrationManager.Callback {
+            override fun onSuccess() {
+                runOnUiThread {
+                    migrationButton.isEnabled = true
+                    migrationButton.text = "执行目录迁移"
+                    migrationStatus.text = "目录迁移: 已完成"
+                    migrationStatus.setTextColor(resources.getColor(android.R.color.holo_green_dark))
+                    Toast.makeText(this@MainActivity, "目录迁移成功", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onError(errorCode: Int, message: String) {
+                runOnUiThread {
+                    migrationButton.isEnabled = true
+                    migrationButton.text = "执行目录迁移"
+                    migrationStatus.text = "目录迁移: 失败"
+                    migrationStatus.setTextColor(resources.getColor(android.R.color.holo_red_dark))
+                    Toast.makeText(this@MainActivity, "目录迁移失败: $message", Toast.LENGTH_LONG).show()
+                }
+            }
+        })
     }
 
     override fun onResume() {
@@ -753,8 +823,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+
         if (requestCode == OVERLAY_PERMISSION_REQUEST_CODE) {
-            // 更新权限状态
             updatePermissionStatus()
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -764,13 +834,48 @@ class MainActivity : AppCompatActivity() {
                     Toast.makeText(this, "未获得显示在其他应用之上的权限，悬浮按钮功能将无法使用", Toast.LENGTH_LONG).show()
                 }
             }
+        } else if (requestCode == SAF_REQUEST_CODE) {
+            LogManager.log(TAG, "处理 SAF 权限请求结果", "DEBUG")
+            
+            if (resultCode == RESULT_OK && data != null) {
+                val uri = data.data
+                if (uri != null) {
+                    LogManager.log(TAG, "SAF 权限已授予: $uri", "DEBUG")
+                    contentResolver.takePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                    )
+                    Toast.makeText(this, "已获得 Documents 目录访问权限", Toast.LENGTH_SHORT).show()
+                    performMigration()
+                }
+            } else {
+                LogManager.log(TAG, "SAF 权限被拒绝", "WARN")
+                migrationStatus.text = "目录迁移: 权限被拒绝"
+                migrationStatus.setTextColor(resources.getColor(android.R.color.holo_red_dark))
+                Toast.makeText(this, "未获得 Documents 目录访问权限，无法执行目录迁移", Toast.LENGTH_LONG).show()
+            }
         }
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         
-        if (requestCode == QUERY_ALL_PACKAGES_REQUEST_CODE) {
+        if (requestCode == STORAGE_PERMISSION_REQUEST_CODE) {
+            LogManager.log(TAG, "处理存储权限请求结果", "DEBUG")
+            
+            val readGranted = grantResults.isNotEmpty() && 
+                grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED
+            val writeGranted = grantResults.size > 1 && 
+                grantResults[1] == android.content.pm.PackageManager.PERMISSION_GRANTED
+            
+            if (readGranted && writeGranted) {
+                LogManager.log(TAG, "存储权限已授予", "DEBUG")
+                Toast.makeText(this, "已获得存储权限", Toast.LENGTH_SHORT).show()
+            }
+            
+            // 存储权限请求完成后，再请求 QUERY_ALL_PACKAGES 权限
+            checkAndRequestQueryAllPackagesPermission()
+        } else if (requestCode == QUERY_ALL_PACKAGES_REQUEST_CODE) {
             LogManager.log(TAG, "处理 QUERY_ALL_PACKAGES 权限请求结果", "DEBUG")
             
             if (grantResults.isNotEmpty() && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) {
@@ -851,6 +956,32 @@ class MainActivity : AppCompatActivity() {
             android.content.pm.PackageManager.PERMISSION_GRANTED -> "granted"
             android.content.pm.PackageManager.PERMISSION_DENIED -> "denied"
             else -> "unknown_$result"
+        }
+    }
+
+    private fun checkAndRequestStoragePermission() {
+        LogManager.log(TAG, "检查存储权限", "DEBUG")
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val readGranted = checkSelfPermission(android.Manifest.permission.READ_EXTERNAL_STORAGE) ==
+                    android.content.pm.PackageManager.PERMISSION_GRANTED
+            val writeGranted = checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) ==
+                    android.content.pm.PackageManager.PERMISSION_GRANTED
+
+            if (!readGranted || !writeGranted) {
+                LogManager.log(TAG, "存储权限未授予，请求权限", "DEBUG")
+                requestPermissions(
+                    arrayOf(
+                        android.Manifest.permission.READ_EXTERNAL_STORAGE,
+                        android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+                    ),
+                    STORAGE_PERMISSION_REQUEST_CODE
+                )
+            } else {
+                LogManager.log(TAG, "存储权限已授予", "DEBUG")
+            }
+        } else {
+            LogManager.log(TAG, "Android 版本低于 6.0，存储权限自动授予", "DEBUG")
         }
     }
 
