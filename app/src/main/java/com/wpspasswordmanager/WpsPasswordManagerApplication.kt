@@ -138,6 +138,21 @@ class WpsPasswordManagerApplication : Application() {
     }
 
     /**
+     * 重启文件观察者，用于目录迁移后重新监听
+     */
+    fun restartFileObserver() {
+        LogManager.log(TAG, "重启文件观察者", "DEBUG")
+        
+        // 停止当前的文件观察者
+        fileObserver?.stopWatching()
+        LogManager.log(TAG, "已停止旧的文件观察者", "DEBUG")
+        
+        // 重新初始化文件观察者
+        initFileObserver()
+        LogManager.log(TAG, "文件观察者已重启", "DEBUG")
+    }
+
+    /**
      * 简单文件观察者，只监控指定目录
      */
     private inner class SimpleFileObserver(path: String) : FileObserver(path, ALL_EVENTS) {

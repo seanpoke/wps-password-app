@@ -38,6 +38,38 @@ class DirectoryMigrationManager(private val context: Context) {
         const val ERROR_CODE_PERMISSION_DENIED = 1008
         const val ERROR_CODE_FILE_LOCKED = 1009
 
+        private var migrationExceptionRecord: MigrationExceptionRecord? = null
+
+        data class MigrationExceptionRecord(
+            val failedStep: Int,
+            val timestamp: Long,
+            val errorCode: Int,
+            val errorMessage: String
+        )
+
+        fun setMigrationExceptionRecord(step: Int, errorCode: Int, message: String) {
+            migrationExceptionRecord = MigrationExceptionRecord(
+                failedStep = step,
+                timestamp = System.currentTimeMillis(),
+                errorCode = errorCode,
+                errorMessage = message
+            )
+            LogManager.log(TAG, "记录迁移异常: 步骤=$step, 错误码=$errorCode, 消息=$message", "ERROR")
+        }
+
+        fun getMigrationExceptionRecord(): MigrationExceptionRecord? {
+            return migrationExceptionRecord
+        }
+
+        fun clearMigrationExceptionRecord() {
+            migrationExceptionRecord = null
+            LogManager.log(TAG, "已清除迁移异常记录", "INFO")
+        }
+
+        fun hasMigrationExceptionRecord(): Boolean {
+            return migrationExceptionRecord != null
+        }
+
         fun execute(context: Context, callback: Callback? = null) {
             Thread {
                 try {
@@ -70,11 +102,7 @@ class DirectoryMigrationManager(private val context: Context) {
         val tempDir = File(documentsDir, TEMP_DIR_NAME)
         val targetDir = File(documentsDir, TARGET_DIR_NAME)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            migrateWithSAF(sourceDir, tempDir, targetDir, callback, mainHandler)
-        } else {
-            migrateWithLegacyAPI(sourceDir, tempDir, targetDir, callback, mainHandler)
-        }
+        migrateWithLegacyAPI(sourceDir, tempDir, targetDir, callback, mainHandler)
     }
 
     private fun migrateWithSAF(sourceDir: File, tempDir: File, targetDir: File, 
@@ -156,7 +184,7 @@ class DirectoryMigrationManager(private val context: Context) {
             LogManager.log(TAG, "[INFO] 原目录删除成功", "INFO")
         } else {
             LogManager.log(TAG, "[ERROR] 原目录删除失败, 错误码: $ERROR_CODE_DELETE_FAILED", "ERROR")
-            executeRollback(tempDocFile)
+            setMigrationExceptionRecord(5, ERROR_CODE_DELETE_FAILED, "原目录删除失败")
             handler.post { callback?.onError(ERROR_CODE_DELETE_FAILED, "原目录删除失败") }
             return
         }
@@ -166,7 +194,7 @@ class DirectoryMigrationManager(private val context: Context) {
             LogManager.log(TAG, "[INFO] 临时目录重命名成功：$TEMP_DIR_NAME -> $TARGET_DIR_NAME", "INFO")
         } else {
             LogManager.log(TAG, "[ERROR] 临时目录重命名失败, 错误码: $ERROR_CODE_RENAME_FAILED", "ERROR")
-            executeRollback(tempDocFile)
+            setMigrationExceptionRecord(6, ERROR_CODE_RENAME_FAILED, "临时目录重命名失败")
             handler.post { callback?.onError(ERROR_CODE_RENAME_FAILED, "临时目录重命名失败") }
             return
         }
@@ -272,11 +300,22 @@ class DirectoryMigrationManager(private val context: Context) {
         }
 
         LogManager.log(TAG, "--- 阶段5: 原目录删除 ---", "INFO")
+        
+        // 测试模式：故意让阶段5失败以测试异常处理流程
+        val isTestMode = false  // 设置为 true 可触发测试
+        if (isTestMode) {
+            LogManager.log(TAG, "[TEST] 测试模式：故意让阶段5失败", "WARN")
+            LogManager.log(TAG, "[ERROR] 原目录删除失败(测试模式), 错误码: $ERROR_CODE_DELETE_FAILED", "ERROR")
+            setMigrationExceptionRecord(5, ERROR_CODE_DELETE_FAILED, "原目录删除失败(测试模式)")
+            handler.post { callback?.onError(ERROR_CODE_DELETE_FAILED, "原目录删除失败(测试模式)") }
+            return
+        }
+        
         if (sourceDir.deleteRecursively()) {
             LogManager.log(TAG, "[INFO] 原目录删除成功", "INFO")
         } else {
             LogManager.log(TAG, "[ERROR] 原目录删除失败, 错误码: $ERROR_CODE_DELETE_FAILED", "ERROR")
-            executeRollbackLegacy(tempDir)
+            setMigrationExceptionRecord(5, ERROR_CODE_DELETE_FAILED, "原目录删除失败")
             handler.post { callback?.onError(ERROR_CODE_DELETE_FAILED, "原目录删除失败") }
             return
         }
@@ -286,12 +325,13 @@ class DirectoryMigrationManager(private val context: Context) {
             LogManager.log(TAG, "[INFO] 临时目录重命名成功：$TEMP_DIR_NAME -> $TARGET_DIR_NAME", "INFO")
         } else {
             LogManager.log(TAG, "[ERROR] 临时目录重命名失败, 错误码: $ERROR_CODE_RENAME_FAILED", "ERROR")
-            executeRollbackLegacy(tempDir)
+            setMigrationExceptionRecord(6, ERROR_CODE_RENAME_FAILED, "临时目录重命名失败")
             handler.post { callback?.onError(ERROR_CODE_RENAME_FAILED, "临时目录重命名失败") }
             return
         }
 
         LogManager.log(TAG, "========== 目录迁移流程结束 ==========", "INFO")
+        clearMigrationExceptionRecord()
         handler.post { callback?.onSuccess() }
     }
 

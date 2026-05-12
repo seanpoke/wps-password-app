@@ -3,6 +3,7 @@ package com.wpspasswordmanager.ui
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.provider.Settings
 import android.widget.Button
 import android.widget.CheckBox
@@ -17,8 +18,6 @@ import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.wpspasswordmanager.R
-import com.wpspasswordmanager.business.PasswordGenerator
-import com.wpspasswordmanager.business.FileMetaManager
 import com.wpspasswordmanager.business.WpsAppInfo
 import com.wpspasswordmanager.business.WpsManager
 import com.wpspasswordmanager.monitor.AccessibilityServiceManager
@@ -30,10 +29,10 @@ import com.wpspasswordmanager.network.LoginResponse
 import com.wpspasswordmanager.network.ErrorResponse
 import com.wpspasswordmanager.storage.ConfigStorage
 import com.wpspasswordmanager.storage.ServerConfig
-import com.wpspasswordmanager.storage.UserInfo
 import com.google.gson.Gson
 import com.wpspasswordmanager.utils.LogManager
 import com.wpspasswordmanager.DirectoryMigrationManager
+import com.wpspasswordmanager.WpsPasswordManagerApplication
 import java.io.File
 import java.io.FileOutputStream
 
@@ -42,10 +41,14 @@ class MainActivity : AppCompatActivity() {
     private val QUERY_ALL_PACKAGES_REQUEST_CODE = 101
     private val STORAGE_PERMISSION_REQUEST_CODE = 102
     private val SAF_REQUEST_CODE = 103
+    private val MANAGE_STORAGE_REQUEST_CODE = 104
     private val TAG = "MainActivity"
     
     private var permissionTitleClickCount = 0
+    private var permissionTitleFirstClickTime = 0L
     private var appTitleClickCount = 0
+    private var appTitleFirstClickTime = 0L
+    private val CLICK_TIME_WINDOW = 1000L
     private var migrationButtonVisible = false
     private lateinit var permissionStatusTitle: TextView
 
@@ -301,41 +304,111 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun handlePermissionTitleClick() {
-        permissionTitleClickCount++
+        val currentTime = System.currentTimeMillis()
         
         if (migrationButtonVisible) {
             migrationButton.visibility = View.GONE
             migrationButtonVisible = false
             permissionTitleClickCount = 0
+            permissionTitleFirstClickTime = 0L
+            return
+        }
+        
+        if (permissionTitleClickCount == 0) {
+            permissionTitleFirstClickTime = currentTime
+            permissionTitleClickCount = 1
         } else {
-            if (permissionTitleClickCount >= 3) {
-                migrationButton.visibility = View.VISIBLE
-                migrationButtonVisible = true
-                permissionTitleClickCount = 0
+            if (currentTime - permissionTitleFirstClickTime <= CLICK_TIME_WINDOW) {
+                permissionTitleClickCount++
+                if (permissionTitleClickCount >= 3) {
+                    migrationButton.visibility = View.VISIBLE
+                    migrationButtonVisible = true
+                    permissionTitleClickCount = 0
+                    permissionTitleFirstClickTime = 0L
+                }
+            } else {
+                permissionTitleClickCount = 1
+                permissionTitleFirstClickTime = currentTime
             }
         }
     }
 
     private fun handleAppTitleClick() {
-        appTitleClickCount++
+        val currentTime = System.currentTimeMillis()
         
-        if (appTitleClickCount >= 3) {
-            val intent = Intent(this, LogActivity::class.java)
-            startActivity(intent)
-            appTitleClickCount = 0
+        if (appTitleClickCount == 0) {
+            appTitleFirstClickTime = currentTime
+            appTitleClickCount = 1
+        } else {
+            if (currentTime - appTitleFirstClickTime <= CLICK_TIME_WINDOW) {
+                appTitleClickCount++
+                if (appTitleClickCount >= 3) {
+                    val intent = Intent(this, LogActivity::class.java)
+                    startActivity(intent)
+                    appTitleClickCount = 0
+                    appTitleFirstClickTime = 0L
+                }
+            } else {
+                appTitleClickCount = 1
+                appTitleFirstClickTime = currentTime
+            }
         }
     }
 
     private fun executeDirectoryMigration() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            requestDocumentsAccess()
-        } else {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (!Environment.isExternalStorageManager()) {
+                requestManageStoragePermission()
+                return
+            }
+        }
+        
+        if (DirectoryMigrationManager.hasMigrationExceptionRecord()) {
+            showMigrationExceptionDialog()
+            return
+        }
+        
+        performMigration()
+    }
+
+    private fun showMigrationExceptionDialog() {
+        val record = DirectoryMigrationManager.getMigrationExceptionRecord()
+        val message = "上一次迁移异常，原文件可能已经丢失，请人工查看WpsManagement目录中的文件是否完整"
+        
+        LogManager.log(TAG, "显示迁移异常对话框: 步骤=${record?.failedStep}, 错误码=${record?.errorCode}", "WARN")
+        
+        val builder = android.app.AlertDialog.Builder(this, R.style.Theme_WpsPasswordManager_LightDialog)
+        builder.setTitle("迁移异常提醒")
+        builder.setMessage(message)
+        
+        builder.setPositiveButton("已确认完整") { dialog, which ->
+            LogManager.log(TAG, "用户确认文件完整，清除异常记录并执行迁移", "INFO")
+            DirectoryMigrationManager.clearMigrationExceptionRecord()
+            dialog.dismiss()
             performMigration()
         }
+        
+        builder.setNegativeButton("取消") { dialog, which ->
+            LogManager.log(TAG, "用户取消迁移操作", "INFO")
+            dialog.dismiss()
+        }
+        
+        val dialog = builder.create()
+        dialog.setCancelable(false)
+        dialog.show()
+        setupDialogButtons(dialog)
+        dialog.window?.setBackgroundDrawableResource(android.R.color.white)
+    }
+
+    private fun requestManageStoragePermission() {
+        LogManager.log(TAG, "请求 MANAGE_EXTERNAL_STORAGE 权限", "DEBUG")
+        val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+        intent.data = android.net.Uri.parse("package:$packageName")
+        startActivityForResult(intent, MANAGE_STORAGE_REQUEST_CODE)
     }
 
     private fun requestDocumentsAccess() {
-        LogManager.log(TAG, "请求 Documents 目录访问权限 (SAF)", "DEBUG")
+        LogManager.log(TAG, "请求 Documents 目录访问权限 (SAF) - 降级方案", "DEBUG")
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
@@ -358,6 +431,9 @@ class MainActivity : AppCompatActivity() {
                     migrationStatus.text = "目录迁移: 已完成"
                     migrationStatus.setTextColor(resources.getColor(android.R.color.holo_green_dark))
                     Toast.makeText(this@MainActivity, "目录迁移成功", Toast.LENGTH_SHORT).show()
+                    
+                    // 目录迁移成功后重启文件观察者
+                    WpsPasswordManagerApplication.instance.restartFileObserver()
                 }
             }
 
@@ -365,9 +441,12 @@ class MainActivity : AppCompatActivity() {
                 runOnUiThread {
                     migrationButton.isEnabled = true
                     migrationButton.text = "执行目录迁移"
-                    migrationStatus.text = "目录迁移: 失败"
+                    migrationStatus.text = "目录迁移: 失败 - $message"
                     migrationStatus.setTextColor(resources.getColor(android.R.color.holo_red_dark))
-                    Toast.makeText(this@MainActivity, "目录迁移失败: $message", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this@MainActivity, "目录迁移失败(错误码: $errorCode): $message", Toast.LENGTH_LONG).show()
+                    
+                    // 无论迁移成功与否，都重启文件观察者
+                    WpsPasswordManagerApplication.instance.restartFileObserver()
                 }
             }
         })
@@ -869,6 +948,21 @@ class MainActivity : AppCompatActivity() {
                 migrationStatus.text = "目录迁移: 权限被拒绝"
                 migrationStatus.setTextColor(resources.getColor(android.R.color.holo_red_dark))
                 Toast.makeText(this, "未获得 Documents 目录访问权限，无法执行目录迁移", Toast.LENGTH_LONG).show()
+            }
+        } else if (requestCode == MANAGE_STORAGE_REQUEST_CODE) {
+            LogManager.log(TAG, "处理 MANAGE_EXTERNAL_STORAGE 权限请求结果", "DEBUG")
+            
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                if (Environment.isExternalStorageManager()) {
+                    LogManager.log(TAG, "MANAGE_EXTERNAL_STORAGE 权限已授予", "DEBUG")
+                    Toast.makeText(this, "已获得所有文件访问权限", Toast.LENGTH_SHORT).show()
+                    performMigration()
+                } else {
+                    LogManager.log(TAG, "MANAGE_EXTERNAL_STORAGE 权限被拒绝", "WARN")
+                    migrationStatus.text = "目录迁移: 权限被拒绝"
+                    migrationStatus.setTextColor(resources.getColor(android.R.color.holo_red_dark))
+                    Toast.makeText(this, "未获得所有文件访问权限，无法执行目录迁移", Toast.LENGTH_LONG).show()
+                }
             }
         }
     }

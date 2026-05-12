@@ -1,4 +1,4 @@
-2026-05-11 13:07:15.570 20201-20343 FileMetaFactory         com.wpspasswordmanager               D  initFileStateWithPermissions - FileMeta: filePath='/storage/emulated/0/Android/data/com.wpspasswordmanager/files/cacheView/$n_本地文档.docx', currentPassword='Co+r@.6$UciL', uid='1776931211526_ca9a6d79-f87e-4c88-a42d-cde9804ef8b1', keyVersion='default', ownerAccount='xiaosn', ownerName='肖少南', readAuth=true, writeAuth=true
-2026-05-11 13:07:15.577 20201-20343 ProxyActivity           com.wpspasswordmanager               D  FileMeta对象初始化成功，权限信息: readAuth=true, writeAuth=true, ownerAccount=xiaosn, ownerName=肖少南, keyVersion=null
-2026-05-11 13:07:15.582 20201-20201 ProxyActivity           com.wpspasswordmanager               D  保存文件URI到WpsAccessibilityService: /storage/emulated/0/Android/data/com.wpspasswordmanager/files/cacheView/$n_本地文档.docx
-2026-05-11 13:07:15.586 20201-20201 ProxyActivity           com.wpspasswordmanager               E  启动 WPS 失败: Failed to find configured root that contains /storage/emulated/0/Android/data/com.wpspasswordmanager/files/cacheView/$n_本地文档.docx
+2026-05-12 11:12:50.570 27534-27812 DirectoryM...ionManager com.wpspasswordmanager               I  --- 阶段5: 原目录删除 ---
+2026-05-12 11:12:50.573 27534-27812 DirectoryM...ionManager com.wpspasswordmanager               W  [TEST] 测试模式：故意让阶段5失败
+2026-05-12 11:12:50.577 27534-27812 DirectoryM...ionManager com.wpspasswordmanager               E  [ERROR] 原目录删除失败(测试模式), 错误码: 1005
+2026-05-12 11:12:50.580 27534-27812 DirectoryM...ionManager com.wpspasswordmanager               E  记录迁移异常: 步骤=5, 错误码=1005, 消息=原目录删除失败(测试模式)
