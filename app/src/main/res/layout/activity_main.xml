@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     tools:context=".ui.MainActivity">
 
-    <ScrollView
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:padding="16dp">
@@ -76,7 +76,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="正在扫描 WPS 应用..." />
+                android:text="正在扫描应用..." />
 
         </LinearLayout>
 
@@ -105,12 +105,11 @@
 
         </LinearLayout>
 
-        <ListView
+        <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/wps_app_list"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:divider="@android:color/transparent"
-            android:dividerHeight="8dp"
+            android:nestedScrollingEnabled="false"
             android:visibility="gone" />
 
         <TextView
@@ -426,7 +425,7 @@
         android:layout_marginTop="24dp" />
 
     </LinearLayout>
-</ScrollView>
+</androidx.core.widget.NestedScrollView>
 
     <Button
         android:id="@+id/fab_add_document"

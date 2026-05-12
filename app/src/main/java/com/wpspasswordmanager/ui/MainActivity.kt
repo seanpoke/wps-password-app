@@ -8,7 +8,8 @@ import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.LinearLayout
-import android.widget.ListView
+import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.LinearLayoutManager
 import android.widget.Spinner
 import android.widget.ArrayAdapter
 import android.widget.TextView
@@ -73,7 +74,7 @@ class MainActivity : AppCompatActivity() {
     // WPS 应用选择相关 UI
     private lateinit var wpsScanningLayout: LinearLayout
     private lateinit var wpsEmptyLayout: LinearLayout
-    private lateinit var wpsAppList: ListView
+    private lateinit var wpsAppList: RecyclerView
     private lateinit var wpsSelectedInfo: TextView
     private lateinit var scanWpsButton: Button
     private lateinit var installWpsButton: Button
@@ -198,6 +199,7 @@ class MainActivity : AppCompatActivity() {
         wpsScanningLayout = findViewById(R.id.wps_scanning_layout)
         wpsEmptyLayout = findViewById(R.id.wps_empty_layout)
         wpsAppList = findViewById(R.id.wps_app_list)
+            wpsAppList.layoutManager = LinearLayoutManager(this)
         wpsSelectedInfo = findViewById(R.id.wps_selected_info)
         scanWpsButton = findViewById(R.id.scan_wps_button)
         installWpsButton = findViewById(R.id.install_wps_button)
@@ -911,7 +913,7 @@ class MainActivity : AppCompatActivity() {
         
         wpsScanningLayout.visibility = LinearLayout.VISIBLE
         wpsEmptyLayout.visibility = LinearLayout.GONE
-        wpsAppList.visibility = ListView.GONE
+        wpsAppList.visibility = RecyclerView.GONE
         wpsSelectedInfo.visibility = TextView.GONE
 
         Thread {
@@ -951,7 +953,7 @@ class MainActivity : AppCompatActivity() {
                     updateWpsAppList()
                 } else {
                     LogManager.log(TAG, "找到 WPS 应用，显示列表", "DEBUG")
-                    wpsAppList.visibility = ListView.VISIBLE
+                    wpsAppList.visibility = RecyclerView.VISIBLE
                     updateWpsAppList()
                 }
             }
@@ -1038,12 +1040,12 @@ class MainActivity : AppCompatActivity() {
         val selectedPackage = configStorage.getTargetWpsPackage()
         LogManager.log(TAG, "已保存的目标包名: $selectedPackage", "DEBUG")
         
-        val adapter = WpsAppAdapter(
+        val adapter = WpsAppRecyclerAdapter(
             this,
-            wpsApps,
             selectedPackage,
             ::onWpsAppSelected
         )
+        adapter.submitList(wpsApps)
         
         wpsAppList.adapter = adapter
         

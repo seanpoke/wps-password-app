@@ -39,7 +39,7 @@ object WpsManager {
         val result = wpsApps.distinctBy { it.packageName }
             .sortedBy { it.label }
         
-        LogManager.log(TAG, "========== 扫描完成: 找到 ${result.size} 个 WPS 应用 ==========", "DEBUG")
+        LogManager.log(TAG, "========== 扫描完成: 找到 ${result.size} 个应用 ==========", "DEBUG")
         result.forEach { LogManager.log(TAG, "  - ${it.label} (${it.packageName}) [${it.versionName}]", "DEBUG") }
         
         return result
@@ -82,7 +82,7 @@ object WpsManager {
                                 installPath = installPath
                             )
                         )
-                        LogManager.log(TAG, "  ✓ 识别到WPS应用: $appLabel ($pkgName)", "DEBUG")
+                        LogManager.log(TAG, "  ✓ 识别到应用: $appLabel ($pkgName)", "DEBUG")
                     }
                 } catch (e: Exception) {
                     LogManager.log(TAG, "  ✗ 加载失败: $pkgName, 错误: ${e.message}", "ERROR")
@@ -97,23 +97,20 @@ object WpsManager {
     }
 
     private fun isWpsApplication(packageName: String, label: String, processName: String): Boolean {
-        LogManager.log(TAG, "  检查应用: pkg=$packageName, label=$label, process=$processName", "DEBUG")
+        LogManager.log(TAG, "  检查WPS应用: pkg=$packageName, label=$label, process=$processName", "DEBUG")
         
-        // 检查包名模式
         val patternMatch = WPS_PACKAGE_PATTERNS.any { packageName.contains(it) }
         if (patternMatch) {
             LogManager.log(TAG, "  ✓ 包名模式匹配", "DEBUG")
             return true
         }
         
-        // 检查关键字
         val keywordMatch = WPS_KEYWORDS.any { packageName.contains(it) } || WPS_KEYWORDS.any { processName.contains(it) }
         if (keywordMatch) {
             LogManager.log(TAG, "  ✓ 关键字匹配", "DEBUG")
             return true
         }
         
-        // 检查标签
         val labelMatch = WPS_LABEL_KEYWORDS.any { label.contains(it) }
         if (labelMatch) {
             LogManager.log(TAG, "  ✓ 标签匹配", "DEBUG")
