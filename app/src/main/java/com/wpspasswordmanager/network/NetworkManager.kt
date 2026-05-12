@@ -228,7 +228,7 @@ class NetworkManager private constructor(context: Context) {
             encryptedAfterPassword?.let { append(", \"afterPassword\": \"$it\"") }
             encryptedPossiblePassword?.let { passwords ->
                 if (passwords.isNotEmpty()) {
-                    append(", \"possiblePasword\": [")
+                    append(", \"possiblePassword\": [")
                     passwords.forEachIndexed { index, password ->
                         if (index > 0) append(", ")
                         append("\"$password\"")
