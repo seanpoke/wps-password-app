@@ -24,11 +24,11 @@ class PasswordGenerator private constructor() {
     private val allChars = uppercaseLetters + lowercaseLetters + digits + specialChars
 
     /**
-     * 生成12位随机密码
+     * 生成10位随机密码
      * 包含大小写字母、数字及特殊符号
      */
     fun generatePassword(): String {
-        val password = StringBuilder(12)
+        val password = StringBuilder(10)
 
         // 确保包含至少一个大写字母
         password.append(uppercaseLetters[secureRandom.nextInt(uppercaseLetters.length)])
@@ -43,7 +43,7 @@ class PasswordGenerator private constructor() {
         password.append(specialChars[secureRandom.nextInt(specialChars.length)])
         
         // 填充剩余的字符
-        for (i in 4 until 12) {
+        for (i in 4 until 10) {
             password.append(allChars[secureRandom.nextInt(allChars.length)])
         }
         

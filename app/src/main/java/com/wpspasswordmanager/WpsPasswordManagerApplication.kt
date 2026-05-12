@@ -289,6 +289,11 @@ class WpsPasswordManagerApplication : Application() {
                         val afterPassword = FileMetaFactory.getWritePassword(filePath)
                         val possiblePassword = fileMeta.pendingPasswordList?.toList()
 
+                        if (beforePassword.isNullOrEmpty() && afterPassword.isNullOrEmpty() && possiblePassword.isNullOrEmpty()) {
+                            LogManager.log(TAG, "beforePassword、afterPassword、possiblePassword都为空，无需上报保存记录", "DEBUG")
+                            return@Runnable
+                        }
+
                         LogManager.log(TAG, "准备上报保存记录: docId=$docId, path=$filePath, beforePassword=$beforePassword, afterPassword=$afterPassword, possiblePassword=$possiblePassword", "DEBUG")
 
                         NetworkManager.getInstance(this).reportSaveLog(

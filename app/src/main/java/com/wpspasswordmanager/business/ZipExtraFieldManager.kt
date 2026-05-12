@@ -242,8 +242,8 @@ class ZipExtraFieldManager private constructor() {
                 ByteArray(0)
             }
             
-            // 构建keyVersion数据（如果存在）
-            val keyVersionData = if (!keyVersion.isNullOrEmpty()) {
+            // 构建keyVersion数据（只有当密码存在时才构建）
+            val keyVersionData = if (!password.isNullOrEmpty() && !keyVersion.isNullOrEmpty()) {
                 val keyVersionBytes = buildExtraFieldData(METADATA_TYPE_KEY_VERSION, keyVersion)
                 Log.d(
                     TAG,
