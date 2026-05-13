@@ -496,8 +496,8 @@ class ProxyActivity : AppCompatActivity() {
         inputLayout.addView(titleLabel)
 
         val tipLabel = android.widget.TextView(this)
-        tipLabel.text = "在查看模式下，对文档的任何编辑行为都不会被插件保存"
-        tipLabel.setTextColor(resources.getColor(android.R.color.darker_gray))
+        tipLabel.text = "在查看模式下，文档的编辑行为都不会被保存"
+        tipLabel.setTextColor(resources.getColor(android.R.color.holo_red_dark))
         tipLabel.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 14f)
         val tipParams = android.widget.LinearLayout.LayoutParams(
             android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
@@ -1094,9 +1094,12 @@ class ProxyActivity : AppCompatActivity() {
             LogManager.log(TAG, "开始获取文档权限信息", "DEBUG")
 
             // 使用NetworkManager获取文档权限信息
+            val fileName = File(filePath).name
+            LogManager.log(TAG, "提取文件名: $fileName", "DEBUG")
             NetworkManager.getInstance(this).getDocumentOwner(
                 docId = uid,
                 token = token,
+                fileName = fileName,
                 callback = object : NetworkCallback {
                     override fun onSuccess(response: String) {
                         LogManager.log(TAG, "获取文档权限响应: $response", "DEBUG")

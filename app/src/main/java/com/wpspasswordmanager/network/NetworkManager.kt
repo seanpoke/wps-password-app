@@ -174,9 +174,16 @@ class NetworkManager private constructor(context: Context) {
     }
 
     // 执行获取文档权限请求（异步）
-    fun getDocumentOwner(docId: String, token: String?, callback: NetworkCallback) {
-        Log.d(TAG, "执行获取文档权限请求: docId=$docId")
-        executeGetRequest("/doc/owner?docId=$docId", token, callback)
+    fun getDocumentOwner(docId: String, token: String?, fileName: String? = null, callback: NetworkCallback) {
+        Log.d(TAG, "执行获取文档权限请求: docId=$docId, fileName=$fileName")
+        val jsonBody = buildString {
+            append("{")
+            append("\"docId\": \"$docId\"")
+            fileName?.let { append(", \"fileName\": \"$it\"") }
+            append("}")
+        }
+        Log.d(TAG, "获取文档权限请求体: $jsonBody")
+        executePostRequest("/doc/owner", jsonBody, token, callback)
     }
 
     // 执行获取文档密码请求（异步）

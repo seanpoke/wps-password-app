@@ -308,6 +308,7 @@ class MainActivity : AppCompatActivity() {
         
         if (migrationButtonVisible) {
             migrationButton.visibility = View.GONE
+            migrationStatus.visibility = View.GONE
             migrationButtonVisible = false
             permissionTitleClickCount = 0
             permissionTitleFirstClickTime = 0L
@@ -322,6 +323,7 @@ class MainActivity : AppCompatActivity() {
                 permissionTitleClickCount++
                 if (permissionTitleClickCount >= 3) {
                     migrationButton.visibility = View.VISIBLE
+                    migrationStatus.visibility = View.VISIBLE
                     migrationButtonVisible = true
                     permissionTitleClickCount = 0
                     permissionTitleFirstClickTime = 0L
