@@ -357,6 +357,16 @@ class FloatingButtonService : Service() {
                 }
             }
 
+            val documentPath = WpsAccessibilityService.stableDocumentPath
+            if (!documentPath.isNullOrEmpty()) {
+                val fileName = java.io.File(documentPath).name
+                val prefix = "\$n_"
+                if (fileName.startsWith(prefix)) {
+                    Log.d(TAG, "文件名为\$n_开头，不显示悬浮按钮: $fileName")
+                    return
+                }
+            }
+
             if (!isFloatingButtonVisible) {
                 Log.d(TAG, "开始初始化悬浮按钮")
                 initFloatingButton()
