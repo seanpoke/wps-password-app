@@ -267,72 +267,37 @@ class WpsPasswordManagerApplication : Application() {
                     return@Runnable
                 }
 
-                // 写入密码到文件
-                FileMetaManager.getInstance().writeMetaDataToFile(file, fileMeta)
+                // 检查是否为临时uid，如果是则先注册到服务端
+                if (fileMeta.isTempUid && fileMeta.uid != null) {
+                    LogManager.log(TAG, "检测到临时uid，需要先注册到服务端: ${fileMeta.uid}", "DEBUG")
+                    registerTempUidToServer(filePath, fileMeta.uid!!) { registered ->
+                        try {
+                            if (registered) {
+                                LogManager.log(TAG, "临时uid注册成功，更新isTempUid为false", "DEBUG")
+                                val updatedMeta = FileMetaFactory.getFileMeta(filePath)
+                                updatedMeta?.isTempUid = false
+                            } else {
+                                LogManager.log(TAG, "临时uid注册失败（网络错误），isTempUid保持true，下次保存时重试", "WARN")
+                            }
+                            // 无论注册成功与否，都写入元数据到文件
+                            FileMetaManager.getInstance().writeMetaDataToFile(file, fileMeta)
+                            postProcessAfterWrite(filePath)
+                        } catch (e: Exception) {
+                            LogManager.log(TAG, "注册后写入元数据失败: ${e.message}", "ERROR")
+                        }
+                    }
+                    return@Runnable // 等待异步注册完成
+                } else {
+                    // 非临时uid，直接写入元数据
+                    LogManager.log(TAG, "非临时uid，直接写入元数据", "DEBUG")
+                    FileMetaManager.getInstance().writeMetaDataToFile(file, fileMeta)
+                }
 
             } catch (e: Exception) {
                 LogManager.log(TAG, "处理文件写入事件失败: ${e.message}", "ERROR")
             } finally {
                 isHandlingEvent = false
                 LogManager.log(TAG, "文件写入事件处理完成: $filePath", "DEBUG")
-
-                // 上报保存记录到服务器
-                try {
-                    val fileMeta = FileMetaFactory.getFileMeta(filePath)
-                    if (fileMeta != null && fileMeta.uid != null) {
-                        val configStorage = ConfigStorage.getInstance(this)
-                        val userInfo = configStorage.getUserInfo()
-                        val token = userInfo?.token
-
-                        val docId = fileMeta.uid
-                        val beforePassword = fileMeta.currentPassword
-                        val afterPassword = FileMetaFactory.getWritePassword(filePath)
-                        val possiblePassword = fileMeta.pendingPasswordList?.toList()
-
-                        if (beforePassword.isNullOrEmpty() && afterPassword.isNullOrEmpty() && possiblePassword.isNullOrEmpty()) {
-                            LogManager.log(TAG, "beforePassword、afterPassword、possiblePassword都为空，无需上报保存记录", "DEBUG")
-                            return@Runnable
-                        }
-
-                        LogManager.log(TAG, "准备上报保存记录: docId=$docId, path=$filePath, beforePassword=$beforePassword, afterPassword=$afterPassword, possiblePassword=$possiblePassword", "DEBUG")
-
-                        NetworkManager.getInstance(this).reportSaveLog(
-                            docId = docId!!,
-                            path = filePath,
-                            beforePassword = beforePassword,
-                            afterPassword = afterPassword,
-                            possiblePassword = possiblePassword,
-                            platform = "android",
-                            token = token,
-                            callback = object : com.wpspasswordmanager.network.NetworkCallback {
-                                override fun onSuccess(response: String) {
-                                    LogManager.log(TAG, "保存记录上报成功: $response", "DEBUG")
-                                }
-
-                                override fun onError(error: String) {
-                                    LogManager.log(TAG, "保存记录上报失败: $error", "ERROR")
-                                }
-
-                                override fun onComplete() {
-                                    // 无论上报成功还是失败，都更新FileMeta中的currentPassword为afterPassword的值
-                                    val updatedFileMeta = FileMetaFactory.getFileMeta(filePath)
-                                    if (updatedFileMeta != null && afterPassword != null) {
-                                        updatedFileMeta.currentPassword = afterPassword
-                                        LogManager.log(TAG, "上报完成后更新currentPassword: $afterPassword", "DEBUG")
-
-                                        // 清空pendingPasswordList
-                                        updatedFileMeta.pendingPasswordList?.clear()
-                                        LogManager.log(TAG, "上报完成后清空pendingPasswordList", "DEBUG")
-                                    }
-                                }
-                            }
-                        )
-                    } else {
-                        LogManager.log(TAG, "文件元数据不存在或无uid，跳过保存记录上报", "DEBUG")
-                    }
-                } catch (e: Exception) {
-                    LogManager.log(TAG, "上报保存记录失败: ${e.message}", "ERROR")
-                }
             }
         }
 
@@ -345,6 +310,123 @@ class WpsPasswordManagerApplication : Application() {
             "DEBUG"
         )
         handler?.postDelayed(runnable, debounceDelay)
+    }
+
+    /**
+     * 注册临时uid到服务端（带重试机制）
+     * @param filePath 文件路径
+     * @param uid 要注册的uid
+     * @param callback 注册完成回调，true表示注册成功，false表示失败
+     */
+    private fun registerTempUidToServer(filePath: String, uid: String, callback: (Boolean) -> Unit) {
+        performRegisterWithRetry(filePath, uid, 1, 3, callback)
+    }
+
+    /**
+     * 执行带重试的注册操作
+     * @param filePath 文件路径
+     * @param uid 要注册的uid
+     * @param retryCount 当前重试次数
+     * @param maxRetries 最大重试次数
+     * @param callback 注册完成回调
+     */
+    private fun performRegisterWithRetry(filePath: String, uid: String, retryCount: Int, maxRetries: Int, callback: (Boolean) -> Unit) {
+        LogManager.log(TAG, "注册临时uid到服务端，第 $retryCount 次尝试: uid=$uid", "DEBUG")
+
+        val configStorage = ConfigStorage.getInstance(this)
+        val userInfo = configStorage.getUserInfo()
+        val token = userInfo?.token
+        val fileName = File(filePath).name
+
+        NetworkManager.getInstance(this).getDocumentOwner(
+            docId = uid,
+            token = token,
+            fileName = fileName,
+            callback = object : com.wpspasswordmanager.network.NetworkCallback {
+                override fun onSuccess(response: String) {
+                    LogManager.log(TAG, "临时uid注册成功: $response", "DEBUG")
+                    callback(true)
+                }
+
+                override fun onError(error: String) {
+                    LogManager.log(TAG, "临时uid注册失败，第 $retryCount 次: $error", "ERROR")
+                    if (retryCount < maxRetries) {
+                        val delay = (1000L * Math.pow(2.0, (retryCount - 1).toDouble())).toLong()
+                        LogManager.log(TAG, "等待 ${delay}ms 后进行第 ${retryCount + 1} 次重试", "DEBUG")
+                        handler?.postDelayed({
+                            performRegisterWithRetry(filePath, uid, retryCount + 1, maxRetries, callback)
+                        }, delay)
+                    } else {
+                        LogManager.log(TAG, "临时uid注册失败，已重试 $maxRetries 次，放弃重试", "ERROR")
+                        callback(false)
+                    }
+                }
+
+                override fun onComplete() {}
+            }
+        )
+    }
+
+    /**
+     * 文件写入后的后续处理（上报保存记录）
+     */
+    private fun postProcessAfterWrite(filePath: String) {
+        try {
+            val fileMeta = FileMetaFactory.getFileMeta(filePath)
+            if (fileMeta != null && fileMeta.uid != null) {
+                val configStorage = ConfigStorage.getInstance(this)
+                val userInfo = configStorage.getUserInfo()
+                val token = userInfo?.token
+
+                val docId = fileMeta.uid
+                val beforePassword = fileMeta.currentPassword
+                val afterPassword = FileMetaFactory.getWritePassword(filePath)
+                val possiblePassword = fileMeta.pendingPasswordList?.toList()
+
+                if (beforePassword.isNullOrEmpty() && afterPassword.isNullOrEmpty() && possiblePassword.isNullOrEmpty()) {
+                    LogManager.log(TAG, "beforePassword、afterPassword、possiblePassword都为空，无需上报保存记录", "DEBUG")
+                    return
+                }
+
+                LogManager.log(TAG, "准备上报保存记录: docId=$docId, path=$filePath, beforePassword=$beforePassword, afterPassword=$afterPassword, possiblePassword=$possiblePassword", "DEBUG")
+
+                NetworkManager.getInstance(this).reportSaveLog(
+                    docId = docId!!,
+                    path = filePath,
+                    beforePassword = beforePassword,
+                    afterPassword = afterPassword,
+                    possiblePassword = possiblePassword,
+                    platform = "android",
+                    token = token,
+                    callback = object : com.wpspasswordmanager.network.NetworkCallback {
+                        override fun onSuccess(response: String) {
+                            LogManager.log(TAG, "保存记录上报成功: $response", "DEBUG")
+                        }
+
+                        override fun onError(error: String) {
+                            LogManager.log(TAG, "保存记录上报失败: $error", "ERROR")
+                        }
+
+                        override fun onComplete() {
+                            // 无论上报成功还是失败，都更新FileMeta中的currentPassword为afterPassword的值
+                            val updatedFileMeta = FileMetaFactory.getFileMeta(filePath)
+                            if (updatedFileMeta != null && afterPassword != null) {
+                                updatedFileMeta.currentPassword = afterPassword
+                                LogManager.log(TAG, "上报完成后更新currentPassword: $afterPassword", "DEBUG")
+
+                                // 清空pendingPasswordList
+                                updatedFileMeta.pendingPasswordList?.clear()
+                                LogManager.log(TAG, "上报完成后清空pendingPasswordList", "DEBUG")
+                            }
+                        }
+                    }
+                )
+            } else {
+                LogManager.log(TAG, "文件元数据不存在或无uid，跳过保存记录上报", "DEBUG")
+            }
+        } catch (e: Exception) {
+            LogManager.log(TAG, "上报保存记录失败: ${e.message}", "ERROR")
+        }
     }
 
     /**

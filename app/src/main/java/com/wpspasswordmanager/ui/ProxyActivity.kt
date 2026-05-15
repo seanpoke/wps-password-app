@@ -930,18 +930,30 @@ class ProxyActivity : AppCompatActivity() {
      */
     private fun processFile(file: File, callback: (File?) -> Unit) {
         try {
-            val uid = readUidFromFile(file.absolutePath)
-                ?: FileMetaFactory.createUid()
+            val existingUid = readUidFromFile(file.absolutePath)
+            val isNewUid = existingUid == null
+            val uid = existingUid ?: FileMetaFactory.createUid()
             val keyVersion = readKeyVersionFromFile(file.absolutePath)
-            val password = readAndParsePassword(file.absolutePath, uid, keyVersion)
+            val password = readAndParsePassword(file.absolutePath, uid, keyVersion, isNewUid)
             
-            // 使用CountDownLatch等待权限信息获取完成
+            // 使用CountDownLatch等待初始化完成
             val latch = java.util.concurrent.CountDownLatch(1)
-            initFileMetaWithPermissions(file.absolutePath, password, uid, keyVersion) {
-                latch.countDown()
+            
+            if (isNewUid) {
+                // 新生成的uid，不调用注册接口，使用默认权限（读写都为true）
+                LogManager.log(TAG, "文件无uid，生成临时uid: $uid", "DEBUG")
+                initFileMetaWithTempUid(file.absolutePath, password, uid, keyVersion) {
+                    latch.countDown()
+                }
+            } else {
+                // 已有uid，调用接口获取权限
+                LogManager.log(TAG, "文件已有uid: $uid", "DEBUG")
+                initFileMetaWithPermissions(file.absolutePath, password, uid, keyVersion) {
+                    latch.countDown()
+                }
             }
             
-            // 等待权限信息获取完成，最多等待10秒
+            // 等待初始化完成，最多等待10秒
             latch.await(10, java.util.concurrent.TimeUnit.SECONDS)
             callback(file)
         } catch (e: Exception) {
@@ -972,7 +984,7 @@ class ProxyActivity : AppCompatActivity() {
     /**
      * 读取密码并存储到缓存
      */
-    private fun readAndParsePassword(filePath: String, uid: String, keyVersion: String?): String? {
+    private fun readAndParsePassword(filePath: String, uid: String, keyVersion: String?, isTemp: Boolean = false): String? {
         LogManager.log(TAG, "开始读取密码并存储到缓存，文件路径: $filePath", "DEBUG")
         try {
             val file = File(filePath)
@@ -1013,6 +1025,7 @@ class ProxyActivity : AppCompatActivity() {
                     encryPassword = localPassword,
                     token = token,
                     keyVersion = finalKeyVersion,
+                    isTemp = isTemp,
                     callback = object : NetworkCallback {
                         override fun onSuccess(response: String) {
                             LogManager.log(TAG, "获取文档密码响应: $response", "DEBUG")
@@ -1193,6 +1206,28 @@ class ProxyActivity : AppCompatActivity() {
             keyVersion = keyVersion
         )
         LogManager.log(TAG, "FileMeta对象初始化成功，使用默认权限设置", "DEBUG")
+    }
+
+    /**
+     * 使用临时uid初始化FileMeta对象（新生成的uid，未注册到服务端）
+     * 不调用服务端接口，使用默认权限（读写都为true）
+     */
+    private fun initFileMetaWithTempUid(
+        filePath: String,
+        password: String?,
+        uid: String,
+        keyVersion: String? = null,
+        onComplete: () -> Unit = {}
+    ) {
+        LogManager.log(TAG, "使用临时uid初始化FileMeta对象", "DEBUG")
+        FileMetaFactory.initFileMetaWithTempUid(
+            filePath = filePath,
+            oldPass = password,
+            uid = uid,
+            keyVersion = keyVersion
+        )
+        LogManager.log(TAG, "FileMeta对象初始化成功，使用临时uid，isTempUid=true，默认权限（读写都为true）", "DEBUG")
+        onComplete()
     }
 
 

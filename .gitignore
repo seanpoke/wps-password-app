@@ -2,6 +2,9 @@
 .gradle/
 build/
 
+# Trae IDE files
+.trae/
+
 # IDE files
 .idea/
 *.iml

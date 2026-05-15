@@ -95,4 +95,7 @@ data class FileMeta(
     var ownerName: String? = null,    // 文档所属名称
     var readAuth: Boolean = false,    // 读权限
     var writeAuth: Boolean = false,   // 写权限
+    
+    // --- 临时uid标识 ---
+    var isTempUid: Boolean = false    // 是否为临时uid（未注册到服务端）
 )

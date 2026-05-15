@@ -1,4 +1,85 @@
-2026-05-12 11:12:50.570 27534-27812 DirectoryM...ionManager com.wpspasswordmanager               I  --- 阶段5: 原目录删除 ---
-2026-05-12 11:12:50.573 27534-27812 DirectoryM...ionManager com.wpspasswordmanager               W  [TEST] 测试模式：故意让阶段5失败
-2026-05-12 11:12:50.577 27534-27812 DirectoryM...ionManager com.wpspasswordmanager               E  [ERROR] 原目录删除失败(测试模式), 错误码: 1005
-2026-05-12 11:12:50.580 27534-27812 DirectoryM...ionManager com.wpspasswordmanager               E  记录迁移异常: 步骤=5, 错误码=1005, 消息=原目录删除失败(测试模式)
+2026-05-15 14:21:40.638 28741-28741 ProxyActivity           com.wpspasswordmanager               D  通过_data列检测: 文件路径=/storage/emulated/0/Documents/WpsManagement/abc.docx, 是否在WpsManagement=true
+2026-05-15 14:21:40.644 28741-28741 ProxyActivity           com.wpspasswordmanager               D  文件是否来自WpsManagement目录: true
+2026-05-15 14:21:40.649 28741-28741 ProxyActivity           com.wpspasswordmanager               D  文件名: abc.docx
+2026-05-15 14:21:40.653 28741-28741 ProxyActivity           com.wpspasswordmanager               D  文件 URI: content://media/external/file/1000033745
+2026-05-15 14:21:40.658 28741-28741 ProxyActivity           com.wpspasswordmanager               D  文件是否在WpsManagement目录中: true
+2026-05-15 14:21:40.663 28741-28741 ProxyActivity           com.wpspasswordmanager               D  文件标识: content://media/external/file/1000033745
+2026-05-15 14:21:40.667 28741-28741 ProxyActivity           com.wpspasswordmanager               D  传入的文件名: 'abc.docx'
+2026-05-15 14:21:40.672 28741-28741 ProxyActivity           com.wpspasswordmanager               D  文件名长度: 8
+2026-05-15 14:21:40.677 28741-28741 ProxyActivity           com.wpspasswordmanager               D  文件是否来自WpsManagement目录: true
+2026-05-15 14:21:40.681 28741-28741 ProxyActivity           com.wpspasswordmanager               D  文件是副本文件，直接执行打开流程
+2026-05-15 14:21:40.687 28741-28741 ProxyActivity           com.wpspasswordmanager               D  开始读取uid并存储到缓存，文件路径: /storage/emulated/0/Documents/WpsManagement/abc.docx
+2026-05-15 14:21:40.692 28741-28741 ProxyActivity           com.wpspasswordmanager               D  文件存在: true
+2026-05-15 14:21:40.701 28741-28741 ProxyActivity           com.wpspasswordmanager               D  文件可读: true
+2026-05-15 14:21:40.706 28741-28741 ProxyActivity           com.wpspasswordmanager               D  文件大小: 11027 字节
+2026-05-15 14:21:40.706 28741-28741 FileMetaManager         com.wpspasswordmanager               D  开始获取文件uid，文件路径: /storage/emulated/0/Documents/WpsManagement/abc.docx
+2026-05-15 14:21:40.709 28741-28741 FileMetaManager         com.wpspasswordmanager               D  尝试从文件读取uid: /storage/emulated/0/Documents/WpsManagement/abc.docx
+2026-05-15 14:21:40.715 28741-28741 ZipExtraFieldManager    com.wpspasswordmanager               D  尝试从输入流读取uid
+2026-05-15 14:21:40.716 28741-28741 ZipExtraFieldManager    com.wpspasswordmanager               D  找到WPPM签名，位置: 11005
+2026-05-15 14:21:40.716 28741-28741 ZipExtraFieldManager    com.wpspasswordmanager               D  元数据类型: 3, 版本: 1
+2026-05-15 14:21:40.716 28741-28741 ZipExtraFieldManager    com.wpspasswordmanager               W  跳过非uid类型的元数据: 3
+2026-05-15 14:21:40.716 28741-28741 ZipExtraFieldManager    com.wpspasswordmanager               D  找到WPPM签名，位置: 10818
+2026-05-15 14:21:40.716 28741-28741 ZipExtraFieldManager    com.wpspasswordmanager               D  元数据类型: 1, 版本: 1
+2026-05-15 14:21:40.716 28741-28741 ZipExtraFieldManager    com.wpspasswordmanager               W  跳过非uid类型的元数据: 1
+2026-05-15 14:21:40.716 28741-28741 ZipExtraFieldManager    com.wpspasswordmanager               D  找到WPPM签名，位置: 10753
+2026-05-15 14:21:40.716 28741-28741 ZipExtraFieldManager    com.wpspasswordmanager               D  元数据类型: 2, 版本: 1
+2026-05-15 14:21:40.716 28741-28741 ZipExtraFieldManager    com.wpspasswordmanager               D  Data Length: 50
+2026-05-15 14:21:40.717 28741-28741 ZipExtraFieldManager    com.wpspasswordmanager               D  成功读取uid: 1778577623324_41c64e9b-33cc-4e4f-8853-db4632d875ee
+2026-05-15 14:21:40.717 28741-28741 FileMetaManager         com.wpspasswordmanager               D  从ZIP Extra Field读取uid成功
+2026-05-15 14:21:40.721 28741-28741 ProxyActivity           com.wpspasswordmanager               D  从本地文件读取到uid: 1778577623324_41c64e9b-33cc-4e4f-8853-db4632d875ee
+2026-05-15 14:21:40.724 28741-28741 ProxyActivity           com.wpspasswordmanager               D  开始读取keyVersion，文件路径: /storage/emulated/0/Documents/WpsManagement/abc.docx
+2026-05-15 14:21:40.724 28741-28741 FileMetaManager         com.wpspasswordmanager               D  开始获取文件keyVersion，文件路径: /storage/emulated/0/Documents/WpsManagement/abc.docx
+2026-05-15 14:21:40.726 28741-28741 FileMetaManager         com.wpspasswordmanager               D  尝试从文件读取keyVersion: /storage/emulated/0/Documents/WpsManagement/abc.docx
+2026-05-15 14:21:40.730 28741-28741 ZipExtraFieldManager    com.wpspasswordmanager               D  尝试从输入流读取keyVersion
+2026-05-15 14:21:40.730 28741-28741 ZipExtraFieldManager    com.wpspasswordmanager               D  找到WPPM签名，位置: 11005
+2026-05-15 14:21:40.730 28741-28741 ZipExtraFieldManager    com.wpspasswordmanager               D  元数据类型: 3, 版本: 1
+2026-05-15 14:21:40.730 28741-28741 ZipExtraFieldManager    com.wpspasswordmanager               D  Data Length: 7
+2026-05-15 14:21:40.730 28741-28741 ZipExtraFieldManager    com.wpspasswordmanager               D  成功读取keyVersion: default
+2026-05-15 14:21:40.730 28741-28741 FileMetaManager         com.wpspasswordmanager               D  从ZIP Extra Field读取keyVersion成功
+2026-05-15 14:21:40.734 28741-28741 ProxyActivity           com.wpspasswordmanager               D  从本地文件读取到keyVersion: default
+2026-05-15 14:21:40.738 28741-28741 ProxyActivity           com.wpspasswordmanager               D  开始读取密码并存储到缓存，文件路径: /storage/emulated/0/Documents/WpsManagement/abc.docx
+2026-05-15 14:21:40.743 28741-28741 ProxyActivity           com.wpspasswordmanager               D  文件存在: true
+2026-05-15 14:21:40.750 28741-28741 ProxyActivity           com.wpspasswordmanager               D  文件可读: true
+2026-05-15 14:21:40.755 28741-28741 ProxyActivity           com.wpspasswordmanager               D  文件大小: 11027 字节
+2026-05-15 14:21:40.755 28741-28741 FileMetaManager         com.wpspasswordmanager               D  开始读取密码，文件路径: /storage/emulated/0/Documents/WpsManagement/abc.docx
+2026-05-15 14:21:40.756 28741-28741 FileMetaManager         com.wpspasswordmanager               D  尝试从文件读取密码: /storage/emulated/0/Documents/WpsManagement/abc.docx
+2026-05-15 14:21:40.759 28741-28741 ZipExtraFieldManager    com.wpspasswordmanager               D  尝试从文件读取密码: /storage/emulated/0/Documents/WpsManagement/abc.docx
+2026-05-15 14:21:40.764 28741-28741 ZipExtraFieldManager    com.wpspasswordmanager               D  Data Length: 172
+2026-05-15 14:21:40.764 28741-28741 ZipExtraFieldManager    com.wpspasswordmanager               D  当前位置: 10829, 剩余长度: 198
+2026-05-15 14:21:40.764 28741-28741 ZipExtraFieldManager    com.wpspasswordmanager               D  找到WPPM签名，位置: 10818
+2026-05-15 14:21:40.764 28741-28741 ZipExtraFieldManager    com.wpspasswordmanager               D  成功读取密码: AAAAWzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABJuVv8Ym5DPVCVE1Xamwa2F1M1gsuclDpgpFITRk1JAdULzI8wH3riyFA+GzhJutG2CJ/kGJo5FBkK7fsOvTLc7Qs6K6njdVXCWHcvW7bMOP/lkUOTl+XrHuijDgGZylUw==
+2026-05-15 14:21:40.764 28741-28741 FileMetaManager         com.wpspasswordmanager               D  从文件file对象读取密码成功
+2026-05-15 14:21:40.768 28741-28741 ProxyActivity           com.wpspasswordmanager               D  从本地文件读取到密码: AAAAWzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABJuVv8Ym5DPVCVE1Xamwa2F1M1gsuclDpgpFITRk1JAdULzI8wH3riyFA+GzhJutG2CJ/kGJo5FBkK7fsOvTLc7Qs6K6njdVXCWHcvW7bMOP/lkUOTl+XrHuijDgGZylUw==
+2026-05-15 14:21:40.772 28741-28741 ProxyActivity           com.wpspasswordmanager               D  获取到token: 已获取
+2026-05-15 14:21:40.776 28741-28741 ProxyActivity           com.wpspasswordmanager               D  开始调用获取文档密码接口
+2026-05-15 14:21:40.776 28741-28741 NetworkManager          com.wpspasswordmanager               D  执行获取文档密码请求: docId=1778577623324_41c64e9b-33cc-4e4f-8853-db4632d875ee, keyVersion=default, isTemp=false
+2026-05-15 14:21:40.776 28741-28741 NetworkManager          com.wpspasswordmanager               D  获取文档密码请求体: {"docId": "1778577623324_41c64e9b-33cc-4e4f-8853-db4632d875ee", "encryPassword": "AAAAWzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABJuVv8Ym5DPVCVE1Xamwa2F1M1gsuclDpgpFITRk1JAdULzI8wH3riyFA+GzhJutG2CJ/kGJo5FBkK7fsOvTLc7Qs6K6njdVXCWHcvW7bMOP/lkUOTl+XrHuijDgGZylUw==", "keyVersion": "default", "isTemp": false}
+2026-05-15 14:21:40.776 28741-28741 NetworkManager          com.wpspasswordmanager               D  执行POST请求: path=/doc/password
+2026-05-15 14:21:40.777 28741-28741 NetworkManager          com.wpspasswordmanager               D  请求URL: http://117.72.183.119:5202/doc/password
+2026-05-15 14:21:40.778 28741-28741 NetworkManager          com.wpspasswordmanager               D  请求准备完成，开始发送
+2026-05-15 14:21:40.947 28741-4634  NetworkManager          com.wpspasswordmanager               D  请求响应: code=200, message=
+2026-05-15 14:21:40.980 28741-4634  NetworkManager          com.wpspasswordmanager               D  响应成功: {"message":"文件不存在","status":409,"data":null}
+2026-05-15 14:21:40.984 28741-4634  ProxyActivity           com.wpspasswordmanager               D  获取文档密码响应: {"message":"文件不存在","status":409,"data":null}
+2026-05-15 14:21:40.988 28741-4634  ProxyActivity           com.wpspasswordmanager               E  获取文档密码失败，响应状态码不是200
+2026-05-15 14:21:40.992 28741-28741 ProxyActivity           com.wpspasswordmanager               D  文件已有uid: 1778577623324_41c64e9b-33cc-4e4f-8853-db4632d875ee
+2026-05-15 14:21:40.996 28741-28741 ProxyActivity           com.wpspasswordmanager               D  开始初始化FileMeta对象并获取权限信息，文件路径: /storage/emulated/0/Documents/WpsManagement/abc.docx
+2026-05-15 14:21:41.000 28741-28741 ProxyActivity           com.wpspasswordmanager               D  获取到token: 已获取
+2026-05-15 14:21:41.003 28741-28741 ProxyActivity           com.wpspasswordmanager               D  开始获取文档权限信息
+2026-05-15 14:21:41.007 28741-28741 ProxyActivity           com.wpspasswordmanager               D  提取文件名: abc.docx
+2026-05-15 14:21:41.007 28741-28741 NetworkManager          com.wpspasswordmanager               D  执行获取文档权限请求: docId=1778577623324_41c64e9b-33cc-4e4f-8853-db4632d875ee, fileName=abc.docx
+2026-05-15 14:21:41.007 28741-28741 NetworkManager          com.wpspasswordmanager               D  获取文档权限请求体: {"docId": "1778577623324_41c64e9b-33cc-4e4f-8853-db4632d875ee", "fileName": "abc.docx"}
+2026-05-15 14:21:41.007 28741-28741 NetworkManager          com.wpspasswordmanager               D  执行POST请求: path=/doc/owner
+2026-05-15 14:21:41.008 28741-28741 NetworkManager          com.wpspasswordmanager               D  请求URL: http://117.72.183.119:5202/doc/owner
+2026-05-15 14:21:41.009 28741-28741 NetworkManager          com.wpspasswordmanager               D  请求准备完成，开始发送
+2026-05-15 14:21:41.248 28741-4634  NetworkManager          com.wpspasswordmanager               D  请求响应: code=200, message=
+2026-05-15 14:21:41.299 28741-4634  NetworkManager          com.wpspasswordmanager               D  响应成功: {"message":"操作成功","status":200,"data":{"ownerAccount":"xiaosn","ownerName":"肖少南","readAuth":true,"writeAuth":true}}
+2026-05-15 14:21:41.303 28741-4634  ProxyActivity           com.wpspasswordmanager               D  获取文档权限响应: {"message":"操作成功","status":200,"data":{"ownerAccount":"xiaosn","ownerName":"肖少南","readAuth":true,"writeAuth":true}}
+2026-05-15 14:21:41.304 28741-4634  FileMetaFactory         com.wpspasswordmanager               D  initFileStateWithPermissions - FileMeta: filePath='/storage/emulated/0/Documents/WpsManagement/abc.docx', currentPassword='null', uid='1778577623324_41c64e9b-33cc-4e4f-8853-db4632d875ee', keyVersion='default', ownerAccount='xiaosn', ownerName='肖少南', readAuth=true, writeAuth=true, isTempUid=false
+2026-05-15 14:21:41.308 28741-4634  ProxyActivity           com.wpspasswordmanager               D  FileMeta对象初始化成功，权限信息: readAuth=true, writeAuth=true, ownerAccount=xiaosn, ownerName=肖少南, keyVersion=default
+2026-05-15 14:21:41.312 28741-28741 ProxyActivity           com.wpspasswordmanager               D  保存文件URI到WpsAccessibilityService: /storage/emulated/0/Documents/WpsManagement/abc.docx
+2026-05-15 14:21:41.317 28741-28741 ProxyActivity           com.wpspasswordmanager               D  插件转换后唤起WPS的ContentURI: content://com.wpspasswordmanager.fileprovider/public_documents/WpsManagement/abc.docx
+2026-05-15 14:21:41.320 28741-28741 ProxyActivity           com.wpspasswordmanager               D  文件MIME类型: application/vnd.openxmlformats-officedocument.wordprocessingml.document
+2026-05-15 14:21:41.324 28741-28741 ProxyActivity           com.wpspasswordmanager               D  使用用户选择的WPS包: cn.wps.moffice_eng
+2026-05-15 14:21:41.368 28741-28741 ProxyActivity           com.wpspasswordmanager               D  通过FileProvider启动WPS成功，包名: cn.wps.moffice_eng，文件: /storage/emulated/0/Documents/WpsManagement/abc.docx
+2026-05-15 14:21:41.372 28741-28741 ProxyActivity           com.wpspasswordmanager               D  已授予WPS应用读写权限
+2026-05-15 14:21:41.376 28741-28741 ProxyActivity           com.wpspasswordmanager               D  已添加WPS特定参数，尝试阻止创建副本

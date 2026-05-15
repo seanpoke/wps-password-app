@@ -18,7 +18,7 @@ object FileMetaFactory {
 
     
     /**
-     * 带权限信息的初始化
+     * 带权限信息的初始化（已有uid，已注册到服务端）
      */
     fun initFileMetaWithPermissions(filePath: String, oldPass: String?, uid: String?, ownerAccount: String?, ownerName: String?, readAuth: Boolean, writeAuth: Boolean, keyVersion: String? = null) {
         val finalUid = if (uid.isNullOrEmpty()) createUid() else uid
@@ -34,13 +34,40 @@ object FileMetaFactory {
             ownerAccount = ownerAccount,
             ownerName = ownerName,
             readAuth = readAuth,
-            writeAuth = writeAuth
+            writeAuth = writeAuth,
+            isTempUid = false  // 已有uid，已注册
         )
         map[filePath] = fileMeta
         // 输出日志
         Log.d(
             TAG,
-            "initFileStateWithPermissions - FileMeta: filePath='$filePath', currentPassword='${oldPass ?: "null"}', uid='$finalUid', keyVersion='$finalKeyVersion', ownerAccount='${ownerAccount ?: "null"}', ownerName='${ownerName ?: "null"}', readAuth=$readAuth, writeAuth=$writeAuth"
+            "initFileStateWithPermissions - FileMeta: filePath='$filePath', currentPassword='${oldPass ?: "null"}', uid='$finalUid', keyVersion='$finalKeyVersion', ownerAccount='${ownerAccount ?: "null"}', ownerName='${ownerName ?: "null"}', readAuth=$readAuth, writeAuth=$writeAuth, isTempUid=false"
+        )
+    }
+
+    /**
+     * 使用临时uid初始化（新生成的uid，未注册到服务端）
+     * 使用默认权限（读写都为true）
+     */
+    fun initFileMetaWithTempUid(filePath: String, oldPass: String?, uid: String, keyVersion: String? = null) {
+        val finalKeyVersion = keyVersion ?: "default"
+        
+        val fileMeta = FileMeta(
+            filePath = filePath,
+            uid = uid,
+            currentPassword = oldPass,
+            currentKeyVersion = finalKeyVersion,
+            ownerAccount = null,
+            ownerName = null,
+            readAuth = true,   // 默认有读权限
+            writeAuth = true,  // 默认有写权限
+            isTempUid = true   // 临时uid，未注册
+        )
+        map[filePath] = fileMeta
+        // 输出日志
+        Log.d(
+            TAG,
+            "initFileMetaWithTempUid - FileMeta: filePath='$filePath', currentPassword='${oldPass ?: "null"}', uid='$uid', keyVersion='$finalKeyVersion', readAuth=true, writeAuth=true, isTempUid=true"
         )
     }
 

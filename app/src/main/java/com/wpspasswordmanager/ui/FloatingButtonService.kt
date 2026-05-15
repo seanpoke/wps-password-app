@@ -644,6 +644,7 @@ class FloatingButtonService : Service() {
             val etSearch = permissionPanelView?.findViewById<android.widget.EditText>(R.id.et_search)
             val btnSearch = permissionPanelView?.findViewById<android.widget.Button>(R.id.btn_search)
             val btnClear = permissionPanelView?.findViewById<android.widget.Button>(R.id.btn_clear)
+            val tvError = permissionPanelView?.findViewById<android.widget.TextView>(R.id.tv_error)
 
             // 替换ScrollView和LinearLayout为RecyclerView
             treeContainer?.removeAllViews()
@@ -753,8 +754,12 @@ class FloatingButtonService : Service() {
                     return@setOnClickListener
                 }
                 
+                // 获取isTemp参数（根据uid是否已注册）
+                val isTemp = fileMeta.isTempUid
+                android.util.Log.d(TAG, "权限更新 - docId=$docId, isTemp=$isTemp, accountDnList=$accountDnList, deptDnList=$deptDnList")
+                
                 // 构建请求体
-                val jsonBody = "{\"docId\": \"$docId\", \"accountDnList\": [${accountDnList.joinToString { "\"$it\"" }}], \"deptDnList\": [${deptDnList.joinToString { "\"$it\"" }}]}"
+                val jsonBody = "{\"docId\": \"$docId\", \"accountDnList\": [${accountDnList.joinToString { "\"$it\"" }}], \"deptDnList\": [${deptDnList.joinToString { "\"$it\"" }}], \"isTemp\": $isTemp}"
                 
                 // 获取token
                 val userInfo = ConfigStorage.getInstance(this).getUserInfo()
@@ -765,14 +770,29 @@ class FloatingButtonService : Service() {
                 networkManager.executePostRequest("/doc/auth/update", jsonBody, token, object : NetworkCallback {
                     override fun onSuccess(response: String) {
                         runOnUiThread {
-                            Toast.makeText(this@FloatingButtonService, "权限更新成功", Toast.LENGTH_SHORT).show()
-                            removePermissionPanel()
+                            try {
+                                val json = org.json.JSONObject(response)
+                                val status = json.getInt("status")
+                                if (status == 200) {
+                                    tvError?.visibility = android.view.View.GONE
+                                    Toast.makeText(this@FloatingButtonService, "权限更新成功", Toast.LENGTH_SHORT).show()
+                                    removePermissionPanel()
+                                } else {
+                                    val message = json.optString("message", "权限更新失败")
+                                    tvError?.text = message
+                                    tvError?.visibility = android.view.View.VISIBLE
+                                }
+                            } catch (e: Exception) {
+                                tvError?.text = "权限更新失败: 解析响应异常"
+                                tvError?.visibility = android.view.View.VISIBLE
+                            }
                         }
                     }
                     
                     override fun onError(error: String) {
                         runOnUiThread {
-                            Toast.makeText(this@FloatingButtonService, "权限更新失败: $error", Toast.LENGTH_SHORT).show()
+                            tvError?.text = "权限更新失败: $error"
+                            tvError?.visibility = android.view.View.VISIBLE
                         }
                     }
 
@@ -1195,5 +1215,9 @@ class FloatingButtonService : Service() {
 
     private fun runOnUiThread(action: () -> Unit) {
         android.os.Handler(android.os.Looper.getMainLooper()).post(action)
+    }
+
+    private fun showToast(message: String) {
+        Toast.makeText(this@FloatingButtonService, message, Toast.LENGTH_LONG).show()
     }
 }
