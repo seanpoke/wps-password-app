@@ -926,7 +926,7 @@ class ProxyActivity : AppCompatActivity() {
     }
 
     /**
-     * 处理文件，读取UID、密码和keyVersion，初始化FileMeta对象
+     * 处理文件，读取UID、加密密码和keyVersion，根据业务逻辑初始化FileMeta对象
      */
     private fun processFile(file: File, callback: (File?) -> Unit) {
         try {
@@ -934,32 +934,259 @@ class ProxyActivity : AppCompatActivity() {
             val isNewUid = existingUid == null
             val uid = existingUid ?: FileMetaFactory.createUid()
             val keyVersion = readKeyVersionFromFile(file.absolutePath)
-            val password = readAndParsePassword(file.absolutePath, uid, keyVersion, isNewUid)
+            val entryPassword = readPassword(file.absolutePath)
             
-            // 使用CountDownLatch等待初始化完成
+            LogManager.log(TAG, "文件处理元数据 - uid: $uid, isNewUid: $isNewUid, keyVersion: ${keyVersion ?: "null"}, entryPassword: ${if (entryPassword.isNullOrEmpty()) "null" else "已获取"}", "DEBUG")
+            
             val latch = java.util.concurrent.CountDownLatch(1)
             
-            if (isNewUid) {
-                // 新生成的uid，不调用注册接口，使用默认权限（读写都为true）
-                LogManager.log(TAG, "文件无uid，生成临时uid: $uid", "DEBUG")
-                initFileMetaWithTempUid(file.absolutePath, password, uid, keyVersion) {
-                    latch.countDown()
-                }
+            if (!isNewUid) {
+                processExistingUidFile(file.absolutePath, uid, keyVersion, entryPassword, latch)
             } else {
-                // 已有uid，调用接口获取权限
-                LogManager.log(TAG, "文件已有uid: $uid", "DEBUG")
-                initFileMetaWithPermissions(file.absolutePath, password, uid, keyVersion) {
-                    latch.countDown()
-                }
+                processNewUidFile(file.absolutePath, uid, keyVersion, entryPassword, latch)
             }
             
-            // 等待初始化完成，最多等待10秒
             latch.await(10, java.util.concurrent.TimeUnit.SECONDS)
             callback(file)
         } catch (e: Exception) {
             LogManager.log(TAG, "处理文件失败: ${e.message}", "ERROR")
             callback(null)
         }
+    }
+    
+    /**
+     * 处理已有uid的文件（非新文件）
+     * 调用/doc/owner接口获取DocInfo，进行双重条件判断后初始化FileMeta
+     */
+    private fun processExistingUidFile(
+        filePath: String,
+        uid: String,
+        keyVersion: String?,
+        entryPassword: String?,
+        latch: java.util.concurrent.CountDownLatch
+    ) {
+        LogManager.log(TAG, "处理已有uid的文件，开始调用/doc/owner接口", "DEBUG")
+        
+        val token = getTokenFromStorage()
+        val fileName = File(filePath).name
+        
+        NetworkManager.getInstance(this).getDocumentOwner(
+            docId = uid,
+            token = token,
+            fileName = fileName,
+            callback = object : NetworkCallback {
+                override fun onSuccess(response: String) {
+                    LogManager.log(TAG, "获取文档权限响应: $response", "DEBUG")
+                    try {
+                        val json = JSONObject(response)
+                        if (json.getInt("status") == 200) {
+                            val data = json.getJSONObject("data")
+                            val ownerAccount = data.optString("ownerAccount")
+                            val ownerName = data.optString("ownerName")
+                            val readAuth = data.optBoolean("readAuth", false)
+                            val writeAuth = data.optBoolean("writeAuth", false)
+                            
+                            // 双重条件判断
+                            // a) 当前用户是否拥有权限（读权限或写权限任意一个为true）
+                            // b) entryPassword和keyVersion是否均不为空
+                            val hasPermission = readAuth || writeAuth
+                            val hasValidCredentials = !entryPassword.isNullOrEmpty() && !keyVersion.isNullOrEmpty()
+                            
+                            LogManager.log(TAG, "权限判断结果 - hasPermission: $hasPermission, hasValidCredentials: $hasValidCredentials", "DEBUG")
+                            
+                            if (hasPermission && hasValidCredentials) {
+                                // 条件均满足：调用/doc/password接口获取真实密码
+                                fetchRealPasswordAndInitFileMeta(
+                                    filePath = filePath,
+                                    uid = uid,
+                                    keyVersion = keyVersion!!,
+                                    entryPassword = entryPassword!!,
+                                    isTemp = false,
+                                    ownerAccount = ownerAccount,
+                                    ownerName = ownerName,
+                                    readAuth = readAuth,
+                                    writeAuth = writeAuth,
+                                    latch = latch
+                                )
+                            } else {
+                                // 条件不满足：仅利用DocInfo初始化FileMeta，密码字段为null
+                                LogManager.log(TAG, "条件不满足，使用DocInfo初始化FileMeta（密码为null）", "DEBUG")
+                                FileMetaFactory.initFileMetaWithPermissions(
+                                    filePath = filePath,
+                                    oldPass = null,
+                                    uid = uid,
+                                    ownerAccount = ownerAccount,
+                                    ownerName = ownerName,
+                                    readAuth = readAuth,
+                                    writeAuth = writeAuth,
+                                    keyVersion = keyVersion
+                                )
+                                latch.countDown()
+                            }
+                        } else {
+                            LogManager.log(TAG, "获取文档权限失败，响应状态码不是200", "ERROR")
+                            initFileMetaWithDefaultPermissions(filePath, null, uid, keyVersion)
+                            latch.countDown()
+                        }
+                    } catch (e: Exception) {
+                        LogManager.log(TAG, "解析权限响应失败: ${e.message}", "ERROR")
+                        initFileMetaWithDefaultPermissions(filePath, null, uid, keyVersion)
+                        latch.countDown()
+                    }
+                }
+                
+                override fun onError(error: String) {
+                    LogManager.log(TAG, "获取文档权限失败: $error", "ERROR")
+                    initFileMetaWithDefaultPermissions(filePath, null, uid, keyVersion)
+                    latch.countDown()
+                }
+                
+                override fun onComplete() {}
+            }
+        )
+    }
+    
+    /**
+     * 处理新uid的文件（新文件）
+     * 根据entryPassword和keyVersion是否有效决定是否调用/doc/password接口
+     */
+    private fun processNewUidFile(
+        filePath: String,
+        uid: String,
+        keyVersion: String?,
+        entryPassword: String?,
+        latch: java.util.concurrent.CountDownLatch
+    ) {
+        LogManager.log(TAG, "处理新uid的文件", "DEBUG")
+        
+        // 验证entryPassword和keyVersion是否均不为空
+        val hasValidCredentials = !entryPassword.isNullOrEmpty() && !keyVersion.isNullOrEmpty()
+        
+        if (hasValidCredentials) {
+            // 条件满足：调用/doc/password接口，isTemp=true
+            LogManager.log(TAG, "entryPassword和keyVersion均有效，调用/doc/password接口获取真实密码", "DEBUG")
+            fetchRealPasswordAndInitFileMeta(
+                filePath = filePath,
+                uid = uid,
+                keyVersion = keyVersion!!,
+                entryPassword = entryPassword!!,
+                isTemp = true,
+                ownerAccount = null,
+                ownerName = null,
+                readAuth = true,
+                writeAuth = true,
+                latch = latch
+            )
+        } else {
+            // 条件不满足：初始化FileMeta，权限均为true，密码为null
+            LogManager.log(TAG, "entryPassword或keyVersion为空，使用默认设置初始化FileMeta", "DEBUG")
+            FileMetaFactory.initFileMetaWithPermissions(
+                filePath = filePath,
+                oldPass = null,
+                uid = uid,
+                ownerAccount = null,
+                ownerName = null,
+                readAuth = true,
+                writeAuth = true,
+                keyVersion = keyVersion
+            )
+            latch.countDown()
+        }
+    }
+    
+    /**
+     * 调用/doc/password接口获取真实密码，并使用完整数据初始化FileMeta对象
+     */
+    private fun fetchRealPasswordAndInitFileMeta(
+        filePath: String,
+        uid: String,
+        keyVersion: String,
+        entryPassword: String,
+        isTemp: Boolean,
+        ownerAccount: String?,
+        ownerName: String?,
+        readAuth: Boolean,
+        writeAuth: Boolean,
+        latch: java.util.concurrent.CountDownLatch
+    ) {
+        LogManager.log(TAG, "调用/doc/password接口，isTemp: $isTemp", "DEBUG")
+        
+        val token = getTokenFromStorage()
+        
+        NetworkManager.getInstance(this).getDocumentPassword(
+            docId = uid,
+            encryPassword = entryPassword,
+            token = token,
+            keyVersion = keyVersion,
+            isTemp = isTemp,
+            callback = object : NetworkCallback {
+                override fun onSuccess(response: String) {
+                    LogManager.log(TAG, "获取文档密码响应: $response", "DEBUG")
+                    try {
+                        val json = org.json.JSONObject(response)
+                        if (json.getInt("status") == 200) {
+                            val data = json.getJSONObject("data")
+                            val realPassword = data.optString("password")
+                            LogManager.log(TAG, "从接口获取到真实密码", "DEBUG")
+                            
+                            FileMetaFactory.initFileMetaWithPermissions(
+                                filePath = filePath,
+                                oldPass = realPassword,
+                                uid = uid,
+                                ownerAccount = ownerAccount,
+                                ownerName = ownerName,
+                                readAuth = readAuth,
+                                writeAuth = writeAuth,
+                                keyVersion = keyVersion
+                            )
+                        } else {
+                            LogManager.log(TAG, "获取文档密码失败，响应状态码不是200", "ERROR")
+                            FileMetaFactory.initFileMetaWithPermissions(
+                                filePath = filePath,
+                                oldPass = null,
+                                uid = uid,
+                                ownerAccount = ownerAccount,
+                                ownerName = ownerName,
+                                readAuth = readAuth,
+                                writeAuth = writeAuth,
+                                keyVersion = keyVersion
+                            )
+                        }
+                    } catch (e: Exception) {
+                        LogManager.log(TAG, "解析获取文档密码响应失败: ${e.message}", "ERROR")
+                        FileMetaFactory.initFileMetaWithPermissions(
+                            filePath = filePath,
+                            oldPass = null,
+                            uid = uid,
+                            ownerAccount = ownerAccount,
+                            ownerName = ownerName,
+                            readAuth = readAuth,
+                            writeAuth = writeAuth,
+                            keyVersion = keyVersion
+                        )
+                    } finally {
+                        latch.countDown()
+                    }
+                }
+                
+                override fun onError(error: String) {
+                    LogManager.log(TAG, "获取文档密码失败: $error", "ERROR")
+                    FileMetaFactory.initFileMetaWithPermissions(
+                        filePath = filePath,
+                        oldPass = null,
+                        uid = uid,
+                        ownerAccount = ownerAccount,
+                        ownerName = ownerName,
+                        readAuth = readAuth,
+                        writeAuth = writeAuth,
+                        keyVersion = keyVersion
+                    )
+                    latch.countDown()
+                }
+                
+                override fun onComplete() {}
+            }
+        )
     }
     
     /**
@@ -982,92 +1209,26 @@ class ProxyActivity : AppCompatActivity() {
     }
 
     /**
-     * 读取密码并存储到缓存
+     * 读取文件中的加密密码（仅读取，不解析）
      */
-    private fun readAndParsePassword(filePath: String, uid: String, keyVersion: String?, isTemp: Boolean = false): String? {
-        LogManager.log(TAG, "开始读取密码并存储到缓存，文件路径: $filePath", "DEBUG")
-        try {
+    private fun readPassword(filePath: String): String? {
+        LogManager.log(TAG, "开始读取加密密码，文件路径: $filePath", "DEBUG")
+        return try {
             val file = File(filePath)
             LogManager.log(TAG, "文件存在: ${file.exists()}", "DEBUG")
             LogManager.log(TAG, "文件可读: ${file.canRead()}", "DEBUG")
             LogManager.log(TAG, "文件大小: ${file.length()} 字节", "DEBUG")
 
-            val localPassword = FileMetaManager.getInstance().getPasswordFromFile(this, filePath)
-            if (localPassword != null) {
-                LogManager.log(TAG, "从本地文件读取到密码: $localPassword", "DEBUG")
-                // 从ConfigStorage获取token
-                val token = getTokenFromStorage()
-                LogManager.log(TAG, "获取到token: ${if (token.isNullOrEmpty()) "空" else "已获取"}", "DEBUG")
-
-                // 如果文件中没有读取到keyVersion，使用全局存储的keyVersion，若仍为空则使用默认值"default"
-                val finalKeyVersion = if (!keyVersion.isNullOrEmpty()) {
-                    keyVersion
-                } else {
-                    val configStorage = ConfigStorage.getInstance(this)
-                    val globalKeyVersion = configStorage.getKeyVersion()
-                    if (!globalKeyVersion.isNullOrEmpty()) {
-                        LogManager.log(TAG, "文件中未读取到keyVersion，使用全局keyVersion: $globalKeyVersion", "DEBUG")
-                        globalKeyVersion
-                    } else {
-                        LogManager.log(TAG, "文件和全局存储中均未读取到keyVersion，使用默认值: default", "DEBUG")
-                        "default"
-                    }
-                }
-
-                // 使用CountDownLatch等待网络请求完成
-                val latch = java.util.concurrent.CountDownLatch(1)
-                var resultPassword: String? = null
-
-                // 调用获取文档密码接口
-                LogManager.log(TAG, "开始调用获取文档密码接口", "DEBUG")
-                NetworkManager.getInstance(this).getDocumentPassword(
-                    docId = uid,
-                    encryPassword = localPassword,
-                    token = token,
-                    keyVersion = finalKeyVersion,
-                    isTemp = isTemp,
-                    callback = object : NetworkCallback {
-                        override fun onSuccess(response: String) {
-                            LogManager.log(TAG, "获取文档密码响应: $response", "DEBUG")
-                            try {
-                                val json = org.json.JSONObject(response)
-                                if (json.getInt("status") == 200) {
-                                    val data = json.getJSONObject("data")
-                                    val documentPassword = data.optString("password")
-                                    LogManager.log(TAG, "从接口获取到文档密码: $documentPassword", "DEBUG")
-                                    resultPassword = documentPassword
-                                } else {
-                                    LogManager.log(TAG, "获取文档密码失败，响应状态码不是200", "ERROR")
-                                    resultPassword = null
-                                }
-                            } catch (e: Exception) {
-                                LogManager.log(TAG, "解析获取文档密码响应失败: ${e.message}", "ERROR")
-                                resultPassword = null
-                            } finally {
-                                latch.countDown()
-                            }
-                        }
-
-                        override fun onError(error: String) {
-                            LogManager.log(TAG, "获取文档密码失败: $error", "ERROR")
-                            resultPassword = null
-                            latch.countDown()
-                        }
-
-                        override fun onComplete() {}
-                    }
-                )
-
-                // 等待网络请求完成，最多等待10秒
-                latch.await(10, java.util.concurrent.TimeUnit.SECONDS)
-                return resultPassword
+            val encryptedPassword = FileMetaManager.getInstance().getPasswordFromFile(this, filePath)
+            if (encryptedPassword != null) {
+                LogManager.log(TAG, "从本地文件读取到加密密码", "DEBUG")
             } else {
-                LogManager.log(TAG, "本地文件中未找到密码", "DEBUG")
-                return null
+                LogManager.log(TAG, "本地文件中未找到加密密码", "DEBUG")
             }
+            encryptedPassword
         } catch (e: Exception) {
-            LogManager.log(TAG, "读取本地文件密码失败: ${e.message}", "ERROR")
-            return null
+            LogManager.log(TAG, "读取本地文件加密密码失败: ${e.message}", "ERROR")
+            null
         }
     }
 
@@ -1093,86 +1254,6 @@ class ProxyActivity : AppCompatActivity() {
     }
 
     /**
-     * 初始化FileMeta对象并获取权限信息
-     */
-    private fun initFileMetaWithPermissions(filePath: String, password: String?, uid: String, keyVersion: String? = null, onComplete: () -> Unit = {}) {
-        LogManager.log(TAG, "开始初始化FileMeta对象并获取权限信息，文件路径: $filePath", "DEBUG")
-
-        try {
-            // 从ConfigStorage获取token
-            val token = getTokenFromStorage()
-            LogManager.log(TAG, "获取到token: ${if (token.isNullOrEmpty()) "空" else "已获取"}", "DEBUG")
-
-            // 尝试获取权限信息
-            LogManager.log(TAG, "开始获取文档权限信息", "DEBUG")
-
-            // 使用NetworkManager获取文档权限信息
-            val fileName = File(filePath).name
-            LogManager.log(TAG, "提取文件名: $fileName", "DEBUG")
-            NetworkManager.getInstance(this).getDocumentOwner(
-                docId = uid,
-                token = token,
-                fileName = fileName,
-                callback = object : NetworkCallback {
-                    override fun onSuccess(response: String) {
-                        LogManager.log(TAG, "获取文档权限响应: $response", "DEBUG")
-                        try {
-                            val json = JSONObject(response)
-                            if (json.getInt("status") == 200) {
-                                val data = json.getJSONObject("data")
-                                val ownerAccount = data.optString("ownerAccount")
-                                val ownerName = data.optString("ownerName")
-                                val readAuth = data.optBoolean("readAuth", false)
-                                val writeAuth = data.optBoolean("writeAuth", false)
-
-                                // 存储到FileMetaFactory
-                                FileMetaFactory.initFileMetaWithPermissions(
-                                    filePath = filePath,
-                                    oldPass = password,
-                                    uid = uid,
-                                    ownerAccount = ownerAccount,
-                                    ownerName = ownerName,
-                                    readAuth = readAuth,
-                                    writeAuth = writeAuth,
-                                    keyVersion = keyVersion
-                                )
-
-                                LogManager.log(
-                                    TAG,
-                                    "FileMeta对象初始化成功，权限信息: readAuth=$readAuth, writeAuth=$writeAuth, ownerAccount=$ownerAccount, ownerName=$ownerName, keyVersion=$keyVersion",
-                                    "DEBUG"
-                                )
-                            } else {
-                                // 响应状态码不是200，使用默认权限
-                                initFileMetaWithDefaultPermissions(filePath, password, uid, keyVersion)
-                            }
-                        } catch (e: Exception) {
-                            LogManager.log(TAG, "解析权限响应失败: ${e.message}", "ERROR")
-                            // 解析失败时使用默认权限
-                            initFileMetaWithDefaultPermissions(filePath, password, uid, keyVersion)
-                        } finally {
-                            onComplete()
-                        }
-                    }
-
-                    override fun onError(error: String) {
-                        LogManager.log(TAG, "获取文档权限失败: $error", "ERROR")
-                        // 网络请求失败时使用默认权限
-                        initFileMetaWithDefaultPermissions(filePath, password, uid, keyVersion)
-                        onComplete()
-                    }
-
-                    override fun onComplete() {}
-                }
-            )
-        } catch (e: Exception) {
-            LogManager.log(TAG, "初始化FileMeta对象失败: ${e.message}", "ERROR")
-            initFileMetaWithDefaultPermissions(filePath, password, uid, keyVersion)
-            onComplete()
-        }
-    }
-
-    /**
      * 从ConfigStorage获取token
      */
     private fun getTokenFromStorage(): String? {
@@ -1186,7 +1267,7 @@ class ProxyActivity : AppCompatActivity() {
     }
 
     /**
-     * 使用默认权限初始化FileMeta对象
+     * 使用默认权限初始化FileMeta对象（权限均为false）
      */
     private fun initFileMetaWithDefaultPermissions(
         filePath: String,
@@ -1206,28 +1287,6 @@ class ProxyActivity : AppCompatActivity() {
             keyVersion = keyVersion
         )
         LogManager.log(TAG, "FileMeta对象初始化成功，使用默认权限设置", "DEBUG")
-    }
-
-    /**
-     * 使用临时uid初始化FileMeta对象（新生成的uid，未注册到服务端）
-     * 不调用服务端接口，使用默认权限（读写都为true）
-     */
-    private fun initFileMetaWithTempUid(
-        filePath: String,
-        password: String?,
-        uid: String,
-        keyVersion: String? = null,
-        onComplete: () -> Unit = {}
-    ) {
-        LogManager.log(TAG, "使用临时uid初始化FileMeta对象", "DEBUG")
-        FileMetaFactory.initFileMetaWithTempUid(
-            filePath = filePath,
-            oldPass = password,
-            uid = uid,
-            keyVersion = keyVersion
-        )
-        LogManager.log(TAG, "FileMeta对象初始化成功，使用临时uid，isTempUid=true，默认权限（读写都为true）", "DEBUG")
-        onComplete()
     }
 
 
