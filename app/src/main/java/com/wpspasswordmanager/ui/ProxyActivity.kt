@@ -153,6 +153,16 @@ class ProxyActivity : AppCompatActivity() {
             return
         }
 
+        // 检查所有文件管理权限
+        if (!checkManageStoragePermission()) {
+            // 权限不足，跳转到主页面
+            val mainIntent = Intent(this, MainActivity::class.java)
+            mainIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            startActivity(mainIntent)
+            finish()
+            return
+        }
+
         // 检查是否选择了 WPS 应用
         if (!checkWpsAppSelected()) {
             // 未选择 WPS 应用，跳转到主页面
@@ -206,6 +216,19 @@ class ProxyActivity : AppCompatActivity() {
 
         // 若任意一项权限未启用，则返回false
         return isAccessibilityServiceEnabled && isOverlayPermissionGranted
+    }
+
+    /**
+     * 检查所有文件管理权限
+     * @return true if MANAGE_EXTERNAL_STORAGE permission is granted, false otherwise
+     */
+    private fun checkManageStoragePermission(): Boolean {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            val hasPermission = android.os.Environment.isExternalStorageManager()
+            LogManager.log(TAG, "MANAGE_EXTERNAL_STORAGE 权限状态: $hasPermission", "DEBUG")
+            return hasPermission
+        }
+        return true
     }
 
     /**
@@ -1078,16 +1101,11 @@ class ProxyActivity : AppCompatActivity() {
                 latch = latch
             )
         } else {
-            // 条件不满足：初始化FileMeta，权限均为true，密码为null
-            LogManager.log(TAG, "entryPassword或keyVersion为空，使用默认设置初始化FileMeta", "DEBUG")
-            FileMetaFactory.initFileMetaWithPermissions(
+            LogManager.log(TAG, "entryPassword或keyVersion为空，使用临时uid初始化FileMeta", "DEBUG")
+            FileMetaFactory.initFileMetaWithTempUid(
                 filePath = filePath,
                 oldPass = null,
                 uid = uid,
-                ownerAccount = null,
-                ownerName = null,
-                readAuth = true,
-                writeAuth = true,
                 keyVersion = keyVersion
             )
             latch.countDown()

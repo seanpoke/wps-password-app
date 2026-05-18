@@ -470,14 +470,9 @@ class FloatingButtonService : Service() {
             }
 
             override fun onError(error: String) {
-                // 如果响应为null，使用模拟数据
-                val mockResponse = getMockResponse()
-                val ldapItems = parseLdapItems(mockResponse)
-
-                // 在主线程中显示对话框
+                // 直接显示错误提示
                 runOnUiThread {
-                    Toast.makeText(this@FloatingButtonService, "网络错误，使用模拟数据", Toast.LENGTH_SHORT).show()
-                    showPermissionTreeDialog(ldapItems)
+                    Toast.makeText(this@FloatingButtonService, "获取权限列表失败: $error", Toast.LENGTH_SHORT).show()
                 }
             }
 
@@ -514,8 +509,8 @@ class FloatingButtonService : Service() {
         if (permissionPanelView == null) {
             // 解析LdapItem为TreeNode
             rootNodes = parseLdapItemsToTreeNodes(ldapItems)
-            // 初始化时计算所有父节点的半勾选状态
-            initializeParentAuthState(rootNodes)
+            // 初始化时处理已选中部门的子节点置灰状态
+            initGrayedStateForSelectedDepts(rootNodes)
             // 创建权限面板视图
             createPermissionPanel()
         } else {
@@ -678,12 +673,15 @@ class FloatingButtonService : Service() {
                 onAuthStateChanged = { node, hasAuth ->
                     node.hasAuth = hasAuth
                     node.isIndeterminate = false
+                    node.isGrayed = false
                     
                     if (node.type == 0) {
-                        node.updateChildrenAuthState(hasAuth)
+                        if (hasAuth) {
+                            updateChildrenGrayedState(node)
+                        } else {
+                            node.clearChildrenState()
+                        }
                     }
-                    
-                    updateParentAuthState(node.parent)
                     
                     val newList = flattenTree(rootNodes).toMutableList()
                     treeAdapter?.nodes?.clear()
@@ -728,6 +726,13 @@ class FloatingButtonService : Service() {
 
             // 保存按钮点击事件
             btnSave?.setOnClickListener {
+                // 隐藏之前的错误信息
+                tvError?.visibility = android.view.View.GONE
+                
+                // 置灰按钮并显示"保存中"
+                btnSave?.isEnabled = false
+                btnSave?.text = "保存中"
+                
                 // 处理保存逻辑
                 val selectedItems = getSelectedNodes(rootNodes)
                 
@@ -746,6 +751,8 @@ class FloatingButtonService : Service() {
                 // 获取文档路径
                 val documentPath = WpsAccessibilityService.stableDocumentPath
                 if (documentPath.isNullOrEmpty()) {
+                    btnSave?.isEnabled = true
+                    btnSave?.text = "保存"
                     Toast.makeText(this, "未找到文档路径", Toast.LENGTH_SHORT).show()
                     return@setOnClickListener
                 }
@@ -753,6 +760,8 @@ class FloatingButtonService : Service() {
                 // 获取FileMeta对象
                 val fileMeta = FileMetaFactory.getFileMeta(documentPath)
                 if (fileMeta == null) {
+                    btnSave?.isEnabled = true
+                    btnSave?.text = "保存"
                     Toast.makeText(this, "未找到文档元数据", Toast.LENGTH_SHORT).show()
                     return@setOnClickListener
                 }
@@ -760,6 +769,8 @@ class FloatingButtonService : Service() {
                 // 获取docId参数
                 val docId = fileMeta.uid
                 if (docId.isNullOrEmpty()) {
+                    btnSave?.isEnabled = true
+                    btnSave?.text = "保存"
                     Toast.makeText(this, "未找到文档唯一标识", Toast.LENGTH_SHORT).show()
                     return@setOnClickListener
                 }
@@ -795,6 +806,9 @@ class FloatingButtonService : Service() {
                             } catch (e: Exception) {
                                 tvError?.text = "权限更新失败: 解析响应异常"
                                 tvError?.visibility = android.view.View.VISIBLE
+                            } finally {
+                                btnSave?.isEnabled = true
+                                btnSave?.text = "保存"
                             }
                         }
                     }
@@ -803,6 +817,8 @@ class FloatingButtonService : Service() {
                         runOnUiThread {
                             tvError?.text = "权限更新失败: $error"
                             tvError?.visibility = android.view.View.VISIBLE
+                            btnSave?.isEnabled = true
+                            btnSave?.text = "保存"
                         }
                     }
 
@@ -878,6 +894,54 @@ class FloatingButtonService : Service() {
             }
         }
         return selected
+    }
+    
+    /**
+     * 初始化时处理已选中部门的子节点置灰状态
+     * 跳过已被单独选中的员工节点
+     */
+    private fun initGrayedStateForSelectedDepts(nodes: List<TreeNode>) {
+        for (node in nodes) {
+            if (node.type == 0 && node.hasAuth) {
+                updateChildrenGrayedStateWithCheck(node)
+            }
+            if (node.children.isNotEmpty()) {
+                initGrayedStateForSelectedDepts(node.children)
+            }
+        }
+    }
+    
+    /**
+     * 更新子节点置灰状态（初始化时使用）
+     * 跳过已被单独选中的员工节点
+     */
+    private fun updateChildrenGrayedStateWithCheck(node: TreeNode) {
+        for (child in node.children) {
+            if (child.type == 1) {
+                if (!child.hasAuth) {
+                    child.isGrayed = true
+                }
+            } else {
+                child.isGrayed = true
+                if (child.children.isNotEmpty()) {
+                    updateChildrenGrayedStateWithCheck(child)
+                }
+            }
+        }
+    }
+    
+    /**
+     * 强制更新所有子节点置灰状态（勾选部门时使用）
+     * 不跳过任何节点，强制设置为置灰状态
+     */
+    private fun updateChildrenGrayedState(node: TreeNode) {
+        for (child in node.children) {
+            child.hasAuth = false
+            child.isGrayed = true
+            if (child.type == 0 && child.children.isNotEmpty()) {
+                updateChildrenGrayedState(child)
+            }
+        }
     }
 
     private fun performSearch(searchText: String) {

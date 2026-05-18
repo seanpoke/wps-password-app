@@ -93,12 +93,6 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".ui.PermissionTreeActivity"
-            android:exported="false"
-            android:theme="@style/Theme.WpsPasswordManager" />
-
-
         <service
             android:name=".monitor.WpsAccessibilityService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"

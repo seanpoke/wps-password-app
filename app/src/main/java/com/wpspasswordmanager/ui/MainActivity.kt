@@ -54,8 +54,10 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var accessibilityStatus: TextView
     private lateinit var overlayStatus: TextView
+    private lateinit var manageStorageStatus: TextView
     private lateinit var enableAccessibilityButton: Button
     private lateinit var enableOverlayButton: Button
+    private lateinit var manageStorageButton: Button
     private lateinit var migrationStatus: TextView
     private lateinit var migrationButton: Button
 
@@ -175,8 +177,10 @@ class MainActivity : AppCompatActivity() {
     private fun initUI() {
         accessibilityStatus = findViewById(R.id.accessibility_status)
         overlayStatus = findViewById(R.id.overlay_status)
+        manageStorageStatus = findViewById(R.id.manage_storage_status)
         enableAccessibilityButton = findViewById(R.id.enable_accessibility_button)
         enableOverlayButton = findViewById(R.id.enable_overlay_button)
+        manageStorageButton = findViewById(R.id.manage_storage_button)
         migrationStatus = findViewById(R.id.migration_status)
         migrationButton = findViewById(R.id.migration_button)
         permissionStatusTitle = findViewById(R.id.permission_status_title)
@@ -243,6 +247,10 @@ class MainActivity : AppCompatActivity() {
 
         enableOverlayButton.setOnClickListener {
             requestOverlayPermission()
+        }
+
+        manageStorageButton.setOnClickListener {
+            requestManageStoragePermission()
         }
 
         loginButton.setOnClickListener {
@@ -491,6 +499,24 @@ class MainActivity : AppCompatActivity() {
             overlayStatus.setTextColor(resources.getColor(android.R.color.holo_red_dark))
             enableOverlayButton.text = "启用"
             enableOverlayButton.isEnabled = true
+        }
+
+        // 检查所有文件管理权限状态
+        val isManageStorageEnabled = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            Environment.isExternalStorageManager()
+        } else {
+            true
+        }
+        if (isManageStorageEnabled) {
+            manageStorageStatus.text = "文档操作权限: 已授权"
+            manageStorageStatus.setTextColor(resources.getColor(android.R.color.holo_green_dark))
+            manageStorageButton.text = "已授权"
+            manageStorageButton.isEnabled = false
+        } else {
+            manageStorageStatus.text = "文档操作权限: 未授权"
+            manageStorageStatus.setTextColor(resources.getColor(android.R.color.holo_red_dark))
+            manageStorageButton.text = "授予权限"
+            manageStorageButton.isEnabled = true
         }
     }
 
@@ -958,14 +984,12 @@ class MainActivity : AppCompatActivity() {
                 if (Environment.isExternalStorageManager()) {
                     LogManager.log(TAG, "MANAGE_EXTERNAL_STORAGE 权限已授予", "DEBUG")
                     Toast.makeText(this, "已获得所有文件访问权限", Toast.LENGTH_SHORT).show()
-                    performMigration()
                 } else {
                     LogManager.log(TAG, "MANAGE_EXTERNAL_STORAGE 权限被拒绝", "WARN")
-                    migrationStatus.text = "目录迁移: 权限被拒绝"
-                    migrationStatus.setTextColor(resources.getColor(android.R.color.holo_red_dark))
-                    Toast.makeText(this, "未获得所有文件访问权限，无法执行目录迁移", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this, "未获得所有文件访问权限", Toast.LENGTH_LONG).show()
                 }
             }
+            updatePermissionStatus()
         }
     }
 
@@ -1217,6 +1241,15 @@ class MainActivity : AppCompatActivity() {
         return isAccessibilityServiceEnabled && isOverlayPermissionGranted
     }
 
+    private fun checkManageStoragePermission(): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val hasPermission = Environment.isExternalStorageManager()
+            LogManager.log(TAG, "MANAGE_EXTERNAL_STORAGE 权限状态: $hasPermission", "DEBUG")
+            return hasPermission
+        }
+        return true
+    }
+
     private fun isAccessibilityServiceEnabled(): Boolean {
         try {
             val accessibilityManager = getSystemService(android.content.Context.ACCESSIBILITY_SERVICE) as android.view.accessibility.AccessibilityManager
@@ -1409,6 +1442,12 @@ class MainActivity : AppCompatActivity() {
 
                     if (!checkWpsAppSelected()) {
                         errorText.text = "未选择 WPS 应用，请先选择"
+                        errorText.visibility = android.view.View.VISIBLE
+                        return@setOnClickListener
+                    }
+
+                    if (!checkManageStoragePermission()) {
+                        errorText.text = "请先授予【文档操作权限】，否则无法创建文件"
                         errorText.visibility = android.view.View.VISIBLE
                         return@setOnClickListener
                     }

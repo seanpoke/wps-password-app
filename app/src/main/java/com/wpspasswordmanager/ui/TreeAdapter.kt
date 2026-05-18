@@ -9,10 +9,13 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.wpspasswordmanager.R
 
-class TreeAdapter(val nodes: MutableList<TreeNode>, private val onItemClicked: (TreeNode) -> Unit, private val onAuthStateChanged: (TreeNode, Boolean) -> Unit) : RecyclerView.Adapter<TreeAdapter.TreeViewHolder>() {
+class TreeAdapter(
+    val nodes: MutableList<TreeNode>,
+    private val onItemClicked: (TreeNode) -> Unit,
+    private val onAuthStateChanged: (TreeNode, Boolean) -> Unit
+) : RecyclerView.Adapter<TreeAdapter.TreeViewHolder>() {
 
     var isSearchMode = false
-
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TreeViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.tree_node_item, parent, false)
@@ -42,8 +45,7 @@ class TreeAdapter(val nodes: MutableList<TreeNode>, private val onItemClicked: (
     }
 
     override fun getItemCount(): Int {
-        val count = nodes.size
-        return count
+        return nodes.size
     }
 
     private fun shouldShowNode(node: TreeNode): Boolean {
@@ -67,19 +69,19 @@ class TreeAdapter(val nodes: MutableList<TreeNode>, private val onItemClicked: (
         private val arrowImageView: ImageView = itemView.findViewById(R.id.iv_arrow)
         private val iconImageView: ImageView = itemView.findViewById(R.id.iv_icon)
         private val nameTextView: TextView = itemView.findViewById(R.id.tv_name)
-        private val authImageView: ImageView = itemView.findViewById(R.id.iv_auth)
         private val checkBox: CheckBox = itemView.findViewById(R.id.cb_select)
 
-        fun bind(node: TreeNode, onItemClicked: (TreeNode) -> Unit, onAuthStateChanged: (TreeNode, Boolean) -> Unit) {
-            // 根据层级设置左侧缩进
+        fun bind(
+            node: TreeNode,
+            onItemClicked: (TreeNode) -> Unit,
+            onAuthStateChanged: (TreeNode, Boolean) -> Unit
+        ) {
             val params = itemView.layoutParams as ViewGroup.MarginLayoutParams
-            params.marginStart = node.level * 40 // 每层缩进40dp
+            params.marginStart = node.level * 40
             itemView.layoutParams = params
 
-            // 设置名称
             nameTextView.text = node.name
 
-            // 处理展开/折叠图标
             if (node.type == 0 && node.children.isNotEmpty()) {
                 arrowImageView.visibility = View.VISIBLE
                 arrowImageView.setImageResource(if (node.isExpanded) R.drawable.ic_expanded else R.drawable.ic_collapsed)
@@ -87,28 +89,31 @@ class TreeAdapter(val nodes: MutableList<TreeNode>, private val onItemClicked: (
                 arrowImageView.visibility = View.INVISIBLE
             }
 
-            // 区分部门和员工的图标
             iconImageView.setImageResource(if (node.type == 0) R.drawable.ic_dept else R.drawable.ic_employee)
 
-            // 半勾选状态显示半勾选图标，其他状态不显示图标
-            if (node.type == 0 && node.isIndeterminate) {
-                authImageView.visibility = View.VISIBLE
-                authImageView.setImageResource(R.drawable.ic_indeterminate_checkbox)
-            } else {
-                authImageView.visibility = View.GONE
-            }
-
-            // 设置勾选状态，避免触发onCheckedChangeListener
             checkBox.setOnCheckedChangeListener(null)
-            checkBox.isChecked = node.hasAuth
-            checkBox.setOnCheckedChangeListener {
-                _, isChecked ->
+            
+            if (node.isIndeterminate) {
+                checkBox.isChecked = true
+                checkBox.isEnabled = false
+            } else if (node.isGrayed && !node.hasAuth) {
+                checkBox.isChecked = true
+                checkBox.isEnabled = false
+                checkBox.alpha = 0.5f
+            } else {
+                checkBox.isChecked = node.hasAuth
+                checkBox.isEnabled = true
+                checkBox.alpha = 1.0f
+            }
+            
+            checkBox.setOnCheckedChangeListener { _, isChecked ->
                 node.isIndeterminate = false
-                node.setAuthState(isChecked)
+                node.isGrayed = false
+                checkBox.isEnabled = true
+                checkBox.alpha = 1.0f
                 onAuthStateChanged(node, isChecked)
             }
 
-            // 点击事件
             itemView.setOnClickListener {
                 onItemClicked(node)
             }

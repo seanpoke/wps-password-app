@@ -191,6 +191,28 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="8dp">
+
+            <TextView
+                android:id="@+id/manage_storage_status"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="文档操作权限: 未授权"
+                android:textColor="@android:color/holo_red_dark" />
+
+            <Button
+                android:id="@+id/manage_storage_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="授予权限" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:orientation="horizontal">
 
             <TextView

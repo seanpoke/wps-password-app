@@ -4,7 +4,7 @@ plugins {
 }
 
 def date = new Date()
-def formattedDate = date.format('yyyyMMdd')
+def formattedDate = date.format('yyyyMMddHHmm')
 
 android {
     namespace 'com.wpspasswordmanager'
@@ -43,6 +43,15 @@ android {
         jvmTarget = '17'
     }
     buildToolsVersion '34.0.0'
+
+//    // ========== 自动自定义 APK 文件名（你要的功能）==========
+//    applicationVariants.all { variant ->
+//        variant.outputs.all { output ->
+//            // 在这里修改你想要的包名前缀
+//            def apkName = "文档密码管理_${variant.versionName}.apk"
+//            outputFileName = apkName
+//        }
+//    }
 }
 
 dependencies {
@@ -54,7 +63,6 @@ dependencies {
     implementation 'org.apache.poi:poi-ooxml:5.2.3'
     implementation 'com.google.code.gson:gson:2.10.1'
     implementation 'com.squareup.okhttp3:okhttp:4.10.0'
-    // BouncyCastle 加密库
     implementation 'org.bouncycastle:bcprov-jdk15on:1.70'
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
