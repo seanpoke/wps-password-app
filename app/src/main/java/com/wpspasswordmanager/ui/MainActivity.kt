@@ -917,25 +917,8 @@ class MainActivity : AppCompatActivity() {
             registerReceiver(sessionExpiredReceiver, filter)
         }
         
-        // 再次检查用户信息状态
-        val userInfo = configStorage.getUserInfo()
-        if (userInfo != null && isLoggedIn) {
-            // 检查token有效性
-            networkManager.refreshToken(userInfo.token, object : NetworkCallback {
-                override fun onSuccess(response: String) {
-                    // Token有效，保持登录状态
-                }
-
-                override fun onError(error: String) {
-                    // Token无效（401）或网络错误，清理登录状态
-                    runOnUiThread {
-                        handle401Error()
-                    }
-                }
-
-                override fun onComplete() {}
-            })
-        }
+        // Token有效性检查已在 onCreate() 中完成，心跳保活由 HeartbeatService 负责
+        // 无需在 onStart() 中重复检查，避免重复的 refresh-token 请求
     }
 
     override fun onStop() {
@@ -1531,26 +1514,14 @@ class MainActivity : AppCompatActivity() {
                 "docx" -> {
                     return createEmptyDocx(targetFile)
                 }
-                "doc" -> {
-                    return createEmptyDocx(targetFile)
-                }
                 "xlsx" -> {
-                    return createEmptyXlsx(targetFile)
-                }
-                "xls" -> {
                     return createEmptyXlsx(targetFile)
                 }
                 "pptx" -> {
                     return createEmptyPptx(targetFile)
                 }
-                "ppt" -> {
-                    return createEmptyPptx(targetFile)
-                }
-                "pdf" -> {
-                    return createEmptyPdf(targetFile)
-                }
                 else -> {
-                    return createEmptyTextFile(targetFile)
+                    return false
                 }
             }
         } catch (e: Exception) {
@@ -1812,13 +1783,8 @@ class MainActivity : AppCompatActivity() {
         val extension = fileName.substringAfterLast('.', "").toLowerCase()
         return when (extension) {
             "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            "doc" -> "application/msword"
             "xlsx" -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            "xls" -> "application/vnd.ms-excel"
             "pptx" -> "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-            "ppt" -> "application/vnd.ms-powerpoint"
-            "pdf" -> "application/pdf"
-            "txt" -> "text/plain"
             else -> "application/octet-stream"
         }
     }

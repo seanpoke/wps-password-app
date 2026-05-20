@@ -199,12 +199,7 @@ class WpsPasswordManagerApplication : Application() {
 
                 MOVED_TO -> {
                     LogManager.log(TAG, "监听到文件移动完成: $fullPath", "DEBUG")
-                    if (fullPath.endsWith(".docx") || fullPath.endsWith(".doc") || fullPath.endsWith(
-                            ".xlsx"
-                        ) || fullPath.endsWith(".xls") || fullPath.endsWith(".pptx") || fullPath.endsWith(
-                            ".ppt"
-                        )
-                    ) {
+                    if (fullPath.endsWith(".docx") || fullPath.endsWith(".xlsx") || fullPath.endsWith(".pptx")) {
                         if (!isPluginOperation()) {
                             handleFileCloseWrite(fullPath)
                         } else {

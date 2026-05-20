@@ -15,6 +15,25 @@ class WpsAccessibilityService : AccessibilityService() {
         private const val TAG = "WpsAccessibilityService"
         private val WPS_PACKAGES = arrayOf("cn.wps.moffice_eng", "cn.wps.moffice")
         private var tempPassword: String? = null // 临时存储密码，用户确认前不写入MemoryPasswordStorage
+        private val ALLOWED_EXTENSIONS = arrayOf(".docx", ".xlsx", ".pptx")
+        
+        /**
+         * 验证文件类型是否为允许的类型（.docx、.xlsx、.pptx）
+         * @param filePath 文件路径
+         * @return 是否为允许的文件类型
+         */
+        fun isValidFileType(filePath: String?): Boolean {
+            if (filePath.isNullOrEmpty()) {
+                Log.w(TAG, "文件路径为空，跳过文件类型验证")
+                return false
+            }
+            val fileName = java.io.File(filePath).name.lowercase()
+            val isValid = ALLOWED_EXTENSIONS.any { fileName.endsWith(it) }
+            if (!isValid) {
+                Log.w(TAG, "文件类型不允许: $filePath，仅支持: ${ALLOWED_EXTENSIONS.joinToString(", ")}")
+            }
+            return isValid
+        }
 
         /**
          * 获取临时密码
@@ -422,6 +441,38 @@ class WpsAccessibilityService : AccessibilityService() {
             // 检测对话框类型
             val previousDialogType = currentDialogType
             detectDialogType(rootNode)
+
+            // 获取当前文件路径用于验证
+            val currentFilePath = currentFileUri ?: stableDocumentPath
+            
+            // 文件类型验证逻辑
+            when (currentDialogType) {
+                DialogType.OPEN_ENCRYPTED_DOCUMENT -> {
+                    // 【文档已加密】窗口：验证文件类型
+                    if (!isValidFileType(currentFilePath)) {
+                        Log.w(TAG, "文件类型不允许，终止【文档已加密】窗口的后续操作")
+                        // 重置相关状态，不执行后续操作
+                        currentDialogType = DialogType.UNKNOWN
+                        // 隐藏悬浮按钮
+                        AccessibilityServiceManager.getInstance().hideFloatingButton()
+                        stopFloatingButtonService()
+                        return
+                    }
+                }
+                DialogType.ADD_PASSWORD, DialogType.MODIFY_PASSWORD -> {
+                    // 【添加密码】或【修改密码】窗口：验证文件类型
+                    if (!isValidFileType(currentFilePath)) {
+                        Log.w(TAG, "文件类型不允许，终止【${if (currentDialogType == DialogType.ADD_PASSWORD) "添加" else "修改"}密码】窗口的后续操作")
+                        // 重置相关状态，不执行后续操作
+                        currentDialogType = DialogType.UNKNOWN
+                        // 隐藏悬浮按钮
+                        AccessibilityServiceManager.getInstance().hideFloatingButton()
+                        stopFloatingButtonService()
+                        return
+                    }
+                }
+                else -> {}
+            }
 
             // 只有在对话框类型发生变化时才重置显示密码标志
             if (previousDialogType != currentDialogType) {
@@ -1264,11 +1315,8 @@ class WpsAccessibilityService : AccessibilityService() {
         }
 
         // 检查是否是真实的文件路径
-        val isRealFilePath = detectedPath?.contains(".doc") == true ||
-                detectedPath?.contains(".docx") == true ||
-                detectedPath?.contains(".xls") == true ||
+        val isRealFilePath = detectedPath?.contains(".docx") == true ||
                 detectedPath?.contains(".xlsx") == true ||
-                detectedPath?.contains(".ppt") == true ||
                 detectedPath?.contains(".pptx") == true ||
                 detectedPath?.contains("/storage/") == true ||
                 detectedPath?.contains("SD卡") == true ||
@@ -1281,10 +1329,9 @@ class WpsAccessibilityService : AccessibilityService() {
         }
 
         // 保持文档路径稳定，只在第一次设置或检测到新的有效路径时更新
-        if (stableDocumentPath == null || (isRealFilePath && (!stableDocumentPath!!.contains(".doc") && !stableDocumentPath!!.contains(
-                ".xls"
-            ) && !stableDocumentPath!!.contains(".ppt") && !stableDocumentPath!!.contains("/storage/")))
-        ) {
+        if (stableDocumentPath == null || (isRealFilePath && (!stableDocumentPath!!.contains(".docx") && !stableDocumentPath!!.contains(
+                ".xlsx"
+            ) && !stableDocumentPath!!.contains(".pptx") && !stableDocumentPath!!.contains("/storage/")))) {
             stableDocumentPath = detectedPath
             if (enableLogging) {
                 Log.d(TAG, "设置稳定文档路径: $stableDocumentPath")
@@ -1343,8 +1390,7 @@ class WpsAccessibilityService : AccessibilityService() {
             if (text.isNotEmpty() && (text.contains("/storage/") || text.contains("SD卡") || text.contains(
                     "Internal storage"
                 )) &&
-                (text.contains(".doc") || text.contains(".docx") || text.contains(".xls") ||
-                        text.contains(".xlsx") || text.contains(".ppt") || text.contains(".pptx"))
+                (text.contains(".docx") || text.contains(".xlsx") || text.contains(".pptx"))
             ) {
                 Log.d(TAG, "从系统元素找到文件路径: $text")
                 return text
@@ -1353,10 +1399,7 @@ class WpsAccessibilityService : AccessibilityService() {
             if (contentDescription.isNotEmpty() && (contentDescription.contains("/storage/") || contentDescription.contains(
                     "SD卡"
                 ) || contentDescription.contains("Internal storage")) &&
-                (contentDescription.contains(".doc") || contentDescription.contains(".docx") || contentDescription.contains(
-                    ".xls"
-                ) ||
-                        contentDescription.contains(".xlsx") || contentDescription.contains(".ppt") || contentDescription.contains(
+                (contentDescription.contains(".docx") || contentDescription.contains(".xlsx") || contentDescription.contains(
                     ".pptx"
                 ))
             ) {
@@ -1397,20 +1440,17 @@ class WpsAccessibilityService : AccessibilityService() {
             ) {
 
                 // 检查文本是否包含文件路径特征
-                if (text.isNotEmpty() && (text.contains(".doc") || text.contains(".docx") ||
-                            text.contains(".xls") || text.contains(".xlsx") ||
-                            text.contains(".ppt") || text.contains(".pptx"))
+                if (text.isNotEmpty() && (text.contains(".docx") ||
+                            text.contains(".xlsx") || text.contains(".pptx"))
                 ) {
                     Log.d(TAG, "从导航栏找到文件路径: $text")
                     return text
                 }
 
                 // 检查内容描述
-                if (contentDescription.isNotEmpty() && (contentDescription.contains(".doc") || contentDescription.contains(
-                        ".docx"
-                    ) ||
-                            contentDescription.contains(".xls") || contentDescription.contains(".xlsx") ||
-                            contentDescription.contains(".ppt") || contentDescription.contains(".pptx"))
+                if (contentDescription.isNotEmpty() && (contentDescription.contains(".docx") ||
+                            contentDescription.contains(".xlsx") ||
+                            contentDescription.contains(".pptx"))
                 ) {
                     Log.d(TAG, "从导航栏内容描述找到文件路径: $contentDescription")
                     return contentDescription
@@ -1446,9 +1486,8 @@ class WpsAccessibilityService : AccessibilityService() {
             if (text.isNotEmpty() && (text.contains("路径") || text.contains("Path") || text.contains(
                     "path"
                 )) &&
-                (text.contains(".doc") || text.contains(".docx") ||
-                        text.contains(".xls") || text.contains(".xlsx") ||
-                        text.contains(".ppt") || text.contains(".pptx") ||
+                (text.contains(".docx") || text.contains(".xlsx") ||
+                        text.contains(".pptx") ||
                         text.contains("/storage/") || text.contains("SD卡") ||
                         text.contains("Internal storage") || text.contains("file:/"))
             ) {
@@ -1459,9 +1498,8 @@ class WpsAccessibilityService : AccessibilityService() {
             if (contentDescription.isNotEmpty() && (contentDescription.contains("路径") || contentDescription.contains(
                     "Path"
                 ) || contentDescription.contains("path")) &&
-                (contentDescription.contains(".doc") || contentDescription.contains(".docx") ||
-                        contentDescription.contains(".xls") || contentDescription.contains(".xlsx") ||
-                        contentDescription.contains(".ppt") || contentDescription.contains(".pptx") ||
+                (contentDescription.contains(".docx") || contentDescription.contains(".xlsx") ||
+                        contentDescription.contains(".pptx") ||
                         contentDescription.contains("/storage/") || contentDescription.contains("SD卡") ||
                         contentDescription.contains("Internal storage") || contentDescription.contains(
                     "file:/"
@@ -1498,19 +1536,16 @@ class WpsAccessibilityService : AccessibilityService() {
             val className = currentNode.className?.toString() ?: ""
 
             // 检查是否是文件名（包含常见的文档扩展名）
-            if (text.isNotEmpty() && (text.contains(".doc") || text.contains(".docx") ||
-                        text.contains(".xls") || text.contains(".xlsx") ||
-                        text.contains(".ppt") || text.contains(".pptx"))
+            if (text.isNotEmpty() && (text.contains(".docx") ||
+                        text.contains(".xlsx") || text.contains(".pptx"))
             ) {
                 Log.d(TAG, "从WPS找到文件名: $text")
                 return text
             }
 
-            if (contentDescription.isNotEmpty() && (contentDescription.contains(".doc") || contentDescription.contains(
-                    ".docx"
-                ) ||
-                        contentDescription.contains(".xls") || contentDescription.contains(".xlsx") ||
-                        contentDescription.contains(".ppt") || contentDescription.contains(".pptx"))
+            if (contentDescription.isNotEmpty() && (contentDescription.contains(".docx") ||
+                        contentDescription.contains(".xlsx") ||
+                        contentDescription.contains(".pptx"))
             ) {
                 Log.d(TAG, "从WPS内容描述找到文件名: $contentDescription")
                 return contentDescription
@@ -1549,9 +1584,8 @@ class WpsAccessibilityService : AccessibilityService() {
 
                 // 检查文本是否包含文件路径特征
                 if (text.isNotEmpty() && (
-                            text.contains(".doc") || text.contains(".docx") ||
-                                    text.contains(".xls") || text.contains(".xlsx") ||
-                                    text.contains(".ppt") || text.contains(".pptx")
+                            text.contains(".docx") || text.contains(".xlsx") ||
+                                    text.contains(".pptx")
                             )
                 ) {
                     Log.d(TAG, "从状态栏找到文件路径: $text")
@@ -1560,13 +1594,8 @@ class WpsAccessibilityService : AccessibilityService() {
 
                 // 检查内容描述
                 if (contentDescription.isNotEmpty() && (
-                            contentDescription.contains(".doc") || contentDescription.contains(".docx") ||
-                                    contentDescription.contains(".xls") || contentDescription.contains(
-                                ".xlsx"
-                            ) ||
-                                    contentDescription.contains(".ppt") || contentDescription.contains(
-                                ".pptx"
-                            )
+                            contentDescription.contains(".docx") || contentDescription.contains(".xlsx") ||
+                                    contentDescription.contains(".pptx")
                             )
                 ) {
                     Log.d(TAG, "从状态栏内容描述找到文件路径: $contentDescription")
@@ -1606,11 +1635,8 @@ class WpsAccessibilityService : AccessibilityService() {
                                 text.contains("Internal storage") ||
                                 text.contains("file:/")
                         ) && (
-                        text.contains(".doc") ||
-                                text.contains(".docx") ||
-                                text.contains(".xls") ||
+                        text.contains(".docx") ||
                                 text.contains(".xlsx") ||
-                                text.contains(".ppt") ||
                                 text.contains(".pptx")
                         )
             ) {
@@ -1624,11 +1650,8 @@ class WpsAccessibilityService : AccessibilityService() {
                                 contentDescription.contains("Internal storage") ||
                                 contentDescription.contains("file:/")
                         ) && (
-                        contentDescription.contains(".doc") ||
-                                contentDescription.contains(".docx") ||
-                                contentDescription.contains(".xls") ||
+                        contentDescription.contains(".docx") ||
                                 contentDescription.contains(".xlsx") ||
-                                contentDescription.contains(".ppt") ||
                                 contentDescription.contains(".pptx")
                         )
             ) {
@@ -1674,9 +1697,8 @@ class WpsAccessibilityService : AccessibilityService() {
                 // 检查文本是否包含文件路径或文件名
                 if (text.isNotEmpty()) {
                     // 检查是否包含文件扩展名
-                    if (text.contains(".doc") || text.contains(".docx") ||
-                        text.contains(".xls") || text.contains(".xlsx") ||
-                        text.contains(".ppt") || text.contains(".pptx")
+                    if (text.contains(".docx") || text.contains(".xlsx") ||
+                        text.contains(".pptx")
                     ) {
                         Log.d(TAG, "从WPS特定元素找到文件路径: $text")
                         return text
@@ -1686,9 +1708,8 @@ class WpsAccessibilityService : AccessibilityService() {
                 // 检查内容描述
                 if (contentDescription.isNotEmpty()) {
                     // 检查是否包含文件扩展名
-                    if (contentDescription.contains(".doc") || contentDescription.contains(".docx") ||
-                        contentDescription.contains(".xls") || contentDescription.contains(".xlsx") ||
-                        contentDescription.contains(".ppt") || contentDescription.contains(".pptx")
+                    if (contentDescription.contains(".docx") || contentDescription.contains(".xlsx") ||
+                        contentDescription.contains(".pptx")
                     ) {
                         Log.d(TAG, "从WPS特定元素内容描述找到文件路径: $contentDescription")
                         return contentDescription
@@ -1700,8 +1721,7 @@ class WpsAccessibilityService : AccessibilityService() {
             if (text.isNotEmpty() && (text.contains("/storage/") || text.contains("SD卡") || text.contains(
                     "Internal storage"
                 )) &&
-                (text.contains(".doc") || text.contains(".docx") || text.contains(".xls") ||
-                        text.contains(".xlsx") || text.contains(".ppt") || text.contains(".pptx"))
+                (text.contains(".docx") || text.contains(".xlsx") || text.contains(".pptx"))
             ) {
                 Log.d(TAG, "从文件路径相关节点找到文件路径: $text")
                 return text
@@ -1740,9 +1760,8 @@ class WpsAccessibilityService : AccessibilityService() {
             // 查找包含文件路径特征的文本
             if (text.isNotEmpty()) {
                 // 检查是否包含文件扩展名
-                if (text.contains(".doc") || text.contains(".docx") ||
-                    text.contains(".xls") || text.contains(".xlsx") ||
-                    text.contains(".ppt") || text.contains(".pptx")
+                if (text.contains(".docx") || text.contains(".xlsx") ||
+                    text.contains(".pptx")
                 ) {
                     Log.d(TAG, "从标题栏找到文件路径: $text")
                     return text
@@ -1759,9 +1778,8 @@ class WpsAccessibilityService : AccessibilityService() {
 
             if (contentDescription.isNotEmpty()) {
                 // 检查是否包含文件扩展名
-                if (contentDescription.contains(".doc") || contentDescription.contains(".docx") ||
-                    contentDescription.contains(".xls") || contentDescription.contains(".xlsx") ||
-                    contentDescription.contains(".ppt") || contentDescription.contains(".pptx")
+                if (contentDescription.contains(".docx") || contentDescription.contains(".xlsx") ||
+                    contentDescription.contains(".pptx")
                 ) {
                     Log.d(TAG, "从标题栏内容描述找到文件路径: $contentDescription")
                     return contentDescription
@@ -1821,17 +1839,15 @@ class WpsAccessibilityService : AccessibilityService() {
             val text = currentNode.text?.toString() ?: ""
             if (text.isNotEmpty()) {
                 // 检查文本是否包含文件路径特征
-                if ((text.contains(".doc") || text.contains(".docx") || text.contains(".xls") ||
-                            text.contains(".xlsx") || text.contains(".ppt") || text.contains(".pptx")) &&
+                if ((text.contains(".docx") || text.contains(".xlsx") || text.contains(".pptx")) &&
                     (text.contains("/") || text.contains("\\") || text.contains("storage/") ||
                             text.contains("SD卡") || text.contains("Internal storage"))
                 ) {
                     return text
                 }
                 // 检查文本是否只是文件名（包含扩展名）
-                if (text.contains(".doc") || text.contains(".docx") ||
-                    text.contains(".xls") || text.contains(".xlsx") ||
-                    text.contains(".ppt") || text.contains(".pptx")
+                if (text.contains(".docx") || text.contains(".xlsx") ||
+                    text.contains(".pptx")
                 ) {
                     return text
                 }
@@ -1841,9 +1857,8 @@ class WpsAccessibilityService : AccessibilityService() {
             val contentDescription = currentNode.contentDescription?.toString() ?: ""
             if (contentDescription.isNotEmpty()) {
                 // 检查内容描述是否包含文件路径特征
-                if ((contentDescription.contains(".doc") || contentDescription.contains(".docx") ||
-                            contentDescription.contains(".xls") || contentDescription.contains(".xlsx") ||
-                            contentDescription.contains(".ppt") || contentDescription.contains(".pptx")) &&
+                if ((contentDescription.contains(".docx") || contentDescription.contains(".xlsx") ||
+                            contentDescription.contains(".pptx")) &&
                     (contentDescription.contains("/") || contentDescription.contains("\\") ||
                             contentDescription.contains("storage/") || contentDescription.contains("SD卡") ||
                             contentDescription.contains("Internal storage"))
@@ -1851,9 +1866,8 @@ class WpsAccessibilityService : AccessibilityService() {
                     return contentDescription
                 }
                 // 检查内容描述是否只是文件名（包含扩展名）
-                if (contentDescription.contains(".doc") || contentDescription.contains(".docx") ||
-                    contentDescription.contains(".xls") || contentDescription.contains(".xlsx") ||
-                    contentDescription.contains(".ppt") || contentDescription.contains(".pptx")
+                if (contentDescription.contains(".docx") || contentDescription.contains(".xlsx") ||
+                    contentDescription.contains(".pptx")
                 ) {
                     return contentDescription
                 }

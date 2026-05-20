@@ -108,7 +108,8 @@
         <service
             android:name=".ui.FloatingButtonService"
             android:exported="false"
-            android:foregroundServiceType="dataSync" />
+            android:foregroundServiceType="dataSync"
+            android:hardwareAccelerated="false" />
 
         <service
             android:name=".monitor.MetadataWriteService"

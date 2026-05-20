@@ -366,6 +366,12 @@ class FloatingButtonService : Service() {
                     return
                 }
             }
+            
+            // 文件类型验证
+            if (!WpsAccessibilityService.isValidFileType(documentPath)) {
+                Log.w(TAG, "文件类型不允许，不显示悬浮按钮")
+                return
+            }
 
             if (!isFloatingButtonVisible) {
                 Log.d(TAG, "开始初始化悬浮按钮")
@@ -1130,7 +1136,7 @@ class FloatingButtonService : Service() {
         val deptList: List<LdapItem>?, // 子部门列表
         val employList: List<LdapItem>? // 子员工列表
     )
-    
+
 
     private fun runOnUiThread(action: () -> Unit) {
         android.os.Handler(android.os.Looper.getMainLooper()).post(action)
