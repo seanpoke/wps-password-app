@@ -517,11 +517,23 @@ class FloatingButtonService : Service() {
             rootNodes = parseLdapItemsToTreeNodes(ldapItems)
             // 初始化时处理已选中部门的子节点置灰状态
             initGrayedStateForSelectedDepts(rootNodes)
+            // 自动展开所有已选中节点的路径
+            expandSelectedNodePaths(rootNodes)
             // 创建权限面板视图
             createPermissionPanel()
         } else {
             // 切换面板展开/收起状态
             togglePermissionPanel()
+        }
+    }
+    
+    /**
+     * 展开所有已选中节点的路径
+     * 在页面首次加载时自动展开至所有已勾选节点所在层级
+     */
+    private fun expandSelectedNodePaths(nodes: List<TreeNode>) {
+        for (node in nodes) {
+            node.expandSelectedPaths()
         }
     }
 

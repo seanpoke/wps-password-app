@@ -207,4 +207,28 @@ data class TreeNode(
         }
         return result
     }
+    
+    /**
+     * 递归展开已选中节点的路径
+     * 确保所有已勾选节点（包括各级父节点）都处于展开状态
+     */
+    fun expandSelectedPaths() {
+        if (hasAuth) {
+            expandParentPath()
+        }
+        children.forEach {
+            it.expandSelectedPaths()
+        }
+    }
+    
+    /**
+     * 向上递归展开父节点路径
+     */
+    private fun expandParentPath() {
+        var current = parent
+        while (current != null) {
+            current.isExpanded = true
+            current = current.parent
+        }
+    }
 }
