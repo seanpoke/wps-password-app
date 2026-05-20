@@ -71,9 +71,6 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".ui.SettingsActivity"
-            android:exported="false" />
-        <activity
             android:name=".ui.LogActivity"
             android:exported="false" />
 
@@ -118,18 +115,6 @@
         <service
             android:name=".network.HeartbeatService"
             android:exported="false" />
-
-        <receiver
-            android:name=".monitor.WpsCloseReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.PACKAGE_REMOVED" />
-                <action android:name="android.intent.action.PACKAGE_FULLY_REMOVED" />
-                <action android:name="android.intent.action.EXIT" />
-                <action android:name="com.wpspasswordmanager.action.DOCUMENT_CLOSED" />
-                <data android:scheme="package" />
-            </intent-filter>
-        </receiver>
 
         <provider
             android:name="androidx.core.content.FileProvider"

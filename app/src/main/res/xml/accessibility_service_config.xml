@@ -7,5 +7,4 @@
     android:canRetrieveWindowContent="true"
     android:description="@string/accessibility_service_description"
     android:packageNames="cn.wps.moffice_eng,cn.wps.moffice"
-    android:notificationTimeout="100"
-    android:settingsActivity=".ui.SettingsActivity" />
+    android:notificationTimeout="100" />

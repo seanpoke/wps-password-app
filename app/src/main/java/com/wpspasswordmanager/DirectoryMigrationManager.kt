@@ -301,16 +301,6 @@ class DirectoryMigrationManager(private val context: Context) {
 
         LogManager.log(TAG, "--- 阶段5: 原目录删除 ---", "INFO")
         
-        // 测试模式：故意让阶段5失败以测试异常处理流程
-        val isTestMode = false  // 设置为 true 可触发测试
-        if (isTestMode) {
-            LogManager.log(TAG, "[TEST] 测试模式：故意让阶段5失败", "WARN")
-            LogManager.log(TAG, "[ERROR] 原目录删除失败(测试模式), 错误码: $ERROR_CODE_DELETE_FAILED", "ERROR")
-            setMigrationExceptionRecord(5, ERROR_CODE_DELETE_FAILED, "原目录删除失败(测试模式)")
-            handler.post { callback?.onError(ERROR_CODE_DELETE_FAILED, "原目录删除失败(测试模式)") }
-            return
-        }
-        
         if (sourceDir.deleteRecursively()) {
             LogManager.log(TAG, "[INFO] 原目录删除成功", "INFO")
         } else {
