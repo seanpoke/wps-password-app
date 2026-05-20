@@ -157,6 +157,7 @@ class WpsPasswordManagerApplication : Application() {
      */
     private inner class SimpleFileObserver(path: String) : FileObserver(path, ALL_EVENTS) {
         private val rootPath = path
+        private val ALLOWED_EXTENSIONS = arrayOf(".docx", ".xlsx", ".pptx")
 
         override fun onEvent(event: Int, path: String?) {
             if (path == null) return
@@ -167,6 +168,12 @@ class WpsPasswordManagerApplication : Application() {
             }
 
             val fullPath = File(rootPath, path).absolutePath
+            
+            // 文件类型验证：仅处理 .docx、.xlsx、.pptx 三种类型的文件
+            if (!isValidFileType(fullPath)) {
+                LogManager.log(TAG, "忽略不支持的文件类型事件: $fullPath", "DEBUG")
+                return
+            }
 
             when (event and ALL_EVENTS) {
                 CLOSE_WRITE -> {
@@ -199,12 +206,10 @@ class WpsPasswordManagerApplication : Application() {
 
                 MOVED_TO -> {
                     LogManager.log(TAG, "监听到文件移动完成: $fullPath", "DEBUG")
-                    if (fullPath.endsWith(".docx") || fullPath.endsWith(".xlsx") || fullPath.endsWith(".pptx")) {
-                        if (!isPluginOperation()) {
-                            handleFileCloseWrite(fullPath)
-                        } else {
-                            LogManager.log(TAG, "跳过由插件引起的MOVED_TO事件: $fullPath", "DEBUG")
-                        }
+                    if (!isPluginOperation()) {
+                        handleFileCloseWrite(fullPath)
+                    } else {
+                        LogManager.log(TAG, "跳过由插件引起的MOVED_TO事件: $fullPath", "DEBUG")
                     }
                 }
             }
@@ -212,6 +217,11 @@ class WpsPasswordManagerApplication : Application() {
 
         private fun isViewModeFile(fileName: String): Boolean {
             return fileName.startsWith("\$n_")
+        }
+        
+        private fun isValidFileType(filePath: String): Boolean {
+            val fileName = File(filePath).name.lowercase()
+            return ALLOWED_EXTENSIONS.any { fileName.endsWith(it) }
         }
     }
 
