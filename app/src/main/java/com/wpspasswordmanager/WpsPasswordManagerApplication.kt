@@ -197,10 +197,10 @@ class WpsPasswordManagerApplication : Application() {
 
                 MOVED_FROM -> {
                     if (isPluginOperation()) {
-                        LogManager.log(TAG, "跳过由插件引起的文件重命名事件(原文件): $fullPath", "DEBUG")
+                        LogManager.log(TAG, "跳过由插件引起的文件删除事件: $fullPath", "DEBUG")
                     } else {
                         FileMetaFactory.clearFile(fullPath)
-                        LogManager.log(TAG, "文件重命名(原文件): $fullPath", "DEBUG")
+                        LogManager.log(TAG, "文件删除: $fullPath", "DEBUG")
                     }
                 }
 
