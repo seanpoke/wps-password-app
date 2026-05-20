@@ -21,8 +21,6 @@ object WpsManager {
     )
 
     private val NON_WPS_PACKAGES = setOf(
-        "com.hihonor.fileservice",
-        "com.huawei.fileservice",
         "com.android.documentsui",
         "com.google.android.documentsui",
         "com.wpspasswordmanager"
