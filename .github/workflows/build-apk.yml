@@ -23,17 +23,15 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Regenerate gradlew script
+    - name: Fix gradlew line endings
       run: |
         rm -f gradlew
-        cat > gradlew << 'EOF'
-#!/usr/bin/env bash
-
-APP_HOME=$(cd "$(dirname "$0")" && pwd)
-CLASSPATH="$APP_HOME/gradle/wrapper/gradle-wrapper.jar"
-
-exec java -Xmx64m -Xms64m -Dorg.gradle.appname=gradlew -classpath "$CLASSPATH" org.gradle.wrapper.GradleWrapperMain "$@"
-EOF
+        echo '#!/usr/bin/env bash' > gradlew
+        echo '' >> gradlew
+        echo 'APP_HOME=$(cd "$(dirname "$0")" && pwd)' >> gradlew
+        echo 'CLASSPATH="$APP_HOME/gradle/wrapper/gradle-wrapper.jar"' >> gradlew
+        echo '' >> gradlew
+        echo 'exec java -Xmx64m -Xms64m -Dorg.gradle.appname=gradlew -classpath "$CLASSPATH" org.gradle.wrapper.GradleWrapperMain "$@"' >> gradlew
         chmod +x gradlew
 
     - name: Build debug APK
