@@ -1,6 +1,8 @@
 # Gradle files
 .gradle/
 build/
+app/build/
+*.apk
 
 # Trae IDE files
 .trae/
@@ -10,35 +12,88 @@ build/
 *.iml
 *.ipr
 *.iws
+.vscode/
+.project
+.classpath
+.settings/
 
 # Android build outputs
-app/build/
 app/src/main/assets/
 app/src/main/res/raw/
+app/build/generated/
+build/generated/
+app/build/intermediates/
+build/intermediates/
+
+# Signing files (敏感信息)
+*.jks
+*.keystore
+*.key
+signing.properties
 
 # Local configuration files
 local.properties
+gradle.properties.local
 
 # OS generated files
 .DS_Store
 Thumbs.db
+ehthumbs.db
+*.swp
+*.bak
+*.tmp
 
 # Log files
 logs/
 *.log
+app.log
+*.txt
 
 # Temporary files
 tmp/
 temp/
+*.temp
 
 # Test files
 **/test-results/
 **/coverage/
-
-# Generated files
-build/generated/
-app/build/generated/
+**/jacoco/
+*.gcda
+*.gcno
 
 # DEX files
 dex/
-app/build/intermediates/dex/
+
+# Crash reports
+crashlytics-build.properties
+fabric.properties
+
+# Firebase
+google-services.json
+google-services.json.backup
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+
+# NDK
+*.so
+
+# ProGuard
+proguard-rules.pro.bak
+
+# Gradle cache
+*.lock
+
+# Build outputs
+*.aab
+*.aar
+*.zip
+*.tar.gz
+
+# Local development
+.env
+.env.local
+.secret

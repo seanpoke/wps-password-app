@@ -22,10 +22,15 @@ android {
 
     signingConfigs {
         release {
-            storeFile file('keystore.jks')
-            storePassword 'password123'
-            keyAlias 'wps_password_manager'
-            keyPassword 'password123'
+            def keystoreFile = System.getenv('KEYSTORE_FILE') ?: 'keystore.jks'
+            def keystorePassword = System.getenv('KEYSTORE_PASSWORD') ?: 'password123'
+            def keyAlias = System.getenv('KEY_ALIAS') ?: 'wps_password_manager'
+            def keyPassword = System.getenv('KEY_PASSWORD') ?: 'password123'
+            
+            storeFile file(keystoreFile)
+            storePassword keystorePassword
+            keyAlias keyAlias
+            keyPassword keyPassword
         }
     }
     buildTypes {
