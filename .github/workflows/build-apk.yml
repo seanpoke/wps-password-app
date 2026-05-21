@@ -23,19 +23,15 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Fix gradlew line endings
+    - name: Install Gradle
       run: |
-        rm -f gradlew
-        echo '#!/usr/bin/env bash' > gradlew
-        echo '' >> gradlew
-        echo 'APP_HOME=$(cd "$(dirname "$0")" && pwd)' >> gradlew
-        echo 'CLASSPATH="$APP_HOME/gradle/wrapper/gradle-wrapper.jar"' >> gradlew
-        echo '' >> gradlew
-        echo 'exec java -Xmx64m -Xms64m -Dorg.gradle.appname=gradlew -classpath "$CLASSPATH" org.gradle.wrapper.GradleWrapperMain "$@"' >> gradlew
-        chmod +x gradlew
+        wget -q https://services.gradle.org/distributions/gradle-8.2-bin.zip
+        unzip -q gradle-8.2-bin.zip -d /opt/gradle
+        echo "GRADLE_HOME=/opt/gradle/gradle-8.2" >> $GITHUB_ENV
+        echo "/opt/gradle/gradle-8.2/bin" >> $GITHUB_PATH
 
     - name: Build debug APK
-      run: ./gradlew assembleDebug
+      run: gradle assembleDebug
 
     - name: Upload debug APK
       uses: actions/upload-artifact@v4
