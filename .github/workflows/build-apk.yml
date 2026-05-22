@@ -33,8 +33,12 @@ jobs:
     - name: Build debug APK
       run: gradle assembleDebug
 
+    - name: List built APK files
+      run: |
+        ls -la app/build/outputs/apk/debug/
+
     - name: Upload debug APK
       uses: actions/upload-artifact@v4
       with:
-        name: app-debug
+        name: 文档密码管理-debug
         path: app/build/outputs/apk/debug/*.apk
