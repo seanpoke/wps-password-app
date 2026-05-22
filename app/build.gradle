@@ -49,11 +49,10 @@ android {
     }
     buildToolsVersion '34.0.0'
 
-    androidComponents {
-        onVariants { variant ->
-            variant.outputs.each { output ->
-                output.outputFileName = "文档密码管理_${variant.versionName}_${formattedDate}.apk"
-            }
+    applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+            def apkName = "文档密码管理_${variant.versionName}_${formattedDate}.apk"
+            output.outputFileName = apkName
         }
     }
 }
