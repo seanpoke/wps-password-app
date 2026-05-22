@@ -3,8 +3,7 @@ plugins {
     id 'org.jetbrains.kotlin.android'
 }
 
-def date = new Date()
-def formattedDate = date.format('yyyyMMddHHmm')
+def buildDate = new Date().format('yyyyMMddHHmm')
 
 android {
     namespace 'com.wpspasswordmanager'
@@ -14,9 +13,8 @@ android {
         applicationId "com.wpspasswordmanager"
         minSdk 26
         targetSdk 34
-        versionCode date.getTime() / 1000 as int
+        versionCode System.currentTimeMillis() / 1000 as int
         versionName "1.0.0"
-
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -33,6 +31,7 @@ android {
             keyPassword keyPwd
         }
     }
+
     buildTypes {
         release {
             minifyEnabled false
@@ -40,19 +39,22 @@ android {
             signingConfig signingConfigs.release
         }
     }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
+
     kotlinOptions {
         jvmTarget = '17'
     }
+
     buildToolsVersion '34.0.0'
 
-    applicationVariants.all { variant ->
-        variant.outputs.all { output ->
-            def apkName = "文档密码管理_${variant.versionName}_${formattedDate}.apk"
-            output.outputFileName = apkName
+    android.applicationVariants.all { variant ->
+        variant.outputs.each { output ->
+            def fileName = "文档密码管理_${variant.versionName}_${buildDate}.apk"
+            output.outputFile = new File(output.outputFile.parent, fileName)
         }
     }
 }
