@@ -51,10 +51,10 @@ android {
 
     buildToolsVersion '34.0.0'
 
-    android.applicationVariants.all { variant ->
-        variant.outputs.each { output ->
-            def fileName = "文档密码管理_${variant.versionName}_${buildDate}.apk"
-            output.outputFile = new File(output.outputFile.parent, fileName)
+    applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+            def baseName = "文档密码管理_${variant.versionName}_${buildDate}"
+            output.outputFileName = "${baseName}.apk"
         }
     }
 }
