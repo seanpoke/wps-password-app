@@ -22,13 +22,19 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          # 注意：这里去掉了缓存，防止脏数据干扰
 
+      # 关键步骤：使用官方 Action 统一安装和配置纯净、兼容的 Gradle 8.7，直接绕过本地 gradlew
+      - name: Setup Gradle 8.7
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.7'
+
+      # 解密证书
       - name: Decode Keystore
         run: |
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > "${{ github.workspace }}/release.jks"
 
-      # 关键改动：绕过 ./gradlew 脚本，直接用全局 gradle 命令编译
+      # 执行打包（直接调用刚才装好的 gradle 命令，版本完美兼容 AGP 8.x）
       - name: Build release APK
         run: gradle assembleRelease
         env:
