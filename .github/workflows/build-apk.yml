@@ -10,7 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    steps:
+  steps:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
@@ -22,23 +22,34 @@ jobs:
       with:
         java-version: '17'
         distribution: 'temurin'
+        cache: gradle # 开启缓存，后续打包速度会大幅提升
 
-    - name: Install Gradle
+    # 第一步：把 GitHub Secrets 里的 Base64 字符串重新解码还原为证书文件
+    - name: Decode Keystore
       run: |
-        wget -q https://services.gradle.org/distributions/gradle-8.2-bin.zip
-        unzip -q gradle-8.2-bin.zip -d /opt/gradle
-        echo "GRADLE_HOME=/opt/gradle/gradle-8.2" >> $GITHUB_ENV
-        echo "/opt/gradle/gradle-8.2/bin" >> $GITHUB_PATH
+        echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > "${{ github.workspace }}/release.jks"
 
-    - name: Build debug APK
-      run: gradle assembleDebug
+    # 第二步：给项目自带的 gradlew 脚本赋予执行权限
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
 
+    # 第三步：执行正式版打包，并注入你在 build.gradle 中定义的环境变量
+    - name: Build release APK
+      run: ./gradlew assembleRelease
+      env:
+        KEYSTORE_FILE: "${{ github.workspace }}/release.jks"
+        KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+    # 第四步：打印并确认一下生成的 APK 文件（非必需，保留供你排查）
     - name: List built APK files
       run: |
-        ls -la app/build/outputs/apk/debug/
+        ls -la app/build/outputs/apk/release/
 
-    - name: Upload debug APK
+    # 第五步：上传带有固定签名的 Release APK 产物
+    - name: Upload release APK
       uses: actions/upload-artifact@v4
       with:
-        name: 文档密码管理-debug
-        path: app/build/outputs/apk/debug/*.apk
+        name: 文档密码管理-release
+        path: app/build/outputs/apk/release/*.apk

@@ -20,10 +20,11 @@ android {
 
     signingConfigs {
         release {
-            def ksFile = System.getenv('KEYSTORE_FILE') ?: 'keystore.jks'
-            def ksPassword = System.getenv('KEYSTORE_PASSWORD') ?: 'password123'
-            def keyAliasName = System.getenv('KEY_ALIAS') ?: 'wps_password_manager'
-            def keyPwd = System.getenv('KEY_PASSWORD') ?: 'password123'
+            // 优先读取 GitHub Actions 传进来的环境变量，本地没有的话默认去找 my-release-key.jks
+            def ksFile = System.getenv('KEYSTORE_FILE') ?: 'my-release-key.jks'
+            def ksPassword = System.getenv('KEYSTORE_PASSWORD') ?: '123456'
+            def keyAliasName = System.getenv('KEY_ALIAS') ?: 'my-key-alias'
+            def keyPwd = System.getenv('KEY_PASSWORD') ?: '123456'
             
             storeFile file(ksFile)
             storePassword ksPassword
@@ -36,6 +37,7 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // 确保 release 模式下使用上面配置的固定签名
             signingConfig signingConfigs.release
         }
     }
