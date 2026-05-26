@@ -11,10 +11,11 @@ jobs:
       actions: write
       contents: read
     steps:
-      - name: 使用官方推荐的清理 Action
-        uses: tokio-rs/delete-workflow-runs@v1
+      - name: 删除旧的工作流记录
+        uses: Mattraks/delete-workflow-runs@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          keep-minimum-runs: 5          # 保留最近 5 条记录
-          retain-only-successful: true  # 只保留成功的记录
-          delete-failed-runs: true       # 删除失败/取消的记录
+          repository: ${{ github.repository }}
+          keep_minimum_runs: 5          # 只保留最近 5 条记录
+          retain_only_successful: true  # 只保留成功的记录
+          delete_failed_runs: true       # 删除失败/取消的记录
