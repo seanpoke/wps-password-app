@@ -1,17 +1,20 @@
 name: 自动清理 Actions 记录
 on:
   schedule:
-    - cron: '0 1 * * *'  # 每天北京时间 9:00 自动执行
-  workflow_dispatch:     # 支持手动触发清理
+    - cron: '0 1 * * *'  # 北京时间每天 9:00 执行
+  workflow_dispatch:     # 支持手动触发
 
 jobs:
   clean:
     runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
     steps:
-      - name: 清理旧记录，仅保留最近5条成功运行
-        uses: actions/delete-workflow-runs@v2
+      - name: 使用官方推荐的清理 Action
+        uses: tokio-rs/delete-workflow-runs@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          keep_minimum_runs: 5
-          retain_only_successful: true
-          delete_failed_runs: true
+          keep-minimum-runs: 5          # 保留最近 5 条记录
+          retain-only-successful: true  # 只保留成功的记录
+          delete-failed-runs: true       # 删除失败/取消的记录
