@@ -1,21 +1,51 @@
 name: 自动清理 Actions 记录
 on:
   schedule:
-    - cron: '0 1 * * *'  # 北京时间每天 9:00 执行
-  workflow_dispatch:     # 支持手动触发
+    - cron: '0 1 * * *'  # 每天北京时间 9:00
+  workflow_dispatch:     # 手动触发
 
 jobs:
   clean:
     runs-on: ubuntu-latest
     permissions:
       actions: write
-      contents: read
+
     steps:
-      - name: 删除旧的工作流记录
-        uses: Mattraks/delete-workflow-runs@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          repository: ${{ github.repository }}
-          keep_minimum_runs: 5          # 每个工作流最少保留 5 条
-          retain_days: 1                # 只保留 1 天内的记录
-          delete_run_by_conclusion_pattern: "failure,cancelled" # 删除失败/取消的记录
+      - name: 安装依赖
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: 全仓库统一清理：仅保留所有工作流 最新5条成功记录
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -e
+
+          # ==============================================
+          # 规则：
+          # 1. 所有工作流
+          # 2. 失败/取消 全部删除
+          # 3. 成功记录 只保留最新5条，其余全部删除
+          # ==============================================
+
+          echo "===== 开始清理所有工作流 ====="
+
+          # 1. 删除所有失败/取消的记录
+          echo "【1/2】删除所有失败、取消的记录"
+          gh api "/repos/$REPO/actions/runs?per_page=100" | \
+            jq -r '.workflow_runs[] | select(.conclusion == "failure" or .conclusion == "cancelled") | .id' | \
+            xargs -I{} sh -c 'echo "🗑️ 删除记录: {}" && gh api -X DELETE "/repos/$REPO/actions/runs/{}"'
+
+          # 2. 对每个工作流，成功记录只保留最新5条
+          echo -e "\n【2/2】所有工作流只保留最新5条成功记录"
+          gh api "/repos/$REPO/actions/workflows" | \
+            jq -r '.workflows[].id' | \
+            while read -r WF_ID; do
+              echo -e "\n处理工作流 ID: $WF_ID"
+              gh api "/repos/$REPO/actions/runs?workflow_id=$WF_ID&status=success&per_page=100" | \
+                jq -r '.workflow_runs | sort_by(.created_at) | reverse | .[5:] | .[].id' | \
+                xargs -I{} sh -c 'echo "🗑️ 删除旧成功记录: {}" && gh api -X DELETE "/repos/$REPO/actions/runs/{}"'
+            done
+
+          echo -e "\n✅ 全部清理完成！"
+          echo "📌 最终效果：所有工作流 → 仅保留最新5条成功记录"
