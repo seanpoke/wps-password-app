@@ -16,5 +16,6 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           repository: ${{ github.repository }}
-          keep_minimum_runs: 5          # 保留每个工作流最近 5 条记录
-          delete_run_by_conclusion_pattern: "failure,cancelled" # 直接删除失败/取消的记录
+          keep_minimum_runs: 5          # 每个工作流最少保留 5 条
+          retain_days: 1                # 只保留 1 天内的记录
+          delete_run_by_conclusion_pattern: "failure,cancelled" # 删除失败/取消的记录
