@@ -92,6 +92,7 @@ proguard-rules.pro.bak
 *.aar
 *.zip
 *.tar.gz
+install.ps1
 
 # Local development
 .env
