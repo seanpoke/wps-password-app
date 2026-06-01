@@ -1,12 +1,12 @@
-# WPS Password Manager
+# 文档编辑器密码管理器
 
-WPS密码管理器是一款Android应用，用于管理和保护WPS文档的密码信息。该应用通过监听文件系统变化，自动将密码元数据写入Office文档（.docx、.xlsx、.pptx），实现密码与文档的绑定存储。
+文档编辑器密码管理器是一款Android应用，用于管理和保护Office文档的密码信息。该应用通过监听文件系统变化，自动将密码元数据写入Office文档（.docx、.xlsx、.pptx），实现密码与文档的绑定存储。
 
 ## 功能特性
 
-- **文件监控**: 自动监控 `WpsManagement` 目录下的Office文档变化
+- **文件监控**: 自动监控 `DocumentManagement` 目录下的Office文档变化
 - **密码绑定**: 通过ZIP Extra Field方式将密码写入文档尾部
-- **WPS集成**: 支持扫描和关联已安装的WPS应用
+- **文档编辑器集成**: 支持扫描和关联已安装的文档编辑器应用
 - **网络服务**: 支持登录认证、心跳保活、密钥获取等功能
 - **目录迁移**: 支持文档目录迁移功能
 
@@ -15,21 +15,21 @@ WPS密码管理器是一款Android应用，用于管理和保护WPS文档的密�
 ### 项目结构
 
 ```
-app/src/main/java/com/wpspasswordmanager/
-├── WpsPasswordManagerApplication.kt  # 应用入口
+app/src/main/java/com/documentpasswordmanager/
+├── DocumentPasswordManagerApplication.kt  # 应用入口
 ├── business/                          # 业务逻辑层
 │   ├── FileMeta.kt                   # 文件元数据模型
 │   ├── FileMetaFactory.kt            # 元数据工厂
 │   ├── FileMetaManager.kt            # 元数据管理器
 │   ├── OfficeEncryptUtils.kt         # Office加密工具
 │   ├── PasswordGenerator.kt          # 密码生成器
-│   ├── WpsAppInfo.kt                 # WPS应用信息
-│   ├── WpsManager.kt                 # WPS应用管理
+│   ├── DocumentAppInfo.kt            # 文档编辑器应用信息
+│   ├── DocumentManager.kt            # 文档编辑器应用管理
 │   └── ZipExtraFieldManager.kt       # ZIP扩展字段管理
 ├── monitor/                          # 监控服务
 │   ├── AccessibilityServiceManager.kt
 │   ├── MetadataWriteService.kt
-│   └── WpsAccessibilityService.kt
+│   └── DocumentAccessibilityService.kt
 ├── network/                          # 网络模块
 │   ├── ApiResponse.kt
 │   ├── HeartbeatService.kt           # 心跳服务
@@ -51,7 +51,7 @@ app/src/main/java/com/wpspasswordmanager/
 
 1. **文件监控**: 使用 `FileObserver` 监听目录变化，支持防抖处理
 2. **密码存储**: 通过ZIP Extra Field方式将密码元数据写入Office文档尾部
-3. **无障碍服务**: 监听WPS应用操作，实现自动密码填充
+3. **无障碍服务**: 监听文档编辑器应用操作，实现自动密码填充
 4. **网络通信**: 使用OkHttp进行HTTP请求，支持会话保持和自动重连
 
 ## 快速开始
@@ -67,7 +67,7 @@ app/src/main/java/com/wpspasswordmanager/
 ```bash
 # 克隆项目
 git clone <repository-url>
-cd wps-password-app
+cd document-password-app
 
 # 构建Debug版本
 ./gradlew assembleDebug
@@ -91,16 +91,16 @@ cd wps-password-app
 
 应用需要以下权限：
 
-1. **无障碍服务**: 用于监听WPS应用操作
+1. **无障碍服务**: 用于监听文档编辑器应用操作
 2. **悬浮窗权限**: 用于显示悬浮按钮
 3. **文件管理权限**: 用于访问和修改文档文件
 
 ### 配置步骤
 
-1. **启动应用**: 打开WPS密码管理器
+1. **启动应用**: 打开文档编辑器密码管理器
 2. **授予权限**: 依次启用无障碍服务、悬浮窗权限和文件管理权限
 3. **配置服务器**: 输入服务器IP、端口、用户名和密码
-4. **选择WPS应用**: 扫描并选择默认的WPS应用
+4. **选择文档编辑器应用**: 扫描并选择默认的文档编辑器应用
 
 ### 密码管理流程
 
