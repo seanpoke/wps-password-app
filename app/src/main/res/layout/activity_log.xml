@@ -96,13 +96,11 @@
     </LinearLayout>
 
     <!-- 日志列表 -->
-    <ListView
-        android:id="@+id/log_list_view"
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/log_recycler_view"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:background="@android:color/darker_gray"
-        android:divider="@android:color/holo_blue_light"
-        android:dividerHeight="1dp" />
+        android:background="@android:color/darker_gray" />
 
 </LinearLayout>

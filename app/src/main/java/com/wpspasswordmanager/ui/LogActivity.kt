@@ -8,30 +8,33 @@ import android.text.TextWatcher
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.wpspasswordmanager.R
 import com.wpspasswordmanager.utils.LogManager
 
 class LogActivity : AppCompatActivity() {
 
-    private lateinit var logListView: ListView
+    private lateinit var logRecyclerView: RecyclerView
     private lateinit var searchEditText: EditText
     private lateinit var levelSpinner: Spinner
     private lateinit var refreshButton: Button
     private lateinit var pauseButton: Button
     private lateinit var resumeButton: Button
     private lateinit var clearButton: Button
-    private lateinit var logAdapter: ArrayAdapter<String>
-    private var logList: MutableList<String> = mutableListOf()
+    private lateinit var logAdapter: LogAdapter
     private val handler = Handler(Looper.getMainLooper())
     private var refreshRunnable: Runnable? = null
     private var isPaused = false
+    private var lastLogVersion = -1 // 记住上次的日志版本号
+    private var lastLogListSize = 0 // 记住上次的列表大小
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_log)
 
         // 初始化 UI 元素
-        logListView = findViewById(R.id.log_list_view)
+        logRecyclerView = findViewById(R.id.log_recycler_view)
         searchEditText = findViewById(R.id.search_edit_text)
         levelSpinner = findViewById(R.id.level_spinner)
         refreshButton = findViewById(R.id.refresh_button)
@@ -39,9 +42,10 @@ class LogActivity : AppCompatActivity() {
         resumeButton = findViewById(R.id.resume_button)
         clearButton = findViewById(R.id.clear_button)
 
-        // 初始化日志适配器
-        logAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, logList)
-        logListView.adapter = logAdapter
+        // 初始化日志适配器和 RecyclerView
+        logAdapter = LogAdapter()
+        logRecyclerView.adapter = logAdapter
+        logRecyclerView.layoutManager = LinearLayoutManager(this)
 
         // 初始化日志级别选择器
         val levels = arrayOf("所有", "DEBUG", "INFO", "WARN", "ERROR")
@@ -103,33 +107,63 @@ class LogActivity : AppCompatActivity() {
     }
 
     private fun loadLogs() {
-        logList.clear()
         val logs = LogManager.getLogs()
-        logList.addAll(logs)
-        logAdapter.notifyDataSetChanged()
+        logAdapter.updateLogs(logs)
+        lastLogVersion = LogManager.getLogVersion()
+        lastLogListSize = logs.size
         // 滚动到底部，确保最新的日志在最下面
-        if (logList.isNotEmpty()) {
-            logListView.setSelection(logList.size - 1)
+        if (logs.isNotEmpty()) {
+            logRecyclerView.scrollToPosition(logAdapter.itemCount - 1)
+        }
+    }
+    
+    /**
+     * 增量刷新：只加载新日志
+     */
+    private fun refreshLogsIncremental() {
+        val currentVersion = LogManager.getLogVersion()
+        if (currentVersion <= lastLogVersion) {
+            return // 版本号没变，没有新日志，不刷新
+        }
+        
+        // 获取新日志
+        val newLogs = LogManager.getNewLogs(lastLogListSize)
+        val allLogs = LogManager.getLogs()
+        
+        // 检查队列是否被替换（数量变少了）
+        val hasQueueReplaced = allLogs.size < lastLogListSize
+        if (hasQueueReplaced) {
+            // 队列被替换了，需要全量刷新
+            loadLogs()
+        } else if (newLogs.isNotEmpty()) {
+            // 正常追加新日志
+            lastLogVersion = currentVersion
+            lastLogListSize = allLogs.size
+            
+            // 如果有筛选条件，需要重新筛选
+            val searchText = searchEditText.text.toString()
+            val selectedLevel = levelSpinner.selectedItem.toString()
+            if (searchText.isNotEmpty() || selectedLevel != "所有") {
+                filterLogs() // 有筛选条件时还是需要重新筛选
+            } else {
+                // 没有筛选条件，使用增量更新
+                logAdapter.addLogs(newLogs)
+                logRecyclerView.scrollToPosition(logAdapter.itemCount - 1)
+            }
+        } else {
+            // 没有新日志但版本号变了，说明队列内容替换了，全量刷新
+            loadLogs()
         }
     }
 
     private fun filterLogs() {
-        val searchText = searchEditText.text.toString().toLowerCase()
+        val searchText = searchEditText.text.toString()
         val selectedLevel = levelSpinner.selectedItem.toString()
         
-        val filteredLogs = LogManager.getLogs().filter { log ->
-            val matchesSearch = log.toLowerCase().contains(searchText)
-            val matchesLevel = if (selectedLevel == "所有") {
-                true
-            } else {
-                log.contains(selectedLevel)
-            }
-            matchesSearch && matchesLevel
-        }
+        // 使用 LogManager 提供的筛选方法
+        val filteredLogs = LogManager.getFilteredLogs(selectedLevel, searchText)
 
-        logList.clear()
-        logList.addAll(filteredLogs)
-        logAdapter.notifyDataSetChanged()
+        logAdapter.updateLogs(filteredLogs)
     }
 
     private fun startRealTimeRefresh() {
@@ -138,7 +172,7 @@ class LogActivity : AppCompatActivity() {
         
         refreshRunnable = object : Runnable {
             override fun run() {
-                loadLogs()
+                refreshLogsIncremental() // 改用增量刷新
                 handler.postDelayed(this, 2000) // 每2秒刷新一次
             }
         }
