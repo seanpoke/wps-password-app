@@ -642,6 +642,9 @@ class MainActivity : AppCompatActivity() {
         } else {
             configStorage.clearPassword()
         }
+
+        // 配置更新后刷新网络客户端
+        networkManager.onServerConfigChanged()
     }
 
     // 执行登录请求

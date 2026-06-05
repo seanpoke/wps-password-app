@@ -6,14 +6,14 @@ import com.wpspasswordmanager.business.EccEncryptor
 import com.wpspasswordmanager.storage.ConfigStorage
 import com.wpspasswordmanager.storage.ServerConfig
 import okhttp3.*
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
-import java.util.concurrent.TimeUnit
 
 class NetworkManager private constructor(context: Context) {
     private val TAG = "NetworkManager"
-    private val okHttpClient: OkHttpClient
+    private lateinit var okHttpClient: OkHttpClient
     private val configStorage: ConfigStorage
 
     companion object {
@@ -25,23 +25,39 @@ class NetworkManager private constructor(context: Context) {
                 instance ?: NetworkManager(context).also { instance = it }
             }
         }
+
+        fun resetInstance() {
+            instance = null
+        }
     }
 
     init {
-        okHttpClient = OkHttpClient.Builder()
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(30, TimeUnit.SECONDS)
-            .build()
         configStorage = ConfigStorage.getInstance(context)
+        refreshHttpClient()
     }
 
-    // 获取基础URL
+    private fun refreshHttpClient() {
+        val config = configStorage.getServerConfig()
+        okHttpClient = if (config != null) {
+            try {
+                val httpUrl = SSLUtils.parseUserAddress("${config.ipAddress}:${config.port}")
+                SSLUtils.getUnsafeOkHttpClient(httpUrl)
+            } catch (e: IllegalArgumentException) {
+                SSLUtils.getUnsafeOkHttpClient("http://default".toHttpUrlOrNull()!!)
+            }
+        } else {
+            SSLUtils.getUnsafeOkHttpClient("http://default".toHttpUrlOrNull()!!)
+        }
+    }
+
+    fun onServerConfigChanged() {
+        refreshHttpClient()
+    }
+
     private fun getBaseUrl(): String? {
         val config = configStorage.getServerConfig()
         return if (config != null) {
             var ipAddress = config.ipAddress
-            // 确保IP地址包含协议前缀
             if (!ipAddress.startsWith("http://") && !ipAddress.startsWith("https://")) {
                 ipAddress = "http://$ipAddress"
             }
@@ -51,7 +67,6 @@ class NetworkManager private constructor(context: Context) {
         }
     }
 
-    // 构建完整URL
     private fun buildUrl(path: String): String? {
         val baseUrl = getBaseUrl()
         return if (baseUrl != null) {
@@ -65,7 +80,6 @@ class NetworkManager private constructor(context: Context) {
         }
     }
 
-    // 执行GET请求（异步）
     fun executeGetRequest(path: String, token: String? = null, callback: NetworkCallback) {
         val url = buildUrl(path)
         if (url == null) {
@@ -100,7 +114,6 @@ class NetworkManager private constructor(context: Context) {
         })
     }
 
-    // 执行POST请求（异步）
     fun executePostRequest(path: String, jsonBody: String, token: String? = null, callback: NetworkCallback) {
         Log.d(TAG, "执行POST请求: path=$path")
         val url = buildUrl(path)
@@ -142,7 +155,6 @@ class NetworkManager private constructor(context: Context) {
                 } else {
                     val errorMessage = "HTTP ${response.code}: ${response.message}"
                     Log.e(TAG, "响应失败: $errorMessage")
-                    // 401错误特殊处理
                     if (response.code == 401) {
                         callback.onError("401: Unauthorized")
                     } else {
@@ -154,7 +166,6 @@ class NetworkManager private constructor(context: Context) {
         })
     }
 
-    // 执行登录请求（异步）
     fun login(account: String, password: String, callback: NetworkCallback) {
         Log.d(TAG, "执行登录请求: account=$account")
         val jsonBody = "{\"account\": \"$account\", \"password\": \"$password\"}"
@@ -162,18 +173,15 @@ class NetworkManager private constructor(context: Context) {
         executePostRequest("/account/login", jsonBody, null, callback)
     }
 
-    // 执行刷新token请求（异步）
     fun refreshToken(token: String, callback: NetworkCallback) {
         executePostRequest("/account/refresh-token", "{}", token, callback)
     }
 
-    // 执行登出请求（异步）
     fun logout(token: String, callback: NetworkCallback) {
         Log.d(TAG, "执行登出请求")
         executePostRequest("/account/logout", "{}", token, callback)
     }
 
-    // 执行获取文档权限请求（异步）
     fun getDocumentOwner(docId: String, token: String?, fileName: String? = null, callback: NetworkCallback) {
         Log.d(TAG, "执行获取文档权限请求: docId=$docId, fileName=$fileName")
         val jsonBody = buildString {
@@ -186,7 +194,6 @@ class NetworkManager private constructor(context: Context) {
         executePostRequest("/doc/owner", jsonBody, token, callback)
     }
 
-    // 执行获取文档密码请求（异步）
     fun getDocumentPassword(docId: String, encryPassword: String, token: String?, keyVersion: String = "default", isTemp: Boolean = false, callback: NetworkCallback) {
         Log.d(TAG, "执行获取文档密码请求: docId=$docId, keyVersion=$keyVersion, isTemp=$isTemp")
         val jsonBody = "{\"docId\": \"$docId\", \"encryPassword\": \"$encryPassword\", \"keyVersion\": \"$keyVersion\", \"isTemp\": $isTemp}"
@@ -194,13 +201,11 @@ class NetworkManager private constructor(context: Context) {
         executePostRequest("/doc/password", jsonBody, token, callback)
     }
 
-    // 执行获取最新密钥信息请求（异步）
     fun getLatestKey(callback: NetworkCallback) {
         Log.d(TAG, "执行获取最新密钥信息请求")
         executeGetRequest("/config/latest-key", null, callback)
     }
 
-    // 执行其他API请求（异步）
     fun executeApiRequest(method: String, path: String, body: String? = null, token: String? = null, callback: NetworkCallback) {
         when (method.toUpperCase()) {
             "GET" -> executeGetRequest(path, token, callback)
@@ -209,22 +214,21 @@ class NetworkManager private constructor(context: Context) {
         }
     }
 
-    // 执行保存记录上报请求（异步）
     fun reportSaveLog(docId: String, path: String, beforePassword: String? = null, afterPassword: String? = null, possiblePassword: List<String>? = null, platform: String = "android", token: String? = null, callback: NetworkCallback) {
         Log.d(TAG, "执行保存记录上报请求: docId=$docId, path=$path, platform=$platform")
-        
+
         val keyVersion = configStorage.getKeyVersion()
-        
-        val encryptedBeforePassword = beforePassword?.let { 
-            EccEncryptor.encryptPassword(it) 
+
+        val encryptedBeforePassword = beforePassword?.let {
+            EccEncryptor.encryptPassword(it)
         }
-        val encryptedAfterPassword = afterPassword?.let { 
-            EccEncryptor.encryptPassword(it) 
+        val encryptedAfterPassword = afterPassword?.let {
+            EccEncryptor.encryptPassword(it)
         }
-        val encryptedPossiblePassword = possiblePassword?.mapNotNull { 
-            EccEncryptor.encryptPassword(it) 
+        val encryptedPossiblePassword = possiblePassword?.mapNotNull {
+            EccEncryptor.encryptPassword(it)
         }
-        
+
         val jsonBody = buildString {
             append("{")
             append("\"docId\": \"$docId\",")
@@ -250,7 +254,6 @@ class NetworkManager private constructor(context: Context) {
     }
 }
 
-// 网络回调接口
 interface NetworkCallback {
     fun onSuccess(response: String)
     fun onError(error: String)
