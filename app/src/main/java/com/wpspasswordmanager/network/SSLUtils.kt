@@ -42,7 +42,7 @@ object SSLUtils {
         var originalInput = userInput.trim()
 
         if (!originalInput.startsWith("http://") && !originalInput.startsWith("https://")) {
-            originalInput = "http://$originalInput"
+            originalInput = "https://$originalInput"
         }
 
         val httpUrl = originalInput.toHttpUrlOrNull()

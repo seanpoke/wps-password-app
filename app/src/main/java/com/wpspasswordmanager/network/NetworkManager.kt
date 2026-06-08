@@ -43,10 +43,10 @@ class NetworkManager private constructor(context: Context) {
                 val httpUrl = SSLUtils.parseUserAddress("${config.ipAddress}:${config.port}")
                 SSLUtils.getUnsafeOkHttpClient(httpUrl)
             } catch (e: IllegalArgumentException) {
-                SSLUtils.getUnsafeOkHttpClient("http://default".toHttpUrlOrNull()!!)
+                SSLUtils.getUnsafeOkHttpClient("https://default".toHttpUrlOrNull()!!)
             }
         } else {
-            SSLUtils.getUnsafeOkHttpClient("http://default".toHttpUrlOrNull()!!)
+            SSLUtils.getUnsafeOkHttpClient("https://default".toHttpUrlOrNull()!!)
         }
     }
 
@@ -59,7 +59,7 @@ class NetworkManager private constructor(context: Context) {
         return if (config != null) {
             var ipAddress = config.ipAddress
             if (!ipAddress.startsWith("http://") && !ipAddress.startsWith("https://")) {
-                ipAddress = "http://$ipAddress"
+                ipAddress = "https://$ipAddress"
             }
             "$ipAddress:${config.port}"
         } else {
