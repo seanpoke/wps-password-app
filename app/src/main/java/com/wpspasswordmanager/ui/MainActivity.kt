@@ -573,6 +573,11 @@ class MainActivity : AppCompatActivity() {
             ipAddressError.visibility = TextView.VISIBLE
             isValid = false
             LogManager.log(TAG, "IP地址为空", "DEBUG")
+        } else if (ipAddress.startsWith("http://")) {
+            ipAddressError.text = "不支持HTTP协议，请使用HTTPS协议"
+            ipAddressError.visibility = TextView.VISIBLE
+            isValid = false
+            LogManager.log(TAG, "IP地址使用HTTP协议", "DEBUG")
         }
 
         // 校验端口号

@@ -58,7 +58,10 @@ class NetworkManager private constructor(context: Context) {
         val config = configStorage.getServerConfig()
         return if (config != null) {
             var ipAddress = config.ipAddress
-            if (!ipAddress.startsWith("http://") && !ipAddress.startsWith("https://")) {
+            if (ipAddress.startsWith("http://")) {
+                return null
+            }
+            if (!ipAddress.startsWith("https://")) {
                 ipAddress = "https://$ipAddress"
             }
             "$ipAddress:${config.port}"

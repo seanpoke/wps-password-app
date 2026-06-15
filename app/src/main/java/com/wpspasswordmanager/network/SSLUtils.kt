@@ -41,7 +41,11 @@ object SSLUtils {
     fun parseUserAddress(userInput: String): okhttp3.HttpUrl {
         var originalInput = userInput.trim()
 
-        if (!originalInput.startsWith("http://") && !originalInput.startsWith("https://")) {
+        if (originalInput.startsWith("http://")) {
+            throw IllegalArgumentException("不支持HTTP协议，请使用HTTPS协议")
+        }
+
+        if (!originalInput.startsWith("https://")) {
             originalInput = "https://$originalInput"
         }
 
