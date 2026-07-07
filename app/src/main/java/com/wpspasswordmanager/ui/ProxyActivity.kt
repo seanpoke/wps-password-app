@@ -837,7 +837,7 @@ class ProxyActivity : AppCompatActivity() {
         input.hint = "请输入文件名称"
         input.maxLines = 1
         input.maxEms = 40
-        input.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+        input.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
         input.setSingleLine(true)
         input.setSelection(currentFileName.length)
 
