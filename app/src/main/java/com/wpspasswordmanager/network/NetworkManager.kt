@@ -40,7 +40,7 @@ class NetworkManager private constructor(context: Context) {
         val config = configStorage.getServerConfig()
         okHttpClient = if (config != null) {
             try {
-                val httpUrl = SSLUtils.parseUserAddress("${config.ipAddress}:${config.port}")
+                val httpUrl = SSLUtils.parseUserAddress("${config.ipAddress}:${config.port}", configStorage.getAllowHttp())
                 SSLUtils.getUnsafeOkHttpClient(httpUrl)
             } catch (e: IllegalArgumentException) {
                 SSLUtils.getUnsafeOkHttpClient("https://default".toHttpUrlOrNull()!!)
@@ -59,9 +59,10 @@ class NetworkManager private constructor(context: Context) {
         return if (config != null) {
             var ipAddress = config.ipAddress
             if (ipAddress.startsWith("http://")) {
-                return null
-            }
-            if (!ipAddress.startsWith("https://")) {
+                if (!configStorage.getAllowHttp()) {
+                    return null
+                }
+            } else if (!ipAddress.startsWith("https://")) {
                 ipAddress = "https://$ipAddress"
             }
             "$ipAddress:${config.port}"
@@ -183,6 +184,12 @@ class NetworkManager private constructor(context: Context) {
     fun logout(token: String, callback: NetworkCallback) {
         Log.d(TAG, "执行登出请求")
         executePostRequest("/account/logout", "{}", token, callback)
+    }
+
+    fun changePassword(oldPassword: String, newPassword: String, token: String?, callback: NetworkCallback) {
+        Log.d(TAG, "执行修改密码请求")
+        val jsonBody = "{\"oldPassword\": \"$oldPassword\", \"newPassword\": \"$newPassword\"}"
+        executePostRequest("/account/change-password", jsonBody, token, callback)
     }
 
     fun getDocumentOwner(docId: String, token: String?, fileName: String? = null, callback: NetworkCallback) {
