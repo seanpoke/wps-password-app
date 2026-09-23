@@ -48,6 +48,8 @@ class MainActivity : AppCompatActivity() {
     private var permissionTitleFirstClickTime = 0L
     private var appTitleClickCount = 0
     private var appTitleFirstClickTime = 0L
+    private var configTitleClickCount = 0
+    private var configTitleFirstClickTime = 0L
     private val CLICK_TIME_WINDOW = 1000L
     private var migrationButtonVisible = false
     private lateinit var permissionStatusTitle: TextView
@@ -105,6 +107,9 @@ class MainActivity : AppCompatActivity() {
     private var isButtonLoading: Boolean = false
     private var buttonTimeoutTimer: android.os.Handler? = null
     private val TIMEOUT_DURATION = 15000 // 15秒超时
+
+    // 强制改密时的临时token（needChangePwd流程使用，不落地登录态）
+    private var pendingChangePwdToken: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -278,6 +283,11 @@ class MainActivity : AppCompatActivity() {
         permissionStatusTitle.setOnClickListener {
             handlePermissionTitleClick()
         }
+
+        val configManagementTitle = findViewById<TextView>(R.id.config_management_title)
+        configManagementTitle.setOnClickListener {
+            handleConfigTitleClick()
+        }
     }
 
     private fun disableButton() {
@@ -361,6 +371,35 @@ class MainActivity : AppCompatActivity() {
             } else {
                 appTitleClickCount = 1
                 appTitleFirstClickTime = currentTime
+            }
+        }
+    }
+
+    private fun handleConfigTitleClick() {
+        val currentTime = System.currentTimeMillis()
+        if (configTitleClickCount == 0) {
+            configTitleFirstClickTime = currentTime
+            configTitleClickCount = 1
+        } else {
+            if (currentTime - configTitleFirstClickTime <= CLICK_TIME_WINDOW) {
+                configTitleClickCount++
+                if (configTitleClickCount >= 3) {
+                    val newAllow = !configStorage.getAllowHttp()
+                    configStorage.saveAllowHttp(newAllow)
+                    networkManager.onServerConfigChanged()
+                    val msg = if (newAllow) {
+                        "已开启HTTP支持（HTTP/HTTPS均可）"
+                    } else {
+                        "已关闭HTTP支持（仅HTTPS）"
+                    }
+                    Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+                    LogManager.log(TAG, "配置管理标题三连点切换协议支持：$msg", "DEBUG")
+                    configTitleClickCount = 0
+                    configTitleFirstClickTime = 0L
+                }
+            } else {
+                configTitleClickCount = 1
+                configTitleFirstClickTime = currentTime
             }
         }
     }
@@ -573,7 +612,7 @@ class MainActivity : AppCompatActivity() {
             ipAddressError.visibility = TextView.VISIBLE
             isValid = false
             LogManager.log(TAG, "IP地址为空", "DEBUG")
-        } else if (ipAddress.startsWith("http://")) {
+        } else if (ipAddress.startsWith("http://") && !configStorage.getAllowHttp()) {
             ipAddressError.text = "不支持HTTP协议，请使用HTTPS协议"
             ipAddressError.visibility = TextView.VISIBLE
             isValid = false
@@ -660,7 +699,7 @@ class MainActivity : AppCompatActivity() {
                 LogManager.log(TAG, "登录请求成功，响应: $response", "DEBUG")
                 runOnUiThread {
                     clearButtonTimeout()
-                    processLoginResponse(response)
+                    processLoginResponse(response, password)
                     enableButton()
                 }
             }
@@ -683,7 +722,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     // 处理登录响应
-    private fun processLoginResponse(response: String) {
+    private fun processLoginResponse(response: String, loginPassword: String? = null) {
         LogManager.log(TAG, "开始处理登录响应", "DEBUG")
         val gson = Gson()
         try {
@@ -692,9 +731,18 @@ class MainActivity : AppCompatActivity() {
             LogManager.log(TAG, "解析登录响应成功: status=${loginResponse.status}, message=${loginResponse.message}", "DEBUG")
 
             if (loginResponse.status == 200) {
-                LogManager.log(TAG, "登录成功: account=${loginResponse.data.account}, name=${loginResponse.data.name}", "DEBUG")
+                val loginData = loginResponse.data
+                // 强制改密：needChangePwd=true 时不落地登录态，进入改密流程
+                if (loginData.needChangePwd == true) {
+                    LogManager.log(TAG, "登录响应要求强制修改密码，进入改密流程", "DEBUG")
+                    clearButtonTimeout()
+                    enableButton()
+                    handleNeedChangePassword(loginData.token, loginPassword ?: "")
+                    return
+                }
+                LogManager.log(TAG, "登录成功: account=${loginData.account}, name=${loginData.name}", "DEBUG")
                 // 保存用户信息
-                configStorage.saveUserInfo(loginResponse.data)
+                configStorage.saveUserInfo(loginData)
 
                 // 更新登录状态
                 isLoggedIn = true
@@ -736,6 +784,93 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, "登录失败：响应格式错误", Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    /**
+     * 处理强制改密流程（needChangePwd=true）
+     * 此时不落地任何登录态（不保存token/登录标记），仅用登录响应返回的临时token发起改密请求。
+     * 改密成功后要求用户用新密码重新登录（下次正常流程，needChangePwd=false）。
+     */
+    private fun handleNeedChangePassword(tempToken: String, oldPassword: String) {
+        pendingChangePwdToken = tempToken
+        val context = this
+        val layout = android.widget.LinearLayout(context).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(60, 40, 60, 10)
+        }
+        val newEt = android.widget.EditText(context).apply {
+            hint = "新密码"
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+        }
+        val confirmEt = android.widget.EditText(context).apply {
+            hint = "确认新密码"
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+        }
+        val errorTv = android.widget.TextView(context).apply {
+            setTextColor(resources.getColor(android.R.color.holo_red_dark))
+        }
+        layout.addView(newEt)
+        layout.addView(confirmEt)
+        layout.addView(errorTv)
+
+        val dialog = android.app.AlertDialog.Builder(context, R.style.Theme_WpsPasswordManager_LightDialog)
+            .setTitle("首次登录需修改密码")
+            .setView(layout)
+            .setCancelable(false)
+            .setPositiveButton("确定", null)
+            .setNegativeButton("取消") { d, _ -> d.dismiss() }
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val newP = newEt.text.toString().trim()
+                val confirmP = confirmEt.text.toString().trim()
+                if (newP.isEmpty() || confirmP.isEmpty()) {
+                    errorTv.text = "请输入新密码并确认"
+                    return@setOnClickListener
+                }
+                if (newP != confirmP) {
+                    errorTv.text = "两次输入的新密码不一致"
+                    return@setOnClickListener
+                }
+                // token优先用登录响应返回的临时token，为空则回退全局已存token
+                val token = pendingChangePwdToken ?: configStorage.getUserInfo()?.token
+                if (token.isNullOrEmpty()) {
+                    errorTv.text = "登录态缺失，请重新登录"
+                    return@setOnClickListener
+                }
+                networkManager.changePassword(oldPassword, newP, token, object : NetworkCallback {
+                    override fun onSuccess(response: String) {
+                        runOnUiThread {
+                            try {
+                                val json = org.json.JSONObject(response)
+                                if (json.getInt("status") == 200) {
+                                    Toast.makeText(context, "密码修改成功，请使用新密码重新登录", Toast.LENGTH_LONG).show()
+                                    dialog.dismiss()
+                                    // 重置密码框，要求用户用新密码重新登录（走正常流程）
+                                    passwordInput.setText("")
+                                    pendingChangePwdToken = null
+                                } else {
+                                    errorTv.text = json.optString("message", "密码修改失败")
+                                }
+                            } catch (e: Exception) {
+                                errorTv.text = "密码修改失败：解析响应异常"
+                            }
+                        }
+                    }
+
+                    override fun onError(error: String) {
+                        runOnUiThread {
+                            errorTv.text = "密码修改失败：$error"
+                        }
+                    }
+
+                    override fun onComplete() {}
+                })
+            }
+        }
+        dialog.show()
+        setupDialogButtons(dialog)
     }
 
     // 禁用配置管理页面的所有输入框

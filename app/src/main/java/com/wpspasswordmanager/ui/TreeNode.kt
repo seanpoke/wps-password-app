@@ -15,7 +15,8 @@ package com.wpspasswordmanager.ui
  * @param isIndeterminate 是否半勾选状态
  */
 data class TreeNode(
-    val dn: String,
+    val id: Long = 0L, // 节点ID（仅用于提交，UI不展示）
+    val dn: String?, // LDAP完整路径（用户节点可能为null，所有对dn的操作需加null守卫）
     val name: String,
     val account: String?,
     val type: Int, // 0: 部门, 1: 员工
@@ -198,7 +199,7 @@ data class TreeNode(
     fun getAllSelectedDeptDns(): List<String> {
         val result = mutableListOf<String>()
         if (type == 0 && hasAuth) {
-            result.add(dn)
+            dn?.let { result.add(it) }
         }
         children.forEach {
             if (it.type == 0) {

@@ -17,6 +17,7 @@ class ConfigStorage private constructor(context: Context) {
         private const val KEY_TARGET_WPS_PKG = "target_wps_pkg"
         private const val KEY_PUBLIC_KEY = "public_key"
         private const val KEY_KEY_VERSION = "key_version"
+        private const val KEY_ALLOW_HTTP = "allow_http"
         
         private const val DEFAULT_PUBLIC_KEY = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEuY2/Hz7c7gM0O8P/8VYjDasWhdW4jyS99+Xwyghe+CVFko7KPeamzaOsUffIHQz0VAA8RH9MV1BYyuZAJ7X05Q=="
         private const val DEFAULT_KEY_VERSION = "default"
@@ -160,6 +161,18 @@ class ConfigStorage private constructor(context: Context) {
     fun getKeyVersion(): String {
         return sharedPreferences.getString(KEY_KEY_VERSION, DEFAULT_KEY_VERSION) ?: DEFAULT_KEY_VERSION
     }
+
+    // 存储是否允许使用HTTP协议（默认false，仅HTTPS）
+    fun saveAllowHttp(allow: Boolean) {
+        val editor = sharedPreferences.edit()
+        editor.putBoolean(KEY_ALLOW_HTTP, allow)
+        editor.apply()
+    }
+
+    // 获取是否允许使用HTTP协议，默认false（仅支持HTTPS）
+    fun getAllowHttp(): Boolean {
+        return sharedPreferences.getBoolean(KEY_ALLOW_HTTP, false)
+    }
 }
 
 // 服务器配置数据类
@@ -173,5 +186,7 @@ data class ServerConfig(
 data class UserInfo(
     val account: String,
     val name: String,
-    val token: String
+    val token: String,
+    val needChangePwd: Boolean = false, // 是否需要首次修改密码
+    val role: String? = null // 用户角色（多角色取最高优先级）
 )

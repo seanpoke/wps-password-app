@@ -509,12 +509,16 @@ class FloatingButtonService : Service() {
 
     private var treeAdapter: TreeAdapter? = null
     private var rootNodes: List<TreeNode> = emptyList()
+    private val allNodes: MutableList<TreeNode> = mutableListOf()
 
     private fun showPermissionTreeDialog(ldapItems: List<LdapItem>) {
         // 在WPS应用界面内显示文档权限模块
         if (permissionPanelView == null) {
             // 解析LdapItem为TreeNode
             rootNodes = parseLdapItemsToTreeNodes(ldapItems)
+            // 构建扁平化的全量节点列表（含折叠节点），用于dn前缀包含判定
+            allNodes.clear()
+            collectAllNodes(rootNodes, allNodes)
             // 初始化时处理已选中部门的子节点置灰状态
             initGrayedStateForSelectedDepts(rootNodes)
             // 自动展开所有已选中节点的路径
@@ -566,6 +570,7 @@ class FloatingButtonService : Service() {
         val nodes = mutableListOf<TreeNode>()
         for (item in ldapItems) {
             val node = TreeNode(
+                id = item.id,
                 dn = item.dn,
                 name = item.name,
                 account = item.account,
@@ -584,6 +589,7 @@ class FloatingButtonService : Service() {
         // 添加子部门
         for (dept in ldapItem.deptList ?: emptyList()) {
             val deptNode = TreeNode(
+                id = dept.id,
                 dn = dept.dn,
                 name = dept.name,
                 account = dept.account,
@@ -599,6 +605,7 @@ class FloatingButtonService : Service() {
         // 添加员工
         for (employee in ldapItem.employList ?: emptyList()) {
             val employeeNode = TreeNode(
+                id = employee.id,
                 dn = employee.dn,
                 name = employee.name,
                 account = employee.account,
@@ -608,6 +615,18 @@ class FloatingButtonService : Service() {
                 parent = parent
             )
             parent.children.add(employeeNode)
+        }
+    }
+
+    /**
+     * 收集树中所有节点（含折叠节点）到扁平列表，用于 dn 前缀包含判定
+     */
+    private fun collectAllNodes(nodes: List<TreeNode>, out: MutableList<TreeNode>) {
+        for (node in nodes) {
+            out.add(node)
+            if (node.children.isNotEmpty()) {
+                collectAllNodes(node.children, out)
+            }
         }
     }
 
@@ -692,15 +711,17 @@ class FloatingButtonService : Service() {
                     node.hasAuth = hasAuth
                     node.isIndeterminate = false
                     node.isGrayed = false
-                    
+
                     if (node.type == 0) {
                         if (hasAuth) {
-                            updateChildrenGrayedState(node)
+                            // 勾选部门：将其下所有后代节点（dn前缀匹配）置灰，表示被该部门包含
+                            markDescendantsGrayedByDn(node)
                         } else {
-                            node.clearChildrenState()
+                            // 取消勾选部门：解除后代节点的置灰状态
+                            clearDescendantsByDn(node)
                         }
                     }
-                    
+
                     val newList = flattenTree(rootNodes).toMutableList()
                     treeAdapter?.nodes?.clear()
                     treeAdapter?.nodes?.addAll(newList)
@@ -754,15 +775,15 @@ class FloatingButtonService : Service() {
                 // 处理保存逻辑
                 val selectedItems = getSelectedNodes(rootNodes)
                 
-                // 提取选中的账号和部门DN
-                val accountDnList = mutableListOf<String>()
-                val deptDnList = mutableListOf<String>()
-                
+                // 按 type 分流为 userIdList / deptIdList（使用 id 提交，不提交 dn）
+                val userIdList = mutableListOf<Long>()
+                val deptIdList = mutableListOf<Long>()
+
                 for (node in selectedItems) {
                     if (node.type == 1) { // 员工
-                        accountDnList.add(node.dn)
+                        userIdList.add(node.id)
                     } else if (node.type == 0) { // 部门
-                        deptDnList.add(node.dn)
+                        deptIdList.add(node.id)
                     }
                 }
                 
@@ -795,10 +816,10 @@ class FloatingButtonService : Service() {
                 
                 // 获取isTemp参数（根据uid是否已注册）
                 val isTemp = fileMeta.isTempUid
-                android.util.Log.d(TAG, "权限更新 - docId=$docId, isTemp=$isTemp, accountDnList=$accountDnList, deptDnList=$deptDnList")
-                
-                // 构建请求体
-                val jsonBody = "{\"docId\": \"$docId\", \"accountDnList\": [${accountDnList.joinToString { "\"$it\"" }}], \"deptDnList\": [${deptDnList.joinToString { "\"$it\"" }}], \"isTemp\": $isTemp}"
+                android.util.Log.d(TAG, "权限更新 - docId=$docId, isTemp=$isTemp, userIdList=$userIdList, deptIdList=$deptIdList")
+
+                // 构建请求体：使用内部主键ID列表提交，区分用户与部门
+                val jsonBody = "{\"docId\": \"$docId\", \"userIdList\": [${userIdList.joinToString()}], \"deptIdList\": [${deptIdList.joinToString()}], \"isTemp\": $isTemp}"
                 
                 // 获取token
                 val userInfo = ConfigStorage.getInstance(this).getUserInfo()
@@ -921,43 +942,46 @@ class FloatingButtonService : Service() {
     private fun initGrayedStateForSelectedDepts(nodes: List<TreeNode>) {
         for (node in nodes) {
             if (node.type == 0 && node.hasAuth) {
-                updateChildrenGrayedStateWithCheck(node)
+                markDescendantsGrayedByDn(node)
             }
             if (node.children.isNotEmpty()) {
                 initGrayedStateForSelectedDepts(node.children)
             }
         }
     }
-    
+
     /**
-     * 更新子节点置灰状态（初始化时使用）
-     * 跳过已被单独选中的员工节点
+     * 勾选部门节点时，基于 dn 前缀判定其包含的后代节点（不递归遍历收集子孙），
+     * 将后代节点置灰（表示被该部门包含，提交时只需提交部门id）。
+     * 使用 HashSet<String> 维护已处理的 dn，避免重复。
      */
-    private fun updateChildrenGrayedStateWithCheck(node: TreeNode) {
-        for (child in node.children) {
-            if (child.type == 1) {
-                if (!child.hasAuth) {
-                    child.isGrayed = true
-                }
-            } else {
-                child.isGrayed = true
-                if (child.children.isNotEmpty()) {
-                    updateChildrenGrayedStateWithCheck(child)
-                }
+    private fun markDescendantsGrayedByDn(parent: TreeNode) {
+        val prefix = parent.dn ?: return // 部门节点dn必返回，为null则无法判定，直接返回
+        val separator = "$prefix,"
+        val processed = HashSet<String>()
+        for (node in allNodes) {
+            val dn = node.dn
+            if (node === parent || dn == null) continue
+            // 末尾加逗号分隔符，避免 ou=ab 误匹配 ou=abc
+            if (dn.startsWith(separator) && processed.add(dn)) {
+                node.hasAuth = false
+                node.isGrayed = true
+                node.isIndeterminate = false
             }
         }
     }
-    
+
     /**
-     * 强制更新所有子节点置灰状态（勾选部门时使用）
-     * 不跳过任何节点，强制设置为置灰状态
+     * 取消勾选部门节点时，解除其包含的后代节点的置灰状态
      */
-    private fun updateChildrenGrayedState(node: TreeNode) {
-        for (child in node.children) {
-            child.hasAuth = false
-            child.isGrayed = true
-            if (child.type == 0 && child.children.isNotEmpty()) {
-                updateChildrenGrayedState(child)
+    private fun clearDescendantsByDn(parent: TreeNode) {
+        val prefix = parent.dn ?: return
+        val separator = "$prefix,"
+        for (node in allNodes) {
+            val dn = node.dn
+            if (node === parent || dn == null) continue
+            if (dn.startsWith(separator)) {
+                node.isGrayed = false
             }
         }
     }
@@ -990,24 +1014,23 @@ class FloatingButtonService : Service() {
             return
         }
 
-        val nodesToShowDn = mutableSetOf<String>()
+        // 收集匹配节点及其所有祖先节点（按节点引用，避免dn为null时无法定位路径）
+        val toShow = mutableSetOf<TreeNode>()
         matchingNodes.forEach { node ->
             var current: TreeNode? = node
             while (current != null) {
-                nodesToShowDn.add(current.dn)
+                toShow.add(current)
                 if (current.type == 0) {
                     current.isExpanded = true
                 }
                 current = current.parent
             }
         }
-        Log.d(TAG, "需要显示的节点DN: ${nodesToShowDn.size}个")
 
         val pathNodes = mutableListOf<TreeNode>()
-        collectPathNodes(rootNodes, nodesToShowDn, pathNodes)
+        collectNodesByMembership(rootNodes, toShow, pathNodes)
         
         Log.d(TAG, "收集到的路径节点: ${pathNodes.size}个")
-        pathNodes.forEach { Log.d(TAG, "路径节点: ${it.name} (层级: ${it.level})") }
 
         treeAdapter?.nodes?.clear()
         treeAdapter?.nodes?.addAll(pathNodes)
@@ -1026,12 +1049,12 @@ class FloatingButtonService : Service() {
         }
     }
 
-    private fun collectPathNodes(nodes: List<TreeNode>, nodesToShowDn: Set<String>, result: MutableList<TreeNode>) {
+    private fun collectNodesByMembership(nodes: List<TreeNode>, toShow: Set<TreeNode>, result: MutableList<TreeNode>) {
         for (node in nodes) {
-            if (nodesToShowDn.contains(node.dn)) {
+            if (toShow.contains(node)) {
                 result.add(node)
                 if (node.children.isNotEmpty()) {
-                    collectPathNodes(node.children, nodesToShowDn, result)
+                    collectNodesByMembership(node.children, toShow, result)
                 }
             }
         }
@@ -1140,9 +1163,10 @@ class FloatingButtonService : Service() {
 
     // LdapItem数据类
     data class LdapItem(
+        val id: Long, // 节点ID：type=0 为部门ID，type=1 为员工ID（仅用于提交，UI不展示）
         val type: Int, // 节点类型 0 部门 1员工
         val name: String, // 节点名称
-        val dn: String, // LDAP完整路径
+        val dn: String?, // LDAP完整路径（用户节点可能为null，客户端需兼容缺省）
         val account: String?, // 账号名（用户专属）
         val hasAuth: Boolean, // 是否有权限
         val deptList: List<LdapItem>?, // 子部门列表
