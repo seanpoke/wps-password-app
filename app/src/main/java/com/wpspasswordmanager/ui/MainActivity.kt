@@ -150,6 +150,9 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // 启动版本检查（免token，未配置服务器时静默跳过）
+        checkAppVersion()
+
         // 检查是否已登录，如果已登录则启动心跳服务
         val userInfo = configStorage.getUserInfo()
         if (userInfo != null) {
@@ -242,6 +245,110 @@ class MainActivity : AppCompatActivity() {
             versionTextView.text = "版本 ${packageInfo.versionName}"
         } catch (e: Exception) {
             versionTextView.text = "版本未知"
+        }
+    }
+
+    /**
+     * 客户端版本检查（免token，接口文档v1 11.1）
+     * 启动时上报 platform=android 与当前版本号，由服务端判定 updateType：
+     * NONE 正常进入；OPTIONAL 弹可更新提示（允许跳过）；FORCE 弹强制更新弹窗（禁止跳过）。
+     * 检查失败（未配置服务器/网络异常等）静默忽略，不阻塞进入。
+     */
+    private fun checkAppVersion() {
+        val currentVersion = try {
+            packageManager.getPackageInfo(packageName, 0).versionName ?: "0.0.0"
+        } catch (e: Exception) {
+            "0.0.0"
+        }
+        LogManager.log(TAG, "启动版本检查: current=$currentVersion", "DEBUG")
+        networkManager.checkVersion(currentVersion, object : NetworkCallback {
+            override fun onSuccess(response: String) {
+                runOnUiThread {
+                    try {
+                        val json = org.json.JSONObject(response)
+                        if (json.getInt("status") == 200) {
+                            val data = json.getJSONObject("data")
+                            val updateType = data.optString("updateType", "NONE")
+                            val latestVersion = data.optString("latestVersion", "")
+                            // 服务端字段为 null 时 optString 会返回字符串 "null"，统一归一为空串
+                            fun String.normalize(): String = if (this == "null") "" else this
+                            val downloadUrl = data.optString("downloadUrl", "").normalize()
+                            val changelog = data.optString("changelog", "").normalize()
+                            LogManager.log(TAG, "版本检查结果: updateType=$updateType, latest=$latestVersion", "DEBUG")
+                            when (updateType) {
+                                "FORCE" -> showForceUpdateDialog(latestVersion, downloadUrl, changelog)
+                                "OPTIONAL" -> showOptionalUpdateDialog(latestVersion, downloadUrl, changelog)
+                                else -> LogManager.log(TAG, "已是最新版本，正常进入", "DEBUG")
+                            }
+                        } else {
+                            LogManager.log(TAG, "版本检查返回非200: ${json.optString("message")}", "DEBUG")
+                        }
+                    } catch (e: Exception) {
+                        LogManager.log(TAG, "版本检查响应解析异常: ${e.message}", "ERROR")
+                    }
+                }
+            }
+
+            override fun onError(error: String) {
+                LogManager.log(TAG, "版本检查失败（忽略）: $error", "DEBUG")
+            }
+
+            override fun onComplete() {}
+        })
+    }
+
+    // 可更新提示（OPTIONAL）：允许跳过
+    private fun showOptionalUpdateDialog(latestVersion: String, downloadUrl: String, changelog: String) {
+        val message = buildString {
+            append("最新版本：$latestVersion\n")
+            if (changelog.isNotEmpty()) {
+                append("\n更新内容：\n$changelog")
+            }
+        }
+        val dialog = android.app.AlertDialog.Builder(this, R.style.Theme_WpsPasswordManager_LightDialog)
+            .setTitle("发现新版本")
+            .setMessage(message)
+            .setCancelable(true)
+            .setPositiveButton("立即更新") { d, _ ->
+                openDownloadUrl(downloadUrl)
+                d.dismiss()
+            }
+            .setNegativeButton("暂不更新") { d, _ -> d.dismiss() }
+            .create()
+        dialog.show()
+        setupDialogButtons(dialog)
+    }
+
+    // 强制更新弹窗（FORCE）：模态不可绕过，点击「确认并退出」杀掉整个App进程
+    private fun showForceUpdateDialog(latestVersion: String, downloadUrl: String, changelog: String) {
+        val dialog = android.app.AlertDialog.Builder(this, R.style.Theme_WpsPasswordManager_LightDialog)
+            .setTitle("强制更新")
+            .setMessage("当前版本过低，请联系管理员获取最新版本$latestVersion")
+            .setCancelable(false)
+            .setPositiveButton("确认并退出") { _, _ ->
+                LogManager.log(TAG, "强制更新：用户确认，退出应用", "DEBUG")
+                finishAffinity()
+                android.os.Process.killProcess(android.os.Process.myPid())
+                kotlin.system.exitProcess(0)
+            }
+            .setNegativeButton("立即更新") { _, _ ->
+                openDownloadUrl(downloadUrl)
+            }
+            .create()
+        dialog.setCanceledOnTouchOutside(false)
+        dialog.show()
+        setupDialogButtons(dialog)
+    }
+
+    private fun openDownloadUrl(url: String) {
+        if (url.isEmpty()) {
+            Toast.makeText(this, "未提供下载地址", Toast.LENGTH_SHORT).show()
+            return
+        }
+        try {
+            startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)))
+        } catch (e: Exception) {
+            Toast.makeText(this, "无法打开下载链接", Toast.LENGTH_SHORT).show()
         }
     }
 

@@ -192,6 +192,12 @@ class NetworkManager private constructor(context: Context) {
         executePostRequest("/account/change-password", jsonBody, token, callback)
     }
 
+    // 客户端版本检查（免token，接口文档v1 11.1）：platform 固定 android
+    fun checkVersion(currentVersion: String, callback: NetworkCallback) {
+        Log.d(TAG, "执行版本检查请求: current=$currentVersion")
+        executeGetRequest("/config/version/check?platform=android&current=$currentVersion", null, callback)
+    }
+
     fun getDocumentOwner(docId: String, token: String?, fileName: String? = null, callback: NetworkCallback) {
         Log.d(TAG, "执行获取文档权限请求: docId=$docId, fileName=$fileName")
         val jsonBody = buildString {
