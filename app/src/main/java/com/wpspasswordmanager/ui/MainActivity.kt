@@ -71,6 +71,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var rememberPasswordCheckbox: CheckBox
     private lateinit var loginButton: Button
     private lateinit var userInfoTextView: TextView
+    private lateinit var changePasswordButton: Button
 
     // 错误提示文本框
     private lateinit var ipAddressError: TextView
@@ -197,9 +198,11 @@ class MainActivity : AppCompatActivity() {
         portInput = findViewById(R.id.port_input)
         usernameInput = findViewById(R.id.username_input)
         passwordInput = findViewById(R.id.password_input)
+        PasswordEye.attach(passwordInput)
         rememberPasswordCheckbox = findViewById(R.id.remember_password_checkbox)
         loginButton = findViewById(R.id.login_button)
         userInfoTextView = findViewById(R.id.user_info_text_view)
+        changePasswordButton = findViewById(R.id.change_password_button)
 
         // 初始化错误提示文本框
         ipAddressError = findViewById(R.id.ip_address_error)
@@ -287,6 +290,10 @@ class MainActivity : AppCompatActivity() {
         val configManagementTitle = findViewById<TextView>(R.id.config_management_title)
         configManagementTitle.setOnClickListener {
             handleConfigTitleClick()
+        }
+
+        changePasswordButton.setOnClickListener {
+            showSelfChangePasswordDialog()
         }
     }
 
@@ -737,7 +744,7 @@ class MainActivity : AppCompatActivity() {
                     LogManager.log(TAG, "登录响应要求强制修改密码，进入改密流程", "DEBUG")
                     clearButtonTimeout()
                     enableButton()
-                    handleNeedChangePassword(loginData.token, loginPassword ?: "")
+                    handleNeedChangePassword(loginData.token, loginData.account, loginPassword ?: "")
                     return
                 }
                 LogManager.log(TAG, "登录成功: account=${loginData.account}, name=${loginData.name}", "DEBUG")
@@ -791,7 +798,7 @@ class MainActivity : AppCompatActivity() {
      * 此时不落地任何登录态（不保存token/登录标记），仅用登录响应返回的临时token发起改密请求。
      * 改密成功后要求用户用新密码重新登录（下次正常流程，needChangePwd=false）。
      */
-    private fun handleNeedChangePassword(tempToken: String, oldPassword: String) {
+    private fun handleNeedChangePassword(tempToken: String, account: String, oldPassword: String) {
         pendingChangePwdToken = tempToken
         val context = this
         val layout = android.widget.LinearLayout(context).apply {
@@ -809,6 +816,8 @@ class MainActivity : AppCompatActivity() {
         val errorTv = android.widget.TextView(context).apply {
             setTextColor(resources.getColor(android.R.color.holo_red_dark))
         }
+        PasswordEye.attach(newEt)
+        PasswordEye.attach(confirmEt)
         layout.addView(newEt)
         layout.addView(confirmEt)
         layout.addView(errorTv)
@@ -833,13 +842,17 @@ class MainActivity : AppCompatActivity() {
                     errorTv.text = "两次输入的新密码不一致"
                     return@setOnClickListener
                 }
+                if (!isValidNewPassword(newP)) {
+                    errorTv.text = "新密码需至少8位，且包含大写字母、小写字母和数字"
+                    return@setOnClickListener
+                }
                 // token优先用登录响应返回的临时token，为空则回退全局已存token
                 val token = pendingChangePwdToken ?: configStorage.getUserInfo()?.token
                 if (token.isNullOrEmpty()) {
                     errorTv.text = "登录态缺失，请重新登录"
                     return@setOnClickListener
                 }
-                networkManager.changePassword(oldPassword, newP, token, object : NetworkCallback {
+                networkManager.changePassword(account, oldPassword, newP, token, object : NetworkCallback {
                     override fun onSuccess(response: String) {
                         runOnUiThread {
                             try {
@@ -861,6 +874,150 @@ class MainActivity : AppCompatActivity() {
 
                     override fun onError(error: String) {
                         runOnUiThread {
+                            errorTv.text = "密码修改失败：$error"
+                        }
+                    }
+
+                    override fun onComplete() {}
+                })
+            }
+        }
+        dialog.show()
+        setupDialogButtons(dialog)
+    }
+
+    // 新密码复杂度校验：至少8位且包含大写字母、小写字母和数字
+    private fun isValidNewPassword(pwd: String): Boolean {
+        return pwd.length >= 8 &&
+            pwd.any { it.isUpperCase() } &&
+            pwd.any { it.isLowerCase() } &&
+            pwd.any { it.isDigit() }
+    }
+
+    /**
+     * 自助修改密码（用户主动触发，登录/未登录均可）
+     * 与强制改密场景（handleNeedChangePassword，needChangePwd=true）明确区分：
+     * - 触发：点击「修改密码」按钮；强制改密：登录响应 needChangePwd=true 自动弹出
+     * - 输入：此处需手填 旧密码/新密码/确认新密码 三项；强制改密仅填新密码两项，旧密码自动取登录密码
+     * - 账号来源：已登录取已存用户信息；未登录取配置管理里填写的账号（要求 IP/端口/账号均已填写）
+     * - token：已登录带已存token；未登录不传token（后端该接口无需token，按请求参数中的账号校验）
+     * - 校验：三项均非空、两次新密码一致、新密码不得与旧密码相同
+     * - 成功后：已登录则保持登录态；若开启记住密码则同步更新本地存储的密码
+     */
+    private fun showSelfChangePasswordDialog() {
+        val userInfo = configStorage.getUserInfo()
+        val account: String
+        val token: String?
+        if (userInfo != null) {
+            account = userInfo.account
+            token = userInfo.token
+        } else {
+            // 未登录：要求服务器地址、端口、账号均已填写
+            val ip = ipAddressInput.text.toString().trim()
+            val port = portInput.text.toString().trim()
+            val acc = usernameInput.text.toString().trim()
+            if (ip.isEmpty() || port.isEmpty() || acc.isEmpty()) {
+                Toast.makeText(this, "请先填写服务器地址、端口和账号，再修改密码", Toast.LENGTH_LONG).show()
+                return
+            }
+            if (!port.matches("\\d+".toRegex()) || port.toInt() !in 1..65535) {
+                Toast.makeText(this, "请输入有效的端口号（1-65535）", Toast.LENGTH_LONG).show()
+                return
+            }
+            // 未登录时当前输入可能尚未落盘，先保存配置，保证网络层能构建URL
+            configStorage.saveServerConfig(ServerConfig(ip, port, acc))
+            networkManager.onServerConfigChanged()
+            account = acc
+            token = null // 后端 /account/change-password 无需token，按请求参数中的账号校验
+            LogManager.log(TAG, "自助修改密码：未登录状态，使用输入框配置 account=$acc", "DEBUG")
+        }
+        LogManager.log(TAG, "自助修改密码：打开弹窗", "DEBUG")
+        val context = this
+        val layout = android.widget.LinearLayout(context).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(60, 40, 60, 10)
+        }
+        val oldEt = android.widget.EditText(context).apply {
+            hint = "旧密码"
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+        }
+        val newEt = android.widget.EditText(context).apply {
+            hint = "新密码"
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+        }
+        val confirmEt = android.widget.EditText(context).apply {
+            hint = "确认新密码"
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+        }
+        val errorTv = android.widget.TextView(context).apply {
+            setTextColor(resources.getColor(android.R.color.holo_red_dark))
+        }
+        PasswordEye.attach(oldEt)
+        PasswordEye.attach(newEt)
+        PasswordEye.attach(confirmEt)
+        layout.addView(oldEt)
+        layout.addView(newEt)
+        layout.addView(confirmEt)
+        layout.addView(errorTv)
+
+        val dialog = android.app.AlertDialog.Builder(context, R.style.Theme_WpsPasswordManager_LightDialog)
+            .setTitle("修改密码")
+            .setView(layout)
+            .setCancelable(false)
+            .setPositiveButton("确定", null)
+            .setNegativeButton("取消") { d, _ -> d.dismiss() }
+            .create()
+
+        dialog.setOnShowListener {
+            val positiveBtn = dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE)
+            positiveBtn.setOnClickListener {
+                val oldP = oldEt.text.toString().trim()
+                val newP = newEt.text.toString().trim()
+                val confirmP = confirmEt.text.toString().trim()
+                if (oldP.isEmpty() || newP.isEmpty() || confirmP.isEmpty()) {
+                    errorTv.text = "请填写旧密码、新密码和确认新密码"
+                    return@setOnClickListener
+                }
+                if (newP != confirmP) {
+                    errorTv.text = "两次输入的新密码不一致"
+                    return@setOnClickListener
+                }
+                if (!isValidNewPassword(newP)) {
+                    errorTv.text = "新密码需至少8位，且包含大写字母、小写字母和数字"
+                    return@setOnClickListener
+                }
+                if (newP == oldP) {
+                    errorTv.text = "新密码不能与旧密码相同"
+                    return@setOnClickListener
+                }
+                positiveBtn.isEnabled = false
+                LogManager.log(TAG, "自助修改密码：提交改密请求", "DEBUG")
+                networkManager.changePassword(account, oldP, newP, token, object : NetworkCallback {
+                    override fun onSuccess(response: String) {
+                        runOnUiThread {
+                            positiveBtn.isEnabled = true
+                            try {
+                                val json = org.json.JSONObject(response)
+                                if (json.getInt("status") == 200) {
+                                    LogManager.log(TAG, "自助修改密码成功", "DEBUG")
+                                    // 开启记住密码时，同步更新本地存储的密码，避免下次登录用旧密码
+                                    if (configStorage.getRememberPassword()) {
+                                        configStorage.savePassword(newP)
+                                    }
+                                    Toast.makeText(context, "密码修改成功", Toast.LENGTH_LONG).show()
+                                    dialog.dismiss()
+                                } else {
+                                    errorTv.text = json.optString("message", "密码修改失败")
+                                }
+                            } catch (e: Exception) {
+                                errorTv.text = "密码修改失败：解析响应异常"
+                            }
+                        }
+                    }
+
+                    override fun onError(error: String) {
+                        runOnUiThread {
+                            positiveBtn.isEnabled = true
                             errorTv.text = "密码修改失败：$error"
                         }
                     }
@@ -1010,7 +1167,7 @@ class MainActivity : AppCompatActivity() {
         enableConfigInputs()
         updateLoginButton()
         userInfoTextView.visibility = TextView.GONE
-        
+
         // 显示自适应的提示弹窗
         val builder = android.app.AlertDialog.Builder(this, R.style.Theme_WpsPasswordManager_LightDialog)
         builder.setTitle("登录过期")

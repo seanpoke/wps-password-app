@@ -186,9 +186,9 @@ class NetworkManager private constructor(context: Context) {
         executePostRequest("/account/logout", "{}", token, callback)
     }
 
-    fun changePassword(oldPassword: String, newPassword: String, token: String?, callback: NetworkCallback) {
-        Log.d(TAG, "执行修改密码请求")
-        val jsonBody = "{\"oldPassword\": \"$oldPassword\", \"newPassword\": \"$newPassword\"}"
+    fun changePassword(account: String, oldPassword: String, newPassword: String, token: String?, callback: NetworkCallback) {
+        Log.d(TAG, "执行修改密码请求: account=$account")
+        val jsonBody = "{\"account\": \"$account\", \"oldPassword\": \"$oldPassword\", \"newPassword\": \"$newPassword\"}"
         executePostRequest("/account/change-password", jsonBody, token, callback)
     }
 
