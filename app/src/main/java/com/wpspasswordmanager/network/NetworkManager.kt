@@ -186,10 +186,16 @@ class NetworkManager private constructor(context: Context) {
         executePostRequest("/account/logout", "{}", token, callback)
     }
 
-    fun changePassword(oldPassword: String, newPassword: String, token: String?, callback: NetworkCallback) {
-        Log.d(TAG, "执行修改密码请求")
-        val jsonBody = "{\"oldPassword\": \"$oldPassword\", \"newPassword\": \"$newPassword\"}"
+    fun changePassword(account: String, oldPassword: String, newPassword: String, token: String?, callback: NetworkCallback) {
+        Log.d(TAG, "执行修改密码请求: account=$account")
+        val jsonBody = "{\"account\": \"$account\", \"oldPassword\": \"$oldPassword\", \"newPassword\": \"$newPassword\"}"
         executePostRequest("/account/change-password", jsonBody, token, callback)
+    }
+
+    // 客户端版本检查（免token，接口文档v1 11.1）：platform 固定 android
+    fun checkVersion(currentVersion: String, callback: NetworkCallback) {
+        Log.d(TAG, "执行版本检查请求: current=$currentVersion")
+        executeGetRequest("/config/version/check?platform=android&current=$currentVersion", null, callback)
     }
 
     fun getDocumentOwner(docId: String, token: String?, fileName: String? = null, callback: NetworkCallback) {

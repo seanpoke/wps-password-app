@@ -71,6 +71,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var rememberPasswordCheckbox: CheckBox
     private lateinit var loginButton: Button
     private lateinit var userInfoTextView: TextView
+    private lateinit var changePasswordButton: Button
 
     // 错误提示文本框
     private lateinit var ipAddressError: TextView
@@ -149,6 +150,9 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // 启动版本检查（免token，未配置服务器时静默跳过）
+        checkAppVersion()
+
         // 检查是否已登录，如果已登录则启动心跳服务
         val userInfo = configStorage.getUserInfo()
         if (userInfo != null) {
@@ -197,9 +201,11 @@ class MainActivity : AppCompatActivity() {
         portInput = findViewById(R.id.port_input)
         usernameInput = findViewById(R.id.username_input)
         passwordInput = findViewById(R.id.password_input)
+        PasswordEye.attach(passwordInput)
         rememberPasswordCheckbox = findViewById(R.id.remember_password_checkbox)
         loginButton = findViewById(R.id.login_button)
         userInfoTextView = findViewById(R.id.user_info_text_view)
+        changePasswordButton = findViewById(R.id.change_password_button)
 
         // 初始化错误提示文本框
         ipAddressError = findViewById(R.id.ip_address_error)
@@ -239,6 +245,110 @@ class MainActivity : AppCompatActivity() {
             versionTextView.text = "版本 ${packageInfo.versionName}"
         } catch (e: Exception) {
             versionTextView.text = "版本未知"
+        }
+    }
+
+    /**
+     * 客户端版本检查（免token，接口文档v1 11.1）
+     * 启动时上报 platform=android 与当前版本号，由服务端判定 updateType：
+     * NONE 正常进入；OPTIONAL 弹可更新提示（允许跳过）；FORCE 弹强制更新弹窗（禁止跳过）。
+     * 检查失败（未配置服务器/网络异常等）静默忽略，不阻塞进入。
+     */
+    private fun checkAppVersion() {
+        val currentVersion = try {
+            packageManager.getPackageInfo(packageName, 0).versionName ?: "0.0.0"
+        } catch (e: Exception) {
+            "0.0.0"
+        }
+        LogManager.log(TAG, "启动版本检查: current=$currentVersion", "DEBUG")
+        networkManager.checkVersion(currentVersion, object : NetworkCallback {
+            override fun onSuccess(response: String) {
+                runOnUiThread {
+                    try {
+                        val json = org.json.JSONObject(response)
+                        if (json.getInt("status") == 200) {
+                            val data = json.getJSONObject("data")
+                            val updateType = data.optString("updateType", "NONE")
+                            val latestVersion = data.optString("latestVersion", "")
+                            // 服务端字段为 null 时 optString 会返回字符串 "null"，统一归一为空串
+                            fun String.normalize(): String = if (this == "null") "" else this
+                            val downloadUrl = data.optString("downloadUrl", "").normalize()
+                            val changelog = data.optString("changelog", "").normalize()
+                            LogManager.log(TAG, "版本检查结果: updateType=$updateType, latest=$latestVersion", "DEBUG")
+                            when (updateType) {
+                                "FORCE" -> showForceUpdateDialog(latestVersion, downloadUrl, changelog)
+                                "OPTIONAL" -> showOptionalUpdateDialog(latestVersion, downloadUrl, changelog)
+                                else -> LogManager.log(TAG, "已是最新版本，正常进入", "DEBUG")
+                            }
+                        } else {
+                            LogManager.log(TAG, "版本检查返回非200: ${json.optString("message")}", "DEBUG")
+                        }
+                    } catch (e: Exception) {
+                        LogManager.log(TAG, "版本检查响应解析异常: ${e.message}", "ERROR")
+                    }
+                }
+            }
+
+            override fun onError(error: String) {
+                LogManager.log(TAG, "版本检查失败（忽略）: $error", "DEBUG")
+            }
+
+            override fun onComplete() {}
+        })
+    }
+
+    // 可更新提示（OPTIONAL）：允许跳过
+    private fun showOptionalUpdateDialog(latestVersion: String, downloadUrl: String, changelog: String) {
+        val message = buildString {
+            append("最新版本：$latestVersion\n")
+            if (changelog.isNotEmpty()) {
+                append("\n更新内容：\n$changelog")
+            }
+        }
+        val dialog = android.app.AlertDialog.Builder(this, R.style.Theme_WpsPasswordManager_LightDialog)
+            .setTitle("发现新版本")
+            .setMessage(message)
+            .setCancelable(true)
+            .setPositiveButton("立即更新") { d, _ ->
+                openDownloadUrl(downloadUrl)
+                d.dismiss()
+            }
+            .setNegativeButton("暂不更新") { d, _ -> d.dismiss() }
+            .create()
+        dialog.show()
+        setupDialogButtons(dialog)
+    }
+
+    // 强制更新弹窗（FORCE）：模态不可绕过，点击「确认并退出」杀掉整个App进程
+    private fun showForceUpdateDialog(latestVersion: String, downloadUrl: String, changelog: String) {
+        val dialog = android.app.AlertDialog.Builder(this, R.style.Theme_WpsPasswordManager_LightDialog)
+            .setTitle("强制更新")
+            .setMessage("当前版本过低，请联系管理员获取最新版本$latestVersion")
+            .setCancelable(false)
+            .setPositiveButton("确认并退出") { _, _ ->
+                LogManager.log(TAG, "强制更新：用户确认，退出应用", "DEBUG")
+                finishAffinity()
+                android.os.Process.killProcess(android.os.Process.myPid())
+                kotlin.system.exitProcess(0)
+            }
+            .setNegativeButton("立即更新") { _, _ ->
+                openDownloadUrl(downloadUrl)
+            }
+            .create()
+        dialog.setCanceledOnTouchOutside(false)
+        dialog.show()
+        setupDialogButtons(dialog)
+    }
+
+    private fun openDownloadUrl(url: String) {
+        if (url.isEmpty()) {
+            Toast.makeText(this, "未提供下载地址", Toast.LENGTH_SHORT).show()
+            return
+        }
+        try {
+            startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)))
+        } catch (e: Exception) {
+            Toast.makeText(this, "无法打开下载链接", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -287,6 +397,10 @@ class MainActivity : AppCompatActivity() {
         val configManagementTitle = findViewById<TextView>(R.id.config_management_title)
         configManagementTitle.setOnClickListener {
             handleConfigTitleClick()
+        }
+
+        changePasswordButton.setOnClickListener {
+            showSelfChangePasswordDialog()
         }
     }
 
@@ -737,7 +851,7 @@ class MainActivity : AppCompatActivity() {
                     LogManager.log(TAG, "登录响应要求强制修改密码，进入改密流程", "DEBUG")
                     clearButtonTimeout()
                     enableButton()
-                    handleNeedChangePassword(loginData.token, loginPassword ?: "")
+                    handleNeedChangePassword(loginData.token, loginData.account, loginPassword ?: "")
                     return
                 }
                 LogManager.log(TAG, "登录成功: account=${loginData.account}, name=${loginData.name}", "DEBUG")
@@ -791,7 +905,7 @@ class MainActivity : AppCompatActivity() {
      * 此时不落地任何登录态（不保存token/登录标记），仅用登录响应返回的临时token发起改密请求。
      * 改密成功后要求用户用新密码重新登录（下次正常流程，needChangePwd=false）。
      */
-    private fun handleNeedChangePassword(tempToken: String, oldPassword: String) {
+    private fun handleNeedChangePassword(tempToken: String, account: String, oldPassword: String) {
         pendingChangePwdToken = tempToken
         val context = this
         val layout = android.widget.LinearLayout(context).apply {
@@ -809,6 +923,8 @@ class MainActivity : AppCompatActivity() {
         val errorTv = android.widget.TextView(context).apply {
             setTextColor(resources.getColor(android.R.color.holo_red_dark))
         }
+        PasswordEye.attach(newEt)
+        PasswordEye.attach(confirmEt)
         layout.addView(newEt)
         layout.addView(confirmEt)
         layout.addView(errorTv)
@@ -833,13 +949,17 @@ class MainActivity : AppCompatActivity() {
                     errorTv.text = "两次输入的新密码不一致"
                     return@setOnClickListener
                 }
+                if (!isValidNewPassword(newP)) {
+                    errorTv.text = "新密码需至少8位，且包含大写字母、小写字母和数字"
+                    return@setOnClickListener
+                }
                 // token优先用登录响应返回的临时token，为空则回退全局已存token
                 val token = pendingChangePwdToken ?: configStorage.getUserInfo()?.token
                 if (token.isNullOrEmpty()) {
                     errorTv.text = "登录态缺失，请重新登录"
                     return@setOnClickListener
                 }
-                networkManager.changePassword(oldPassword, newP, token, object : NetworkCallback {
+                networkManager.changePassword(account, oldPassword, newP, token, object : NetworkCallback {
                     override fun onSuccess(response: String) {
                         runOnUiThread {
                             try {
@@ -861,6 +981,150 @@ class MainActivity : AppCompatActivity() {
 
                     override fun onError(error: String) {
                         runOnUiThread {
+                            errorTv.text = "密码修改失败：$error"
+                        }
+                    }
+
+                    override fun onComplete() {}
+                })
+            }
+        }
+        dialog.show()
+        setupDialogButtons(dialog)
+    }
+
+    // 新密码复杂度校验：至少8位且包含大写字母、小写字母和数字
+    private fun isValidNewPassword(pwd: String): Boolean {
+        return pwd.length >= 8 &&
+            pwd.any { it.isUpperCase() } &&
+            pwd.any { it.isLowerCase() } &&
+            pwd.any { it.isDigit() }
+    }
+
+    /**
+     * 自助修改密码（用户主动触发，登录/未登录均可）
+     * 与强制改密场景（handleNeedChangePassword，needChangePwd=true）明确区分：
+     * - 触发：点击「修改密码」按钮；强制改密：登录响应 needChangePwd=true 自动弹出
+     * - 输入：此处需手填 旧密码/新密码/确认新密码 三项；强制改密仅填新密码两项，旧密码自动取登录密码
+     * - 账号来源：已登录取已存用户信息；未登录取配置管理里填写的账号（要求 IP/端口/账号均已填写）
+     * - token：已登录带已存token；未登录不传token（后端该接口无需token，按请求参数中的账号校验）
+     * - 校验：三项均非空、两次新密码一致、新密码不得与旧密码相同
+     * - 成功后：已登录则保持登录态；若开启记住密码则同步更新本地存储的密码
+     */
+    private fun showSelfChangePasswordDialog() {
+        val userInfo = configStorage.getUserInfo()
+        val account: String
+        val token: String?
+        if (userInfo != null) {
+            account = userInfo.account
+            token = userInfo.token
+        } else {
+            // 未登录：要求服务器地址、端口、账号均已填写
+            val ip = ipAddressInput.text.toString().trim()
+            val port = portInput.text.toString().trim()
+            val acc = usernameInput.text.toString().trim()
+            if (ip.isEmpty() || port.isEmpty() || acc.isEmpty()) {
+                Toast.makeText(this, "请先填写服务器地址、端口和账号，再修改密码", Toast.LENGTH_LONG).show()
+                return
+            }
+            if (!port.matches("\\d+".toRegex()) || port.toInt() !in 1..65535) {
+                Toast.makeText(this, "请输入有效的端口号（1-65535）", Toast.LENGTH_LONG).show()
+                return
+            }
+            // 未登录时当前输入可能尚未落盘，先保存配置，保证网络层能构建URL
+            configStorage.saveServerConfig(ServerConfig(ip, port, acc))
+            networkManager.onServerConfigChanged()
+            account = acc
+            token = null // 后端 /account/change-password 无需token，按请求参数中的账号校验
+            LogManager.log(TAG, "自助修改密码：未登录状态，使用输入框配置 account=$acc", "DEBUG")
+        }
+        LogManager.log(TAG, "自助修改密码：打开弹窗", "DEBUG")
+        val context = this
+        val layout = android.widget.LinearLayout(context).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(60, 40, 60, 10)
+        }
+        val oldEt = android.widget.EditText(context).apply {
+            hint = "旧密码"
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+        }
+        val newEt = android.widget.EditText(context).apply {
+            hint = "新密码"
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+        }
+        val confirmEt = android.widget.EditText(context).apply {
+            hint = "确认新密码"
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+        }
+        val errorTv = android.widget.TextView(context).apply {
+            setTextColor(resources.getColor(android.R.color.holo_red_dark))
+        }
+        PasswordEye.attach(oldEt)
+        PasswordEye.attach(newEt)
+        PasswordEye.attach(confirmEt)
+        layout.addView(oldEt)
+        layout.addView(newEt)
+        layout.addView(confirmEt)
+        layout.addView(errorTv)
+
+        val dialog = android.app.AlertDialog.Builder(context, R.style.Theme_WpsPasswordManager_LightDialog)
+            .setTitle("修改密码")
+            .setView(layout)
+            .setCancelable(false)
+            .setPositiveButton("确定", null)
+            .setNegativeButton("取消") { d, _ -> d.dismiss() }
+            .create()
+
+        dialog.setOnShowListener {
+            val positiveBtn = dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE)
+            positiveBtn.setOnClickListener {
+                val oldP = oldEt.text.toString().trim()
+                val newP = newEt.text.toString().trim()
+                val confirmP = confirmEt.text.toString().trim()
+                if (oldP.isEmpty() || newP.isEmpty() || confirmP.isEmpty()) {
+                    errorTv.text = "请填写旧密码、新密码和确认新密码"
+                    return@setOnClickListener
+                }
+                if (newP != confirmP) {
+                    errorTv.text = "两次输入的新密码不一致"
+                    return@setOnClickListener
+                }
+                if (!isValidNewPassword(newP)) {
+                    errorTv.text = "新密码需至少8位，且包含大写字母、小写字母和数字"
+                    return@setOnClickListener
+                }
+                if (newP == oldP) {
+                    errorTv.text = "新密码不能与旧密码相同"
+                    return@setOnClickListener
+                }
+                positiveBtn.isEnabled = false
+                LogManager.log(TAG, "自助修改密码：提交改密请求", "DEBUG")
+                networkManager.changePassword(account, oldP, newP, token, object : NetworkCallback {
+                    override fun onSuccess(response: String) {
+                        runOnUiThread {
+                            positiveBtn.isEnabled = true
+                            try {
+                                val json = org.json.JSONObject(response)
+                                if (json.getInt("status") == 200) {
+                                    LogManager.log(TAG, "自助修改密码成功", "DEBUG")
+                                    // 开启记住密码时，同步更新本地存储的密码，避免下次登录用旧密码
+                                    if (configStorage.getRememberPassword()) {
+                                        configStorage.savePassword(newP)
+                                    }
+                                    Toast.makeText(context, "密码修改成功", Toast.LENGTH_LONG).show()
+                                    dialog.dismiss()
+                                } else {
+                                    errorTv.text = json.optString("message", "密码修改失败")
+                                }
+                            } catch (e: Exception) {
+                                errorTv.text = "密码修改失败：解析响应异常"
+                            }
+                        }
+                    }
+
+                    override fun onError(error: String) {
+                        runOnUiThread {
+                            positiveBtn.isEnabled = true
                             errorTv.text = "密码修改失败：$error"
                         }
                     }
@@ -1010,7 +1274,7 @@ class MainActivity : AppCompatActivity() {
         enableConfigInputs()
         updateLoginButton()
         userInfoTextView.visibility = TextView.GONE
-        
+
         // 显示自适应的提示弹窗
         val builder = android.app.AlertDialog.Builder(this, R.style.Theme_WpsPasswordManager_LightDialog)
         builder.setTitle("登录过期")

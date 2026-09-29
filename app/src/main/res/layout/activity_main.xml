@@ -381,6 +381,15 @@
             android:background="@android:color/holo_purple"
             android:textColor="@android:color/white" />
 
+        <Button
+            android:id="@+id/change_password_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="修改密码"
+            android:background="@android:color/holo_purple"
+            android:textColor="@android:color/white" />
+
     </LinearLayout>
 
     <!-- 功能按钮区域 -->
