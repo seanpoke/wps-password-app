@@ -3,7 +3,7 @@ plugins {
     id 'org.jetbrains.kotlin.android'
 }
 
-def buildDate = new Date().format('yyyyMMddHHmm')
+def buildDate = new Date().format('yyyyMMddHHmmss')
 
 android {
     namespace 'com.wpspasswordmanager'
@@ -13,8 +13,8 @@ android {
         applicationId "com.wpspasswordmanager"
         minSdk 26
         targetSdk 34
-        versionCode 100
-        versionName "1.0.2"
+        versionCode 103
+        versionName "1.0.3"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 

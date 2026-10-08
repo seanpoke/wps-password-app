@@ -112,6 +112,9 @@ class MainActivity : AppCompatActivity() {
     // 强制改密时的临时token（needChangePwd流程使用，不落地登录态）
     private var pendingChangePwdToken: String? = null
 
+    // 更新包下载任务（用于取消）
+    private var updateDownloadCall: okhttp3.Call? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -310,8 +313,8 @@ class MainActivity : AppCompatActivity() {
             .setMessage(message)
             .setCancelable(true)
             .setPositiveButton("立即更新") { d, _ ->
-                openDownloadUrl(downloadUrl)
                 d.dismiss()
+                startUpdateDownload(downloadUrl)
             }
             .setNegativeButton("暂不更新") { d, _ -> d.dismiss() }
             .create()
@@ -332,7 +335,7 @@ class MainActivity : AppCompatActivity() {
                 kotlin.system.exitProcess(0)
             }
             .setNegativeButton("立即更新") { _, _ ->
-                openDownloadUrl(downloadUrl)
+                startUpdateDownload(downloadUrl)
             }
             .create()
         dialog.setCanceledOnTouchOutside(false)
@@ -340,15 +343,102 @@ class MainActivity : AppCompatActivity() {
         setupDialogButtons(dialog)
     }
 
-    private fun openDownloadUrl(url: String) {
-        if (url.isEmpty()) {
-            Toast.makeText(this, "未提供下载地址", Toast.LENGTH_SHORT).show()
+    // 应用内下载更新包：url为空提示联系管理员；否则下载显示进度，完成后自动拉起安装
+    private fun startUpdateDownload(downloadUrl: String) {
+        if (downloadUrl.isEmpty()) {
+            Toast.makeText(this, "未配置下载地址，请联系管理员", Toast.LENGTH_LONG).show()
             return
         }
+        // 服务端可能返回相对路径（如 /downloads/xxx.apk），需拼上服务器 base URL 才能下载
+        val fullUrl = if (downloadUrl.startsWith("http://") || downloadUrl.startsWith("https://")) {
+            downloadUrl
+        } else {
+            val base = networkManager.getServerBaseUrl()
+            if (base.isNullOrEmpty()) {
+                Toast.makeText(this, "未配置服务器地址，无法下载更新", Toast.LENGTH_LONG).show()
+                return
+            }
+            val trimmedBase = if (base.endsWith("/")) base.substring(0, base.length - 1) else base
+            val trimmedPath = if (downloadUrl.startsWith("/")) downloadUrl else "/$downloadUrl"
+            "$trimmedBase$trimmedPath"
+        }
+        LogManager.log(TAG, "开始下载更新包: $fullUrl", "DEBUG")
+
+        val layout = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(60, 40, 60, 10)
+        }
+        val statusTv = android.widget.TextView(this).apply { text = "准备下载..." }
+        val progressBar = android.widget.ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
+            max = 100
+            progress = 0
+        }
+        val percentTv = android.widget.TextView(this).apply { text = "0%" }
+        layout.addView(statusTv)
+        layout.addView(progressBar)
+        layout.addView(percentTv)
+
+        val dialog = android.app.AlertDialog.Builder(this, R.style.Theme_WpsPasswordManager_LightDialog)
+            .setTitle("下载更新包")
+            .setView(layout)
+            .setCancelable(false)
+            .setNegativeButton("取消") { d, _ ->
+                updateDownloadCall?.cancel()
+                d.dismiss()
+            }
+            .create()
+        dialog.show()
+        setupDialogButtons(dialog)
+
+        val destDir = getExternalFilesDir("update") ?: java.io.File(filesDir, "update")
+        val destFile = java.io.File(destDir, "update_${System.currentTimeMillis()}.apk")
+
+        updateDownloadCall = networkManager.downloadApk(
+            fullUrl,
+            destFile,
+            onProgress = { percent ->
+                runOnUiThread {
+                    progressBar.progress = percent
+                    percentTv.text = "$percent%"
+                    statusTv.text = "正在下载..."
+                }
+            },
+            onResult = { success, message ->
+                runOnUiThread {
+                    if (success) {
+                        LogManager.log(TAG, "更新包下载完成: $message", "DEBUG")
+                        statusTv.text = "下载完成，正在打开安装程序..."
+                        progressBar.progress = 100
+                        percentTv.text = "100%"
+                        dialog.dismiss()
+                        installApk(java.io.File(message))
+                    } else {
+                        LogManager.log(TAG, "更新包下载失败: $message", "ERROR")
+                        statusTv.text = "下载失败：$message"
+                        percentTv.text = ""
+                    }
+                }
+            }
+        )
+    }
+
+    // 通过 FileProvider 自动拉起 APK 安装界面
+    private fun installApk(file: java.io.File) {
         try {
-            startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)))
+            val uri = androidx.core.content.FileProvider.getUriForFile(
+                this, "$packageName.fileprovider", file
+            )
+            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, "application/vnd.android.package-archive")
+                addFlags(
+                    android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        or android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+                )
+            }
+            startActivity(intent)
         } catch (e: Exception) {
-            Toast.makeText(this, "无法打开下载链接", Toast.LENGTH_SHORT).show()
+            LogManager.log(TAG, "拉起安装失败: ${e.message}", "ERROR")
+            Toast.makeText(this, "无法启动安装程序", Toast.LENGTH_LONG).show()
         }
     }
 
