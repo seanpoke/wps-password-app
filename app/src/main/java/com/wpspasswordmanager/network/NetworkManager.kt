@@ -9,6 +9,8 @@ import okhttp3.*
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.File
+import java.io.FileOutputStream
 import java.io.IOException
 
 class NetworkManager private constructor(context: Context) {
@@ -70,6 +72,9 @@ class NetworkManager private constructor(context: Context) {
             null
         }
     }
+
+    // 对外暴露：供下载等场景将相对路径拼成完整 URL（不含 /api 上下文）
+    fun getServerBaseUrl(): String? = getBaseUrl()
 
     private fun buildUrl(path: String): String? {
         val baseUrl = getBaseUrl()
@@ -196,6 +201,65 @@ class NetworkManager private constructor(context: Context) {
     fun checkVersion(currentVersion: String, callback: NetworkCallback) {
         Log.d(TAG, "执行版本检查请求: current=$currentVersion")
         executeGetRequest("/config/version/check?platform=android&current=$currentVersion", null, callback)
+    }
+
+    /**
+     * 流式下载 APK：onProgress 回调 0-100（后台线程），onResult 回调成功/失败。
+     * 返回 Call 供调用方取消下载。
+     */
+    fun downloadApk(url: String, destFile: File, onProgress: (Int) -> Unit, onResult: (Boolean, String) -> Unit): Call? {
+        Log.d(TAG, "下载APK: $url -> ${destFile.absolutePath}")
+        val request = Request.Builder().url(url).build()
+        val call = okHttpClient.newCall(request)
+        call.enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                destFile.delete()
+                onResult(false, e.message ?: "网络错误")
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                try {
+                    if (!response.isSuccessful) {
+                        destFile.delete()
+                        onResult(false, "HTTP ${response.code}: ${response.message}")
+                        return
+                    }
+                    val body = response.body
+                    if (body == null) {
+                        destFile.delete()
+                        onResult(false, "响应内容为空")
+                        return
+                    }
+                    val total = body.contentLength()
+                    destFile.parentFile?.mkdirs()
+                    if (destFile.exists()) {
+                        destFile.delete()
+                    }
+                    var copied = 0L
+                    body.byteStream().use { input ->
+                        FileOutputStream(destFile).use { output ->
+                            val buffer = ByteArray(8192)
+                            while (true) {
+                                val read = input.read(buffer)
+                                if (read == -1) break
+                                output.write(buffer, 0, read)
+                                copied += read
+                                if (total > 0) {
+                                    onProgress((copied * 100 / total).toInt())
+                                }
+                            }
+                            output.flush()
+                        }
+                    }
+                    Log.d(TAG, "APK下载完成: ${destFile.absolutePath}, size=$copied")
+                    onResult(true, destFile.absolutePath)
+                } catch (e: Exception) {
+                    destFile.delete()
+                    onResult(false, e.message ?: "下载异常")
+                }
+            }
+        })
+        return call
     }
 
     fun getDocumentOwner(docId: String, token: String?, fileName: String? = null, callback: NetworkCallback) {
