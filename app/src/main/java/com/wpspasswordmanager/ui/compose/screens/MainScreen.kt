@@ -640,6 +640,7 @@ private fun SettingsTab(
     onFixPermission: (String) -> Unit
 ) {
     var wpsPickOpen by remember { mutableStateOf(false) }
+    Box(Modifier.fillMaxSize()) {
     Column(
         Modifier
             .fillMaxSize()
@@ -738,6 +739,7 @@ private fun SettingsTab(
             Spacer(Modifier.height(16.dp))
             AppButton("退出登录", onClick = vm::askLogout, modifier = Modifier.fillMaxWidth(), style = BtnStyle.Ghost, textColor = C.Err, borderColor = Color(0xFFEFC9C5))
             Spacer(Modifier.height(24.dp))
+        }
         }
 
         if (wpsPickOpen) {
