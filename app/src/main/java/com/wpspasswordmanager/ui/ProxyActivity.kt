@@ -18,6 +18,7 @@ import com.wpspasswordmanager.monitor.WpsAccessibilityService
 import com.wpspasswordmanager.network.NetworkCallback
 import com.wpspasswordmanager.network.NetworkManager
 import com.wpspasswordmanager.storage.ConfigStorage
+import com.wpspasswordmanager.ui.compose.AppActivity
 import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
@@ -135,8 +136,8 @@ class ProxyActivity : AppCompatActivity() {
 
         // 检查token存在性与有效性
         if (!checkTokenValidity()) {
-            // token不存在或已失效，跳转到登录页面
-            val loginIntent = Intent(this, MainActivity::class.java)
+            // token不存在或已失效，跳转到登录页面（新版界面会自行进入登录向导/失效页）
+            val loginIntent = Intent(this, AppActivity::class.java)
             loginIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             startActivity(loginIntent)
             finish()
@@ -146,7 +147,7 @@ class ProxyActivity : AppCompatActivity() {
         // 检查应用权限状态
         if (!checkAppPermissions()) {
             // 权限不足，跳转到主页面
-            val mainIntent = Intent(this, MainActivity::class.java)
+            val mainIntent = Intent(this, AppActivity::class.java)
             mainIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             startActivity(mainIntent)
             finish()
@@ -156,7 +157,7 @@ class ProxyActivity : AppCompatActivity() {
         // 检查所有文件管理权限
         if (!checkManageStoragePermission()) {
             // 权限不足，跳转到主页面
-            val mainIntent = Intent(this, MainActivity::class.java)
+            val mainIntent = Intent(this, AppActivity::class.java)
             mainIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             startActivity(mainIntent)
             finish()
@@ -166,7 +167,7 @@ class ProxyActivity : AppCompatActivity() {
         // 检查是否选择了 WPS 应用
         if (!checkWpsAppSelected()) {
             // 未选择 WPS 应用，跳转到主页面
-            val mainIntent = Intent(this, MainActivity::class.java)
+            val mainIntent = Intent(this, AppActivity::class.java)
             mainIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             startActivity(mainIntent)
             finish()

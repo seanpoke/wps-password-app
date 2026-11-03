@@ -62,15 +62,22 @@
         android:usesCleartextTraffic="true"
         android:requestLegacyExternalStorage="true"
         tools:targetApi="31">
+        <!-- 新 Compose 界面（启动入口） -->
         <activity
-            android:name=".ui.MainActivity"
-            android:exported="true">
+            android:name=".ui.compose.AppActivity"
+            android:exported="true"
+            android:theme="@style/Theme.WpsPasswordManager.Compose"
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <!-- 旧界面：迁移期保留，不再作为入口 -->
+        <activity
+            android:name=".ui.MainActivity"
+            android:exported="false" />
         <activity
             android:name=".ui.LogActivity"
             android:exported="false" />

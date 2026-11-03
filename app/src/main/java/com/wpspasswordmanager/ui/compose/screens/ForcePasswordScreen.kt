@@ -1,0 +1,179 @@
+package com.wpspasswordmanager.ui.compose.screens
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.wpspasswordmanager.ui.compose.AppBar
+import com.wpspasswordmanager.ui.compose.AppButton
+import com.wpspasswordmanager.ui.compose.AppField
+import com.wpspasswordmanager.ui.compose.AppViewModel
+import com.wpspasswordmanager.ui.compose.C
+import com.wpspasswordmanager.ui.compose.FieldError
+import com.wpspasswordmanager.ui.compose.I
+import com.wpspasswordmanager.ui.compose.IconBtn
+import com.wpspasswordmanager.ui.compose.SvgIcon
+import com.wpspasswordmanager.ui.compose.T
+
+/**
+ * 屏 26 · 首次登录 / 被重置后强制改密（整页）
+ * 与自助改密页的区别：不填旧密码（用登录返回的临时 token），保存成功后清登录态回登录页；
+ * 返回键 = 放弃改密回登录页，绝不停在半登录态。
+ */
+@Composable
+fun ForcePasswordScreen(vm: AppViewModel) {
+    val fc = vm.s.forceChange
+    var showNew by remember { mutableStateOf(false) }
+    var showConfirm by remember { mutableStateOf(false) }
+    if (fc == null) return
+
+    val mismatch = fc.confirmPassword.isNotEmpty() && fc.confirmPassword != fc.newPassword
+    val ok = fc.newPassword.length in 8..32 &&
+        fc.newPassword.any { it.isUpperCase() } &&
+        fc.newPassword.any { it.isLowerCase() } &&
+        fc.newPassword.any { it.isDigit() } &&
+        fc.confirmPassword == fc.newPassword
+
+    Column(
+        Modifier
+            .fillMaxSize()
+            .background(Color.White)
+            .statusBarsPadding()
+            .imePadding()
+    ) {
+        AppBar("首次登录", onBack = vm::abortForcePassword)
+
+        Column(
+            Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(start = 16.dp, end = 16.dp, top = 20.dp)
+        ) {
+            Text(
+                "请设置新密码",
+                style = T.H2.copy(fontSize = 20.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.4).sp)
+            )
+            Spacer(Modifier.height(7.dp))
+            Text(
+                buildAnnotatedString {
+                    append("账号 ")
+                    withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = C.Ink2)) { append(fc.account) }
+                    append(" 的密码由管理员初始化或刚被重置，需修改后才能使用。")
+                },
+                style = T.Small.copy(fontSize = 12.5.sp, color = C.Ink3, lineHeight = 19.sp)
+            )
+
+            Spacer(Modifier.height(22.dp))
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                FieldLabel("新密码", Modifier.weight(1f))
+                Text("8–32 位", style = T.Micro.copy(fontSize = 11.sp))
+            }
+            AppField(
+                value = fc.newPassword,
+                onValueChange = vm::forceChangeNew,
+                placeholder = "设置新密码",
+                password = !showNew,
+                textStyle = T.Body.copy(fontSize = 13.5.sp),
+                trailing = {
+                    IconBtn(
+                        if (showNew) I.eyeOff else I.eye,
+                        onClick = { showNew = !showNew },
+                        size = 26.dp,
+                        iconSize = 17.dp,
+                        tint = Color(0xFFA8A8B2),
+                        strokeWidth = 1.9f
+                    )
+                }
+            )
+            Spacer(Modifier.height(9.dp))
+            Row {
+                RuleChip("长度 ≥ 8", fc.newPassword.length in 8..32)
+                Spacer(Modifier.width(6.dp))
+                RuleChip("大写", fc.newPassword.any { it.isUpperCase() })
+                Spacer(Modifier.width(6.dp))
+                RuleChip("小写", fc.newPassword.any { it.isLowerCase() })
+                Spacer(Modifier.width(6.dp))
+                RuleChip("数字", fc.newPassword.any { it.isDigit() })
+            }
+
+            Spacer(Modifier.height(16.dp))
+            FieldLabel("确认新密码")
+            AppField(
+                value = fc.confirmPassword,
+                onValueChange = vm::forceChangeConfirm,
+                placeholder = "再次输入新密码",
+                password = !showConfirm,
+                error = mismatch,
+                textStyle = T.Body.copy(fontSize = 13.5.sp),
+                trailing = {
+                    IconBtn(
+                        if (showConfirm) I.eyeOff else I.eye,
+                        onClick = { showConfirm = !showConfirm },
+                        size = 26.dp,
+                        iconSize = 17.dp,
+                        tint = Color(0xFFA8A8B2),
+                        strokeWidth = 1.9f
+                    )
+                }
+            )
+            if (mismatch) FieldError("两次输入不一致")
+            if (fc.error.isNotEmpty()) FieldError(fc.error)
+            Spacer(Modifier.height(8.dp))
+        }
+
+        Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 14.dp)) {
+            SvgIcon(I.info, size = 12.dp, tint = C.Ink3, strokeWidth = 2f, modifier = Modifier.padding(top = 2.dp))
+            Spacer(Modifier.width(6.dp))
+            Text(
+                "本次使用临时凭据登录，无需填写旧密码；保存后需要用新密码重新登录。",
+                style = T.Micro.copy(fontSize = 11.sp, lineHeight = 19.sp)
+            )
+        }
+
+        Column(Modifier.fillMaxWidth().background(Color.White)) {
+            Box(Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFF2F2F6)))
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 22.dp)
+            ) {
+                AppButton(
+                    if (fc.submitting) "正在提交…" else "保存并重新登录",
+                    onClick = vm::submitForceChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = ok && !fc.submitting,
+                    height = 46.dp,
+                    fontSize = 15.sp
+                )
+            }
+        }
+    }
+}

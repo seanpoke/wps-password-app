@@ -204,6 +204,9 @@ object LogManager {
             "[${entry.timestamp}] [${entry.level}] [${entry.tag}] ${entry.message}"
         }
     }
+
+    /** 结构化快照（供日志页按 时间/级别/正文 分列渲染，不读文件） */
+    fun getEntries(): List<LogEntry> = logCacheQueue.toList()
     
     /**
      * 获取当前日志版本号
