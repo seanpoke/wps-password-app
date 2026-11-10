@@ -43,9 +43,19 @@ import com.wpspasswordmanager.ui.compose.SvgIcon
 import com.wpspasswordmanager.ui.compose.T
 import com.wpspasswordmanager.ui.compose.pressable
 
-private data class PermRow(val node: AuthNode, val depth: Int, val inherited: Boolean)
+internal data class PermRow(val node: AuthNode, val depth: Int, val inherited: Boolean)
 
-private fun flatten(
+/** 行渲染所需的全部派生值：滚动时不再做任何树遍历 */
+internal data class PermLine(
+    val row: PermRow,
+    val checked: Boolean,
+    val indeterminate: Boolean,
+    val disabled: Boolean,
+    val expanded: Boolean,
+    val peopleHint: String?
+)
+
+internal fun flatten(
     nodes: List<AuthNode>,
     expanded: Set<String>,
     selected: Set<String>,
@@ -62,10 +72,10 @@ private fun flatten(
     }
 }
 
-private fun subtreeHasSelected(node: AuthNode, selected: Set<String>): Boolean =
+internal fun subtreeHasSelected(node: AuthNode, selected: Set<String>): Boolean =
     selected.contains(node.dn) || node.children.any { subtreeHasSelected(it, selected) }
 
-private fun countUsers(nodes: List<AuthNode>, selected: Set<String>, inherited: Boolean): Int {
+internal fun countUsers(nodes: List<AuthNode>, selected: Set<String>, inherited: Boolean): Int {
     var n = 0
     nodes.forEach { node ->
         val covered = inherited || selected.contains(node.dn)
@@ -75,7 +85,7 @@ private fun countUsers(nodes: List<AuthNode>, selected: Set<String>, inherited: 
     return n
 }
 
-private fun countSelectedDepts(nodes: List<AuthNode>, selected: Set<String>): Int =
+internal fun countSelectedDepts(nodes: List<AuthNode>, selected: Set<String>): Int =
     nodes.count { it.isDept && selected.contains(it.dn) } +
         nodes.sumOf { countSelectedDepts(it.children, selected) }
 
@@ -144,8 +154,23 @@ fun PermTreeSheet(state: PermTreeState, vm: AppViewModel) {
                 }
             }
             else -> {
-                val rows = remember(state.roots, state.expanded, state.selected) {
-                    buildList { flatten(state.roots, state.expanded, state.selected, false, 0, this) }
+                // 勾选态 / 半选 / 人数全部在这里一次性算完，滚动时每行只做绘制
+                val lines = remember(state.roots, state.expanded, state.selected) {
+                    val rows = buildList { flatten(state.roots, state.expanded, state.selected, false, 0, this) }
+                    rows.map { row ->
+                        val node = row.node
+                        val checked = row.inherited || state.selected.contains(node.dn)
+                        PermLine(
+                            row = row,
+                            checked = checked,
+                            indeterminate = !checked && subtreeHasSelected(node, state.selected),
+                            disabled = row.inherited,
+                            expanded = state.expanded.contains(node.dn),
+                            peopleHint = if (node.isDept) {
+                                "${countUsers(node.children, state.selected, checked)} 人"
+                            } else null
+                        )
+                    }
                 }
                 Column(Modifier.weight(1f)) {
                     Row(
@@ -158,7 +183,11 @@ fun PermTreeSheet(state: PermTreeState, vm: AppViewModel) {
                         ToolChip("展开全部", vm::permToggleExpandAll)
                     }
                     LazyColumn(Modifier.fillMaxSize()) {
-                        items(rows, key = { it.node.dn }) { row -> PermRowItem(row, state, vm) }
+                        items(
+                            lines,
+                            key = { it.row.node.dn },
+                            contentType = { it.row.node.isDept }
+                        ) { line -> PermRowItem(line, vm) }
                         item { Spacer(Modifier.height(8.dp)) }
                     }
                 }
@@ -185,8 +214,11 @@ fun PermTreeSheet(state: PermTreeState, vm: AppViewModel) {
             Modifier.padding(start = 18.dp, end = 18.dp, top = 12.dp, bottom = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val depts = countSelectedDepts(state.roots, state.selected)
-            val people = countUsers(state.roots, state.selected, false)
+            // 整棵树递归统计只在勾选/数据变化时算一次，避免每次重组重复遍历
+            val (depts, people) = remember(state.roots, state.selected) {
+                countSelectedDepts(state.roots, state.selected) to
+                    countUsers(state.roots, state.selected, false)
+            }
             Text(
                 if (depts > 0) "已选 $depts 部门 · $people 人" else "已选 $people 人",
                 style = T.Micro.copy(fontSize = 11.5.sp)
@@ -223,12 +255,13 @@ private fun ToolChip(text: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun PermRowItem(row: PermRow, state: PermTreeState, vm: AppViewModel) {
+private fun PermRowItem(line: PermLine, vm: AppViewModel) {
+    val row = line.row
     val node = row.node
-    val checked = row.inherited || state.selected.contains(node.dn)
-    val indeterminate = !checked && subtreeHasSelected(node, state.selected)
-    val disabled = row.inherited
-    val expanded = state.expanded.contains(node.dn)
+    val checked = line.checked
+    val indeterminate = line.indeterminate
+    val disabled = line.disabled
+    val expanded = line.expanded
 
     Row(
         Modifier
@@ -286,9 +319,8 @@ private fun PermRowItem(row: PermRow, state: PermTreeState, vm: AppViewModel) {
 
         when {
             disabled -> Text("含于上级", style = T.Micro.copy(fontSize = 9.5.sp, color = Color(0xFFB0B0BA)))
-            node.isDept -> {
-                val people = countUsers(node.children, state.selected, checked)
-                Text("$people 人", style = T.Micro.copy(fontSize = 10.5.sp))
+            node.isDept -> line.peopleHint?.let {
+                Text(it, style = T.Micro.copy(fontSize = 10.5.sp))
             }
         }
     }

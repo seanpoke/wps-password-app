@@ -5,7 +5,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,11 +19,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -67,6 +72,10 @@ fun MainScreen(
     onOpenDoc: () -> Unit,
     onOpenLogs: () -> Unit
 ) {
+    // tab 单独订阅：主界面快照不含 tab，切页时不会让三个页签的内容失效
+    val tab by remember { derivedStateOf { vm.s.tab } }
+    // 稳定的点击回调：底部 tab 的 clickable 节点不会因数据刷新被替换而吞掉当前手势
+    val onSelectTab = remember<(String) -> Unit> { { vm.setTab(it) } }
     Column(
         Modifier
             .fillMaxSize()
@@ -80,31 +89,37 @@ fun MainScreen(
                 .statusBarsPadding()
         )
         Box(Modifier.weight(1f)) {
-            when (s.tab) {
+            when (tab) {
                 "overview" -> OverviewTab(s, vm, onFixPermission, onCreateDoc, onOpenDoc)
                 "docs" -> DocsTab(s, vm, onCreateDoc)
                 else -> SettingsTab(s, vm, onOpenLogs, onFixPermission)
             }
-            if (s.tab == "docs") {
-                // 屏 09 · 右下角悬浮「新建」
-                Box(
-                    Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(end = 16.dp, bottom = 16.dp)
-                        .size(54.dp)
-                        .shadow(10.dp, RoundedCornerShape(18.dp), clip = false)
-                        .clip(RoundedCornerShape(18.dp))
-                        .background(Brush.linearGradient(C.PrimaryBtnGradient))
-                        .pressable { vm.openCreateDoc() },
-                    contentAlignment = Alignment.Center
-                ) {
-                    SvgIcon(I.plus, size = 22.dp, tint = Color.White, strokeWidth = 2.4f)
-                }
+            if (tab == "docs") {
+                NewDocFab(vm)
             }
         }
-        TabBar(s.tab) { vm.setTab(it) }
+        TabBar(tab, onSelectTab)
     }
 }
+
+/** 屏 09 · 右下角悬浮「新建」。不接收 UiState，数据刷新时其 clickable 节点保持原样 */
+@Composable
+private fun BoxScope.NewDocFab(vm: AppViewModel) {
+    Box(
+        Modifier
+            .align(Alignment.BottomEnd)
+            .padding(end = 16.dp, bottom = 16.dp)
+            .size(54.dp)
+            .shadow(10.dp, RoundedCornerShape(18.dp), clip = false)
+            .clip(RoundedCornerShape(18.dp))
+            .background(Brush.linearGradient(C.PrimaryBtnGradient))
+            .pressable { vm.openCreateDoc() },
+        contentAlignment = Alignment.Center
+    ) {
+        SvgIcon(I.plus, size = 22.dp, tint = Color.White, strokeWidth = 2.4f)
+    }
+}
+
 
 @Composable
 private fun TabBar(current: String, onSelect: (String) -> Unit) {
@@ -166,6 +181,8 @@ private fun OverviewTab(
     onOpenDoc: () -> Unit
 ) {
     val p = s.perm
+    // 时段问候只在进入页面时计算一次，避免每次重组都 Calendar.getInstance()
+    val greetingText = remember { greeting() }
     val appBad = (if (p.accessibility) 0 else 1) + (if (p.overlay) 0 else 1)
     val stats = listOf(
         Stat(
@@ -221,7 +238,7 @@ private fun OverviewTab(
                 Spacer(Modifier.width(11.dp))
                 Column(Modifier.weight(1f)) {
                     Text(
-                        "${greeting()}，${s.name.ifEmpty { "用户" }}",
+                        "$greetingText，${s.name.ifEmpty { "用户" }}",
                         style = T.Body.copy(fontSize = 16.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.2).sp),
                         maxLines = 1
                     )
@@ -351,27 +368,8 @@ private fun OverviewTab(
             StatsGrid(stats)
         }
 
-        // 主操作
-        Row(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp)) {
-            AppButton(
-                "新建文档",
-                onClick = onCreateDoc,
-                modifier = Modifier.weight(1.15f),
-                height = 48.dp,
-                fontSize = 13.5.sp,
-                leading = { SvgIcon(I.plus, size = 16.dp, tint = Color.White, strokeWidth = 2.2f) }
-            )
-            Spacer(Modifier.width(9.dp))
-            AppButton(
-                "打开文档",
-                onClick = onOpenDoc,
-                modifier = Modifier.weight(1f),
-                height = 48.dp,
-                fontSize = 13.5.sp,
-                style = BtnStyle.Ghost,
-                leading = { SvgIcon(I.folder, size = 16.dp, tint = C.Ink2, strokeWidth = 1.9f) }
-            )
-        }
+        // 主操作：独立组合，文档列表刷新时这两个按钮不会被重建
+        MainActionsRow(onCreateDoc, onOpenDoc)
 
         // 最近文档
         Row(
@@ -420,6 +418,30 @@ private fun OverviewTab(
             }
         }
         Spacer(Modifier.height(18.dp))
+    }
+}
+
+@Composable
+private fun MainActionsRow(onCreateDoc: () -> Unit, onOpenDoc: () -> Unit) {
+    Row(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp)) {
+        AppButton(
+            "新建文档",
+            onClick = onCreateDoc,
+            modifier = Modifier.weight(1.15f),
+            height = 48.dp,
+            fontSize = 13.5.sp,
+            leading = { SvgIcon(I.plus, size = 16.dp, tint = Color.White, strokeWidth = 2.2f) }
+        )
+        Spacer(Modifier.width(9.dp))
+        AppButton(
+            "打开文档",
+            onClick = onOpenDoc,
+            modifier = Modifier.weight(1f),
+            height = 48.dp,
+            fontSize = 13.5.sp,
+            style = BtnStyle.Ghost,
+            leading = { SvgIcon(I.folder, size = 16.dp, tint = C.Ink2, strokeWidth = 1.9f) }
+        )
     }
 }
 
@@ -507,7 +529,12 @@ private fun roleText(role: String): String = when (role.lowercase()) {
 @Composable
 private fun DocsTab(s: UiState, vm: AppViewModel, onCreateDoc: () -> Unit) {
     var query by remember { mutableStateOf("") }
-    val list = s.docs.filter { query.isBlank() || it.name.contains(query, ignoreCase = true) }
+    // 过滤与分组结果按输入/数据缓存，避免每次重组（含搜索框每敲一字）重复遍历
+    val list = remember(s.docs, query) {
+        s.docs.filter { query.isBlank() || it.name.contains(query, ignoreCase = true) }
+    }
+    val today = remember(list) { list.filter { it.isToday } }
+    val older = remember(list) { list.filter { !it.isToday } }
     Column(
         Modifier
             .fillMaxSize()
@@ -533,72 +560,75 @@ private fun DocsTab(s: UiState, vm: AppViewModel, onCreateDoc: () -> Unit) {
                 textStyle = T.Small.copy(fontSize = 12.5.sp)
             )
         }
-        Column(
-            Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-        ) {
-            if (list.isEmpty()) {
-                Column(
+        if (list.isEmpty()) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(top = 56.dp, start = 26.dp, end = 26.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Box(
                     Modifier
-                        .fillMaxWidth()
-                        .padding(top = 56.dp, start = 26.dp, end = 26.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .size(78.dp)
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(Color.White)
+                        .border(1.dp, Color(0xFFEDEDF3), RoundedCornerShape(24.dp)),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Box(
-                        Modifier
-                            .size(78.dp)
-                            .clip(RoundedCornerShape(24.dp))
-                            .background(Color.White)
-                            .border(1.dp, Color(0xFFEDEDF3), RoundedCornerShape(24.dp)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        SvgIcon(I.doc, size = 34.dp, tint = Color(0xFFC4C4CE), strokeWidth = 1.5f)
-                    }
-                    Spacer(Modifier.height(20.dp))
-                    Text(if (query.isBlank()) "目录里还没有文档" else "没有匹配的文档", style = T.Body.copy(fontWeight = FontWeight.Bold))
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        if (query.isBlank()) "新建文档后会自动保存在这里" else "试着换一个关键词\n仅显示 WpsManagement 目录内的文件",
-                        style = T.Small3, textAlign = TextAlign.Center
-                    )
-                    Spacer(Modifier.height(22.dp))
-                    AppButton(
-                        if (query.isBlank()) "新建文档" else "清除搜索",
-                        onClick = { if (query.isBlank()) onCreateDoc() else query = "" },
-                        modifier = Modifier.width(150.dp),
-                        style = BtnStyle.Ghost,
-                        height = 40.dp,
-                        fontSize = 13.sp
-                    )
+                    SvgIcon(I.doc, size = 34.dp, tint = Color(0xFFC4C4CE), strokeWidth = 1.5f)
                 }
-            } else {
-                Column(Modifier.padding(horizontal = 16.dp)) {
-                    val today = list.filter { it.isToday }
-                    val older = list.filter { !it.isToday }
-                    if (today.isNotEmpty()) {
-                        SectionLabel("今天")
-                        today.forEach { d ->
-                            DocRow(
-                                d,
-                                onClick = { vm.openDocFlow(d) },
-                                onLongClick = { vm.openDocMenu(d) }
-                            )
-                            Spacer(Modifier.height(8.dp))
-                        }
+                Spacer(Modifier.height(20.dp))
+                Text(if (query.isBlank()) "目录里还没有文档" else "没有匹配的文档", style = T.Body.copy(fontWeight = FontWeight.Bold))
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    if (query.isBlank()) "新建文档后会自动保存在这里" else "试着换一个关键词\n仅显示 WpsManagement 目录内的文件",
+                    style = T.Small3, textAlign = TextAlign.Center
+                )
+                Spacer(Modifier.height(22.dp))
+                AppButton(
+                    if (query.isBlank()) "新建文档" else "清除搜索",
+                    onClick = { if (query.isBlank()) onCreateDoc() else query = "" },
+                    modifier = Modifier.width(150.dp),
+                    style = BtnStyle.Ghost,
+                    height = 40.dp,
+                    fontSize = 13.sp
+                )
+                Spacer(Modifier.height(16.dp))
+            }
+        } else {
+            // 用 LazyColumn + 稳定 key，文档多时不再全量组合/全量绘制
+            LazyColumn(
+                Modifier.weight(1f),
+                contentPadding = PaddingValues(horizontal = 16.dp)
+            ) {
+                if (today.isNotEmpty()) {
+                    item { SectionLabel("今天") }
+                    items(today, key = { it.file.absolutePath }) { d ->
+                        DocRow(
+                            d,
+                            onClick = { vm.openDocFlow(d) },
+                            onLongClick = { vm.openDocMenu(d) }
+                        )
+                        Spacer(Modifier.height(8.dp))
                     }
-                    if (older.isNotEmpty()) {
+                }
+                if (older.isNotEmpty()) {
+                    item {
                         Spacer(Modifier.height(8.dp))
                         SectionLabel("更早")
-                        older.forEach { d ->
-                            DocRow(
-                                d,
-                                onClick = { vm.openDocFlow(d) },
-                                onLongClick = { vm.openDocMenu(d) }
-                            )
-                            Spacer(Modifier.height(8.dp))
-                        }
                     }
+                    items(older, key = { it.file.absolutePath }) { d ->
+                        DocRow(
+                            d,
+                            onClick = { vm.openDocFlow(d) },
+                            onLongClick = { vm.openDocMenu(d) }
+                        )
+                        Spacer(Modifier.height(8.dp))
+                    }
+                }
+                item {
                     Spacer(Modifier.height(8.dp))
                     Row(
                         Modifier
@@ -614,9 +644,9 @@ private fun DocsTab(s: UiState, vm: AppViewModel, onCreateDoc: () -> Unit) {
                             style = T.Micro.copy(fontSize = 11.5.sp)
                         )
                     }
+                    Spacer(Modifier.height(16.dp))
                 }
             }
-            Spacer(Modifier.height(16.dp))
         }
     }
 }
@@ -640,6 +670,8 @@ private fun SettingsTab(
     onFixPermission: (String) -> Unit
 ) {
     var wpsPickOpen by remember { mutableStateOf(false) }
+    // 版本号读取是 PackageManager IPC，切 tab / 重组时不要反复跨进程取
+    val versionLine = remember { "v${vm.currentVersion()} · build ${vm.currentBuild()}" }
     Box(Modifier.fillMaxSize()) {
     Column(
         Modifier
@@ -729,11 +761,7 @@ private fun SettingsTab(
                     SettingRow("高级设置", "目录迁移 · HTTP 开关 · 清除缓存", I.gear) { vm.openAdvanced() }
                     Divider()
                 }
-                SettingRow(
-                    "关于",
-                    "v${vm.currentVersion()} · build ${vm.currentBuild()}",
-                    I.info
-                ) { vm.openAbout() }
+                SettingRow("关于", versionLine, I.info) { vm.openAbout() }
             }
 
             Spacer(Modifier.height(16.dp))

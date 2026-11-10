@@ -15,6 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -25,6 +26,7 @@ import com.wpspasswordmanager.ui.compose.AppViewModel
 import com.wpspasswordmanager.ui.compose.C
 import com.wpspasswordmanager.ui.compose.T
 import com.wpspasswordmanager.ui.compose.TestState
+import com.wpspasswordmanager.ui.compose.UiState
 
 /**
  * 设置页 · 服务器设置（独立页）
@@ -34,7 +36,7 @@ import com.wpspasswordmanager.ui.compose.TestState
 @Composable
 fun ServerEditScreen(vm: AppViewModel) {
     val s = vm.s
-    val canSave = s.host.isNotBlank() && vm.portValid()
+    val holder = rememberServerFormHolder(vm)
 
     Column(
         Modifier
@@ -54,7 +56,7 @@ fun ServerEditScreen(vm: AppViewModel) {
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
         ) {
-            ServerFormBody(s, vm, heading = false)
+            ServerFormBody(holder, s, vm, heading = false)
             Text(
                 "改动会立即生效；若新服务端不认可当前登录令牌，保存后需要重新登录。",
                 style = T.Micro.copy(fontSize = 11.sp, lineHeight = 17.sp, color = Color(0xFF9A9AA4)),
@@ -70,16 +72,25 @@ fun ServerEditScreen(vm: AppViewModel) {
                     .navigationBarsPadding()
                     .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 16.dp)
             ) {
-                ServerTestButton(s, vm)
+                ServerTestButton(holder, s, vm)
                 Spacer(Modifier.height(10.dp))
-                AppButton(
-                    if (s.test is TestState.Testing) "校验中…" else "保存并返回",
-                    onClick = vm::saveServerEdit,
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = canSave && s.test !is TestState.Testing,
-                    fontSize = 15.sp
-                )
+                ServerEditSaveButton(s, vm, holder)
             }
         }
     }
+}
+
+/** 保存按钮独立订阅本地文本，打字时整页不重组 */
+@Composable
+private fun ServerEditSaveButton(s: UiState, vm: AppViewModel, holder: ServerFormHolder) {
+    val host by holder.host
+    val port by holder.port
+    val canSave = host.isNotBlank() && (port.toIntOrNull()?.let { it in 1..65535 } == true)
+    AppButton(
+        if (s.test is TestState.Testing) "校验中…" else "保存并返回",
+        onClick = { vm.submitServerEdit(holder.host.value, holder.port.value) },
+        modifier = Modifier.fillMaxWidth(),
+        enabled = canSave && s.test !is TestState.Testing,
+        fontSize = 15.sp
+    )
 }

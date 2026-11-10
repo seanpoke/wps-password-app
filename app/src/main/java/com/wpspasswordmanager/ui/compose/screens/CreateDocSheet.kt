@@ -15,6 +15,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,7 +44,11 @@ import com.wpspasswordmanager.ui.compose.pressable
 /** 屏 20 · 新建文档抽屉 */
 @Composable
 fun CreateDocSheet(state: CreateDocState, vm: AppViewModel) {
-    BottomSheet(onDismiss = vm::closeCreateDoc) {
+    // 文本放在 MutableState 引用里：只有真正解引用它的 CreateNameField 会因打字重组，
+    // 抽屉标题 / 格式卡片 / 底部按钮都保持稳定，键盘动画期间不再整层重测量。
+    val nameState = remember { mutableStateOf(state.name) }
+    val dirtyState = remember { mutableStateOf(false) }
+    BottomSheet(onDismiss = vm::closeCreateDoc, dismissOnScrimClick = false) {
         Row(
             Modifier.padding(start = 18.dp, end = 10.dp, top = 6.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -53,21 +63,7 @@ fun CreateDocSheet(state: CreateDocState, vm: AppViewModel) {
 
         Column(Modifier.padding(start = 18.dp, end = 18.dp, top = 16.dp)) {
             Text("文件名", style = T.Label, color = C.Ink, modifier = Modifier.padding(bottom = 6.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                AppField(
-                    value = state.name,
-                    onValueChange = vm::setCreateName,
-                    placeholder = "例如：2026 年 Q1 预算表",
-                    modifier = Modifier.weight(1f),
-                    highlighted = true,
-                    error = state.error.isNotEmpty(),
-                    enabled = !state.creating,
-                    textStyle = T.Body.copy(fontSize = 13.5.sp)
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(".${state.fmt}", style = T.Small.copy(fontSize = 12.sp, color = C.Ink3, fontWeight = FontWeight.SemiBold))
-            }
-            if (state.error.isNotEmpty()) FieldError(state.error)
+            CreateNameField(nameState, dirtyState, state, vm)
 
             Spacer(Modifier.height(18.dp))
             Text("格式", style = T.Label, color = C.Ink)
@@ -118,7 +114,7 @@ fun CreateDocSheet(state: CreateDocState, vm: AppViewModel) {
             Spacer(Modifier.width(9.dp))
             AppButton(
                 if (state.creating) "创建中…" else "创建文档",
-                onClick = vm::submitCreateDoc,
+                onClick = { vm.submitCreate(nameState.value) },
                 modifier = Modifier.weight(1f),
                 height = 46.dp,
                 fontSize = 14.sp,
@@ -131,12 +127,47 @@ fun CreateDocSheet(state: CreateDocState, vm: AppViewModel) {
     }
 }
 
+/** 打字只重组这一行：父级抽屉 / 弹窗的其余内容完全不参与 */
+@Composable
+private fun CreateNameField(
+    nameState: MutableState<String>,
+    dirtyState: MutableState<Boolean>,
+    state: CreateDocState,
+    vm: AppViewModel
+) {
+    val name by nameState
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        AppField(
+            value = name,
+            onValueChange = {
+                nameState.value = it
+                if (!dirtyState.value) {
+                    dirtyState.value = true
+                    vm.markCreateNameEdited()
+                }
+            },
+            placeholder = "例如：2026 年 Q1 预算表",
+            modifier = Modifier.weight(1f),
+            highlighted = true,
+            error = state.error.isNotEmpty(),
+            enabled = !state.creating,
+            textStyle = T.Body.copy(fontSize = 13.5.sp)
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(".${state.fmt}", style = T.Small.copy(fontSize = 12.sp, color = C.Ink3, fontWeight = FontWeight.SemiBold))
+    }
+    if (state.error.isNotEmpty()) FieldError(state.error)
+}
+
 /** 屏 19 · 同名文档已存在 */
 @Composable
 fun FileExistsDialog(
     state: com.wpspasswordmanager.ui.compose.FileExistsState,
     vm: AppViewModel
 ) {
+    val renameState = remember(state.fullName) { mutableStateOf(state.rename) }
+    // ViewModel 回填默认重命名时才同步；用户逐字输入不会写回 UiState
+    LaunchedEffect(state.rename) { renameState.value = state.rename }
     com.wpspasswordmanager.ui.compose.DialogCard(width = 308.dp) {
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
             Box(
@@ -171,17 +202,7 @@ fun FileExistsDialog(
         ModeRow("重命名保存", "", rename) { vm.pickExistsMode("rename") }
         if (rename) {
             Spacer(Modifier.height(8.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                AppField(
-                    value = state.rename,
-                    onValueChange = vm::setExistsRename,
-                    placeholder = "新文件名",
-                    modifier = Modifier.weight(1f),
-                    textStyle = T.Body.copy(fontSize = 13.sp)
-                )
-                Spacer(Modifier.width(6.dp))
-                Text(".${state.fmt}", style = T.Small.copy(color = C.Ink3, fontWeight = FontWeight.SemiBold))
-            }
+            RenameField(renameState, state)
         }
         Spacer(Modifier.height(16.dp))
         Row {
@@ -189,12 +210,31 @@ fun FileExistsDialog(
             Spacer(Modifier.width(8.dp))
             AppButton(
                 if (rename) "保存副本" else "覆盖并打开",
-                onClick = vm::confirmExists,
+                onClick = { vm.submitExistsRename(renameState.value) },
                 modifier = Modifier.weight(1f),
                 height = 42.dp,
                 fontSize = 13.5.sp
             )
         }
+    }
+}
+
+@Composable
+private fun RenameField(
+    renameState: MutableState<String>,
+    state: com.wpspasswordmanager.ui.compose.FileExistsState
+) {
+    val renameText by renameState
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        AppField(
+            value = renameText,
+            onValueChange = { renameState.value = it },
+            placeholder = "新文件名",
+            modifier = Modifier.weight(1f),
+            textStyle = T.Body.copy(fontSize = 13.sp)
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(".${state.fmt}", style = T.Small.copy(color = C.Ink3, fontWeight = FontWeight.SemiBold))
     }
 }
 

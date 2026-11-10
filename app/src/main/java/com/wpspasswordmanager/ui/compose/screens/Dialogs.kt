@@ -174,18 +174,19 @@ fun OpenModeDialog(
         Spacer(Modifier.height(6.dp))
         Text(fileName, style = T.Micro.copy(fontSize = 11.5.sp), maxLines = 1)
         Spacer(Modifier.height(14.dp))
-        ModeCard(
-            title = "可编辑",
-            desc = "在 WPS 中修改，保存后写回文档",
-            selected = mode == "edit",
-            onClick = { onPick("edit") }
-        )
-        Spacer(Modifier.height(8.dp))
+        // 查看是绝大多数场景，放在第一位并作为默认选中项
         ModeCard(
             title = "只读查看",
             desc = "复制一份到缓存，任何改动都不会保存",
             selected = mode == "view",
             onClick = { onPick("view") }
+        )
+        Spacer(Modifier.height(8.dp))
+        ModeCard(
+            title = "可编辑",
+            desc = "在 WPS 中修改，保存后写回文档",
+            selected = mode == "edit",
+            onClick = { onPick("edit") }
         )
         Spacer(Modifier.height(16.dp))
         Row {

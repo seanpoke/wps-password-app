@@ -48,6 +48,24 @@ class WpsPasswordManagerApplication : Application() {
 
         // 初始化文件观察者
         initFileObserver()
+
+        // 预热悬浮按钮服务：进程拉起后服务即常驻，这样从 App 打开文档进入 WPS、
+        // 调出【添加密码】/【修改密码】窗口时气泡可以立即出现（否则服务冷启动要数秒）
+        prewarmFloatingButtonService()
+    }
+
+    private fun prewarmFloatingButtonService() {
+        runCatching {
+            val intent = android.content.Intent(this, com.wpspasswordmanager.ui.FloatingButtonService::class.java)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                startForegroundService(intent)
+            } else {
+                startService(intent)
+            }
+            LogManager.log(TAG, "预热悬浮按钮服务完成", "DEBUG")
+        }.onFailure {
+            LogManager.log(TAG, "预热悬浮按钮服务失败: ${it.message}", "WARN")
+        }
     }
 
     /**

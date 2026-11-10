@@ -74,14 +74,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <!-- 旧界面：迁移期保留，不再作为入口 -->
-        <activity
-            android:name=".ui.MainActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ui.LogActivity"
-            android:exported="false" />
-
+        <!-- 外部应用打开文档：转发到 WPS，打开方式由 Compose 弹窗呈现 -->
         <activity
             android:name=".ui.ProxyActivity"
             android:exported="true"

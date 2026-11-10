@@ -48,6 +48,7 @@ sealed interface Route {
     data object ServerEdit : Route
     data object ForcePassword : Route
     data object Advanced : Route
+    data object Assistant : Route
 }
 
 enum class TokenState { Checking, Ok, None, Expired }
@@ -114,7 +115,7 @@ data class FileExistsState(
 
 data class OpenModeState(
     val doc: DocItem,
-    val mode: String = "edit"
+    val mode: String = "view"
 )
 
 data class AuthNode(
@@ -123,7 +124,9 @@ data class AuthNode(
     val name: String,
     val account: String?,
     val hasAuth: Boolean,
-    val children: List<AuthNode>
+    val children: List<AuthNode>,
+    /** 服务端 id 化标识：type=0 -> sys_dept.id；type=1 -> sys_user.id。提交授权必须用它 */
+    val id: Long = 0L
 ) {
     val isDept: Boolean get() = type == 0
 }
@@ -233,6 +236,130 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun set(block: (UiState) -> UiState) {
         _s.value = block(_s.value)
+    }
+
+    /* ---------------- 表单文本本地持有：只在提交点写回 UiState ---------------- */
+    /**
+     * 第二批性能改造：Compose 输入框把文本放在本地 remember 里，逐字输入不再产生
+     * UiState.copy → 整棵界面重组；只在提交 / 跳转 / 测试连接时把最终文本同步进来，
+     * 因此下面所有包装方法都先 set 一次再复用原有业务方法，业务读取路径完全不变。
+     */
+
+    /** 首次编辑时调用一次即可：清掉上一次的错误提示，不参与逐字输入 */
+    fun markLoginEdited() {
+        set {
+            if (it.loginError.isEmpty() && it.expiredError.isEmpty()) it
+            else it.copy(loginError = "", expiredError = "")
+        }
+    }
+
+    /** 服务器地址一旦被改动，旧的「连接正常」结果必须作废（对齐原 setHost/setPort 语义） */
+    fun markServerEdited() {
+        set { if (it.test is TestState.Untested) it else it.copy(test = TestState.Untested) }
+    }
+
+    fun markCreateNameEdited() {
+        set { st ->
+            if (st.createDoc?.error.isNullOrEmpty()) st
+            else st.copy(createDoc = st.createDoc?.copy(error = ""))
+        }
+    }
+
+    fun markPasswordFormEdited() {
+        set { st ->
+            if (st.passwordForm?.error.isNullOrEmpty()) st
+            else st.copy(passwordForm = st.passwordForm?.copy(error = ""))
+        }
+    }
+
+    fun markForceChangeEdited() {
+        set { st ->
+            if (st.forceChange?.error.isNullOrEmpty()) st
+            else st.copy(forceChange = st.forceChange?.copy(error = ""))
+        }
+    }
+
+    fun submitLogin(account: String, password: String) {
+        set { it.copy(account = account.trimStart(), password = password, loginError = "", expiredError = "") }
+        login()
+    }
+
+    fun submitReLogin(account: String, password: String) {
+        set { it.copy(account = account.trimStart(), password = password, expiredError = "") }
+        reLogin()
+    }
+
+    fun submitServerTest(host: String, port: String) {
+        set { it.copy(host = sanitizeHost(host), port = port.filter { c -> c.isDigit() }.take(5)) }
+        testConnection()
+    }
+
+    fun submitWizardServerStep(host: String, port: String) {
+        set { it.copy(host = sanitizeHost(host), port = port.filter { c -> c.isDigit() }.take(5)) }
+        wizardNext()
+    }
+
+    fun submitServerEdit(host: String, port: String) {
+        set { it.copy(host = sanitizeHost(host), port = port.filter { c -> c.isDigit() }.take(5)) }
+        saveServerEdit()
+    }
+
+    fun submitCreate(name: String) {
+        setCreateName(name)
+        submitCreateDoc()
+    }
+
+    fun submitExistsRename(rename: String) {
+        setExistsRename(rename)
+        confirmExists()
+    }
+
+    fun submitPasswordForm(old: String, neu: String, confirm: String) {
+        set { st -> st.copy(passwordForm = st.passwordForm?.copy(old = old, neu = neu, confirm = confirm, error = "")) }
+        submitPassword()
+    }
+
+    fun submitForceChangeForm(newPassword: String, confirmPassword: String) {
+        set { st -> st.copy(forceChange = st.forceChange?.copy(newPassword = newPassword, confirmPassword = confirmPassword, error = "")) }
+        submitForceChange()
+    }
+
+    /** 返回键逻辑下沉：BackHandler 只需订阅一个布尔，不再订阅整个 UiState */
+    fun backEnabled(): Boolean {
+        val st = _s.value
+        val wizardStep = (st.route as? Route.Wizard)?.step ?: 1
+        val dialogOpen = st.logoutConfirm || st.update != null || st.downloading != null ||
+            st.downloadError != null || st.fileExists != null || st.openMode != null || st.deleteTarget != null
+        val sheetOpen = st.createDoc != null || st.permTree != null || st.docMenu != null
+        return dialogOpen || sheetOpen || wizardStep > 1 ||
+            st.route is Route.Logs || st.route is Route.Password || st.route is Route.About ||
+            st.route is Route.ServerEdit || st.route is Route.ForcePassword || st.route is Route.Advanced ||
+            st.route is Route.Assistant || (st.route is Route.Expired && st.expiredForm)
+    }
+
+    fun handleBack() {
+        val st = _s.value
+        val wizardStep = (st.route as? Route.Wizard)?.step ?: 1
+        when {
+            st.deleteTarget != null -> cancelDeleteDoc()
+            st.docMenu != null -> closeDocMenu()
+            st.logoutConfirm -> cancelLogout()
+            st.downloading != null || st.downloadError != null -> cancelDownload()
+            st.update != null -> dismissUpdate()
+            st.fileExists != null -> dismissExists()
+            st.openMode != null -> cancelOpenMode()
+            st.createDoc != null -> closeCreateDoc()
+            st.permTree != null -> closePermTree()
+            wizardStep > 1 -> wizardBack()
+            st.route is Route.Logs -> closeLogs()
+            st.route is Route.Password -> closePasswordPage()
+            st.route is Route.About -> closeAbout()
+            st.route is Route.ServerEdit -> closeServerEdit()
+            st.route is Route.ForcePassword -> abortForcePassword()
+            st.route is Route.Advanced -> closeAdvanced()
+            st.route is Route.Assistant -> closeAssistant()
+            else -> cancelExpiredForm()
+        }
     }
 
     private var toastJob: kotlinx.coroutines.Job? = null
@@ -542,9 +669,16 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     /* ---------------- 主界面 ---------------- */
 
+    private var lastDocsReloadAt = 0L
+
     fun setTab(tab: String) {
         set { it.copy(tab = tab) }
-        if (tab == "docs" || tab == "overview") reloadDocs()
+        if (tab != "docs" && tab != "overview") return
+        // 切页本身只做状态切换；磁盘扫描节流，避免紧接着的 docs 更新再引发一次全树重组
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (s.docs.isNotEmpty() && now - lastDocsReloadAt < 1000L) return
+        lastDocsReloadAt = now
+        reloadDocs()
     }
 
     /* ---------------- 三期：运行日志页 ---------------- */
@@ -620,6 +754,18 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun closeAdvanced() = set { it.copy(route = Route.Main, tab = "settings") }
+
+    fun closeAssistant() = set { it.copy(route = Route.Main, tab = "docs") }
+
+    /** 调试 / 走查：直接拉起悬浮气泡（真实入口由无障碍服务在 WPS 前台时触发） */
+    fun debugShowBubble() {
+        val ctx = getApplication<Application>()
+        val intent = Intent(ctx, com.wpspasswordmanager.ui.FloatingButtonService::class.java)
+            .putExtra("show_bubble", true)
+        runCatching {
+            androidx.core.content.ContextCompat.startForegroundService(ctx, intent)
+        }.onFailure { showToast("启动悬浮服务失败：${it.message}") }
+    }
 
     fun loadCacheSize() {
         viewModelScope.launch {
@@ -930,22 +1076,14 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private fun openInWps(file: File) {
         val ctx = getApplication<Application>()
         try {
+            // 方案A：恢复走 ProxyActivity 完整链路（token/权限校验 → 读文件尾部元数据 →
+            // 初始化 FileMeta(uid/权限/密码) → 唤起 WPS），
+            // 与历史版本一致；否则新建/编辑打开的文档永远没有 uid，
+            // 保存后文件观察者也写不进尾部元数据，导致「文档权限/加密状态/自动填充」全部失效。
             com.wpspasswordmanager.monitor.WpsAccessibilityService.stableDocumentPath = file.absolutePath
             com.wpspasswordmanager.monitor.WpsAccessibilityService.currentDocumentPath = file.absolutePath
-            val uri = androidx.core.content.FileProvider.getUriForFile(ctx, "${ctx.packageName}.fileprovider", file)
-            val intent = Intent(Intent.ACTION_VIEW).apply {
-                setDataAndType(uri, DocumentFactory.mimeType(file.name))
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            storage.getTargetWpsPackage()?.let { pkg ->
-                intent.setPackage(pkg)
-                ctx.grantUriPermission(
-                    pkg, uri,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                )
-            }
-            ctx.startActivity(intent)
-            LogManager.log(TAG, "打开文档: ${file.absolutePath}", "DEBUG")
+            com.wpspasswordmanager.ui.ProxyActivity.openFileWithWps(ctx, file)
+            LogManager.log(TAG, "打开文档(经ProxyActivity): ${file.absolutePath}", "DEBUG")
         } catch (e: Exception) {
             LogManager.log(TAG, "打开文档失败: ${e.message}", "ERROR")
             showToast("无法启动 WPS 应用")
@@ -1025,35 +1163,6 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    private fun parseAuthNode(
-        o: org.json.JSONObject,
-        parentAuth: Boolean,
-        selected: MutableSet<String>,
-        expanded: MutableSet<String>,
-        depth: Int
-    ): AuthNode {
-        val dn = o.optString("dn")
-        val type = o.optInt("type")
-        val has = o.optBoolean("hasAuth", false)
-        val children = mutableListOf<AuthNode>()
-        o.optJSONArray("deptList")?.let { a ->
-            for (i in 0 until a.length()) children += parseAuthNode(a.getJSONObject(i), has, selected, expanded, depth + 1)
-        }
-        o.optJSONArray("employList")?.let { a ->
-            for (i in 0 until a.length()) children += parseAuthNode(a.getJSONObject(i), has, selected, expanded, depth + 1)
-        }
-        if (has && !parentAuth) selected += dn
-        if (type == 0 && depth <= 1) expanded += dn
-        return AuthNode(
-            dn = dn,
-            type = type,
-            name = o.optString("name"),
-            account = o.optString("account").takeIf { it.isNotEmpty() && it != "null" },
-            hasAuth = has,
-            children = children
-        )
-    }
-
     fun togglePermNode(dn: String) {
         set { st ->
             val pt = st.permTree ?: return@set st
@@ -1103,18 +1212,18 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             try {
                 val token = storage.getUserInfo()?.token
-                val deptDns = mutableListOf<String>()
-                val accountDns = mutableListOf<String>()
+                // 服务端已 id 化：只认 sys_dept.id / sys_user.id，传 DN 会被解析成空列表并清空原有授权
+                val deptIds = mutableListOf<Long>()
+                val userIds = mutableListOf<Long>()
                 pt.selected.forEach { dn ->
-                    val node = findAuthNode(pt.roots, dn)
-                    if (node != null) {
-                        if (node.isDept) deptDns += dn else accountDns += dn
-                    }
+                    val node = findAuthNode(pt.roots, dn) ?: return@forEach
+                    if (node.id <= 0L) return@forEach
+                    if (node.isDept) deptIds += node.id else userIds += node.id
                 }
                 val body = org.json.JSONObject().apply {
                     put("docId", docId)
-                    put("deptDnList", org.json.JSONArray(deptDns))
-                    put("accountDnList", org.json.JSONArray(accountDns))
+                    put("deptIdList", org.json.JSONArray(deptIds))
+                    put("userIdList", org.json.JSONArray(userIds))
                     put("isTemp", false)
                 }.toString()
                 val resp = call { network.executePostRequest("/doc/auth/update", body, token, it) }
@@ -1141,20 +1250,6 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             }
         }
     }
-
-    private fun findAuthNode(nodes: List<AuthNode>, dn: String): AuthNode? {
-        nodes.forEach { n ->
-            if (n.dn == dn) return n
-            findAuthNode(n.children, dn)?.let { return it }
-        }
-        return null
-    }
-
-    private fun collectAuthDns(node: AuthNode): List<String> =
-        listOf(node.dn) + node.children.flatMap { collectAuthDns(it) }
-
-    private fun collectDeptDns(nodes: List<AuthNode>): List<String> =
-        nodes.filter { it.isDept }.flatMap { listOf(it.dn) + collectDeptDns(it.children) }
 
     /* ---------------- 会话失效 ---------------- */
 
@@ -1595,6 +1690,28 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             "download" -> set { it.copy(route = Route.Main, tab = "settings", downloading = 46) }
             "downloadErr" -> set {
                 it.copy(route = Route.Main, tab = "settings", downloading = 46, downloadError = "连接超时，已中断在 5.2 MB")
+            }
+            "bubble" -> {
+                set {
+                    it.copy(
+                        route = Route.Main,
+                        tab = "docs",
+                        name = "张鹏",
+                        role = "admin",
+                        account = "zhangpeng",
+                        tokenOk = true
+                    )
+                }
+                debugShowBubble()
+            }
+            "assistant" -> set {
+                it.copy(
+                    route = Route.Assistant,
+                    name = "张鹏",
+                    role = "admin",
+                    account = "zhangpeng",
+                    tokenOk = true
+                )
             }
             "serverEdit" -> set {
                 it.copy(

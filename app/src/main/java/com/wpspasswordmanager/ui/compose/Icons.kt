@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -114,16 +115,18 @@ fun SvgIcon(
     strokeWidth: Float = 2f,
     modifier: Modifier = Modifier
 ) {
+    // path 解析与 Stroke 构造移出 draw 块并缓存：原来每次重组/每帧绘制都要
+    // PathParser 解析几十条路径 + 新建 Path/ComposePath/Stroke 对象，是全局掉帧的主要来源
+    val parsed = remember(paths) { paths.mapNotNull { d -> buildPath(d)?.asComposePath() } }
+    val stroke = remember(strokeWidth) {
+        Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round)
+    }
+
     Canvas(modifier.size(size)) {
         val k = this.size.minDimension / 24f
         withTransform({ scale(k, k, Offset.Zero) }) {
-            paths.forEach { d ->
-                val p = buildPath(d) ?: return@forEach
-                drawPath(
-                    p.asComposePath(),
-                    color = tint,
-                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round)
-                )
+            parsed.forEach { p ->
+                drawPath(p, color = tint, style = stroke)
             }
         }
     }

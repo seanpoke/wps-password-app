@@ -17,6 +17,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,16 +50,10 @@ import com.wpspasswordmanager.ui.compose.T
 @Composable
 fun ForcePasswordScreen(vm: AppViewModel) {
     val fc = vm.s.forceChange
-    var showNew by remember { mutableStateOf(false) }
-    var showConfirm by remember { mutableStateOf(false) }
     if (fc == null) return
-
-    val mismatch = fc.confirmPassword.isNotEmpty() && fc.confirmPassword != fc.newPassword
-    val ok = fc.newPassword.length in 8..32 &&
-        fc.newPassword.any { it.isUpperCase() } &&
-        fc.newPassword.any { it.isLowerCase() } &&
-        fc.newPassword.any { it.isDigit() } &&
-        fc.confirmPassword == fc.newPassword
+    val newPwd = remember { mutableStateOf(fc.newPassword) }
+    val confirmPwd = remember { mutableStateOf(fc.confirmPassword) }
+    val edited = remember { mutableStateOf(false) }
 
     Column(
         Modifier
@@ -90,62 +85,7 @@ fun ForcePasswordScreen(vm: AppViewModel) {
                 style = T.Small.copy(fontSize = 12.5.sp, color = C.Ink3, lineHeight = 19.sp)
             )
 
-            Spacer(Modifier.height(22.dp))
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                FieldLabel("新密码", Modifier.weight(1f))
-                Text("8–32 位", style = T.Micro.copy(fontSize = 11.sp))
-            }
-            AppField(
-                value = fc.newPassword,
-                onValueChange = vm::forceChangeNew,
-                placeholder = "设置新密码",
-                password = !showNew,
-                textStyle = T.Body.copy(fontSize = 13.5.sp),
-                trailing = {
-                    IconBtn(
-                        if (showNew) I.eyeOff else I.eye,
-                        onClick = { showNew = !showNew },
-                        size = 26.dp,
-                        iconSize = 17.dp,
-                        tint = Color(0xFFA8A8B2),
-                        strokeWidth = 1.9f
-                    )
-                }
-            )
-            Spacer(Modifier.height(9.dp))
-            Row {
-                RuleChip("长度 ≥ 8", fc.newPassword.length in 8..32)
-                Spacer(Modifier.width(6.dp))
-                RuleChip("大写", fc.newPassword.any { it.isUpperCase() })
-                Spacer(Modifier.width(6.dp))
-                RuleChip("小写", fc.newPassword.any { it.isLowerCase() })
-                Spacer(Modifier.width(6.dp))
-                RuleChip("数字", fc.newPassword.any { it.isDigit() })
-            }
-
-            Spacer(Modifier.height(16.dp))
-            FieldLabel("确认新密码")
-            AppField(
-                value = fc.confirmPassword,
-                onValueChange = vm::forceChangeConfirm,
-                placeholder = "再次输入新密码",
-                password = !showConfirm,
-                error = mismatch,
-                textStyle = T.Body.copy(fontSize = 13.5.sp),
-                trailing = {
-                    IconBtn(
-                        if (showConfirm) I.eyeOff else I.eye,
-                        onClick = { showConfirm = !showConfirm },
-                        size = 26.dp,
-                        iconSize = 17.dp,
-                        tint = Color(0xFFA8A8B2),
-                        strokeWidth = 1.9f
-                    )
-                }
-            )
-            if (mismatch) FieldError("两次输入不一致")
-            if (fc.error.isNotEmpty()) FieldError(fc.error)
-            Spacer(Modifier.height(8.dp))
+            ForcePasswordFields(fc, newPwd, confirmPwd, edited, vm)
         }
 
         Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 14.dp)) {
@@ -165,15 +105,117 @@ fun ForcePasswordScreen(vm: AppViewModel) {
                     .navigationBarsPadding()
                     .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 22.dp)
             ) {
-                AppButton(
-                    if (fc.submitting) "正在提交…" else "保存并重新登录",
-                    onClick = vm::submitForceChange,
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = ok && !fc.submitting,
-                    height = 46.dp,
-                    fontSize = 15.sp
-                )
+                ForcePasswordSubmitBar(fc, newPwd, confirmPwd, vm)
             }
         }
     }
+}
+
+private fun onForcePwdChange(
+    target: MutableState<String>,
+    value: String,
+    edited: MutableState<Boolean>,
+    vm: AppViewModel
+) {
+    target.value = value
+    if (!edited.value) {
+        edited.value = true
+        vm.markForceChangeEdited()
+    }
+}
+
+@Composable
+private fun ForcePasswordFields(
+    fc: com.wpspasswordmanager.ui.compose.ForceChangeState,
+    newPwd: MutableState<String>,
+    confirmPwd: MutableState<String>,
+    edited: MutableState<Boolean>,
+    vm: AppViewModel
+) {
+    var showNew by remember { mutableStateOf(false) }
+    var showConfirm by remember { mutableStateOf(false) }
+    val neu by newPwd
+    val confirm by confirmPwd
+    val mismatch = confirm.isNotEmpty() && confirm != neu
+
+    Spacer(Modifier.height(22.dp))
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        FieldLabel("新密码", Modifier.weight(1f))
+        Text("8–32 位", style = T.Micro.copy(fontSize = 11.sp))
+    }
+    AppField(
+        value = neu,
+        onValueChange = { onForcePwdChange(newPwd, it, edited, vm) },
+        placeholder = "设置新密码",
+        password = !showNew,
+        textStyle = T.Body.copy(fontSize = 13.5.sp),
+        trailing = {
+            IconBtn(
+                if (showNew) I.eyeOff else I.eye,
+                onClick = { showNew = !showNew },
+                size = 26.dp,
+                iconSize = 17.dp,
+                tint = Color(0xFFA8A8B2),
+                strokeWidth = 1.9f
+            )
+        }
+    )
+    Spacer(Modifier.height(9.dp))
+    Row {
+        RuleChip("长度 ≥ 8", neu.length in 8..32)
+        Spacer(Modifier.width(6.dp))
+        RuleChip("大写", neu.any { it.isUpperCase() })
+        Spacer(Modifier.width(6.dp))
+        RuleChip("小写", neu.any { it.isLowerCase() })
+        Spacer(Modifier.width(6.dp))
+        RuleChip("数字", neu.any { it.isDigit() })
+    }
+
+    Spacer(Modifier.height(16.dp))
+    FieldLabel("确认新密码")
+    AppField(
+        value = confirm,
+        onValueChange = { onForcePwdChange(confirmPwd, it, edited, vm) },
+        placeholder = "再次输入新密码",
+        password = !showConfirm,
+        error = mismatch,
+        textStyle = T.Body.copy(fontSize = 13.5.sp),
+        trailing = {
+            IconBtn(
+                if (showConfirm) I.eyeOff else I.eye,
+                onClick = { showConfirm = !showConfirm },
+                size = 26.dp,
+                iconSize = 17.dp,
+                tint = Color(0xFFA8A8B2),
+                strokeWidth = 1.9f
+            )
+        }
+    )
+    if (mismatch) FieldError("两次输入不一致")
+    if (fc.error.isNotEmpty()) FieldError(fc.error)
+    Spacer(Modifier.height(8.dp))
+}
+
+@Composable
+private fun ForcePasswordSubmitBar(
+    fc: com.wpspasswordmanager.ui.compose.ForceChangeState,
+    newPwd: MutableState<String>,
+    confirmPwd: MutableState<String>,
+    vm: AppViewModel
+) {
+    val neu by newPwd
+    val confirm by confirmPwd
+    val ok = neu.length in 8..32 &&
+        neu.any { it.isUpperCase() } &&
+        neu.any { it.isLowerCase() } &&
+        neu.any { it.isDigit() } &&
+        confirm == neu
+    AppButton(
+        if (fc.submitting) "正在提交…" else "保存并重新登录",
+        onClick = { vm.submitForceChangeForm(newPwd.value, confirmPwd.value) },
+        modifier = Modifier.fillMaxWidth(),
+        enabled = ok && !fc.submitting,
+        height = 46.dp,
+        fontSize = 15.sp
+    )
 }

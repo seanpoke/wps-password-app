@@ -11,13 +11,16 @@ import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.ViewModelProvider
 
 /**
- * 新版界面入口（Compose）。
- * 旧 MainActivity 仅保留作迁移期参照，不再作为启动入口。
+ * 应用界面入口（Compose）。旧 XML 页面 MainActivity / LogActivity 已删除，
+ * 仅 ProxyActivity 作为外部文件打开的无界面转发入口保留。
  */
 class AppActivity : ComponentActivity() {
 
@@ -41,8 +44,9 @@ class AppActivity : ComponentActivity() {
         applyStatusBar(darkIcons = false)
 
         setContent {
-            val s = vm.s
-            val darkIcons = s.route !is Route.Boot
+            // 只订阅「是否启动页」这个派生布尔：输入、切 tab、弹窗等状态变化不再让
+            // setContent 顶层（含 AppTheme / AppRoot）整棵重组
+            val darkIcons by remember { derivedStateOf { vm.s.route !is Route.Boot } }
             LaunchedEffect(darkIcons) {
                 // 等窗口挂上后再改，避免被主题里的 windowLightStatusBar 覆盖
                 window.decorView.post { applyStatusBar(darkIcons) }

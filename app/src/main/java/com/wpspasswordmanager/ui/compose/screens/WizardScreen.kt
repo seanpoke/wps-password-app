@@ -23,6 +23,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -116,21 +117,22 @@ private fun StepsBar(step: Int) {
 
 @Composable
 private fun ServerStep(s: UiState, vm: AppViewModel) {
+    val holder = rememberServerFormHolder(vm)
     Column(Modifier.fillMaxSize()) {
         Column(
             Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
         ) {
-            ServerFormBody(s, vm, heading = true)
+            ServerFormBody(holder, s, vm, heading = true)
         }
 
         FootColumn {
-            ServerTestButton(s, vm)
+            ServerTestButton(holder, s, vm)
             Spacer(Modifier.height(10.dp))
             AppButton(
                 "下一步",
-                onClick = vm::wizardNext,
+                onClick = { vm.submitWizardServerStep(holder.host.value, holder.port.value) },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = s.test is TestState.Ok
             )
@@ -140,10 +142,24 @@ private fun ServerStep(s: UiState, vm: AppViewModel) {
 
 /* ---------------- 2 登录 ---------------- */
 
+private fun onLoginTextChange(
+    target: MutableState<String>,
+    value: String,
+    edited: MutableState<Boolean>,
+    vm: AppViewModel
+) {
+    target.value = value
+    if (!edited.value) {
+        edited.value = true
+        vm.markLoginEdited()
+    }
+}
+
 @Composable
 private fun LoginStep(s: UiState, vm: AppViewModel) {
-    var pwdVisible by remember { mutableStateOf(false) }
-    val can = s.account.trim().isNotEmpty() && s.password.isNotEmpty() && !s.loggingIn
+    val account = remember { mutableStateOf(s.account) }
+    val password = remember { mutableStateOf(s.password) }
+    val edited = remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize()) {
         Column(
             Modifier
@@ -151,63 +167,11 @@ private fun LoginStep(s: UiState, vm: AppViewModel) {
                 .verticalScroll(rememberScrollState())
         ) {
             Column(Modifier.padding(horizontal = 16.dp)) {
-                Spacer(Modifier.height(16.dp))
-                Text("登录企业账号", style = T.H1.copy(fontSize = 22.sp))
-                Spacer(Modifier.height(9.dp))
-                Text("使用 OA 域账号登录，密码错误 5 次将锁定 10 分钟。", style = T.Small3.copy(lineHeight = 20.sp))
-
-                Spacer(Modifier.height(26.dp))
-                Text("账号", style = T.Label)
-                Spacer(Modifier.height(6.dp))
-                AppField(
-                    value = s.account,
-                    onValueChange = vm::setAccount,
-                    placeholder = "zhangpeng",
-                    keyboard = KeyboardType.Text
-                )
-
-                Spacer(Modifier.height(18.dp))
-                Text("密码", style = T.Label)
-                Spacer(Modifier.height(6.dp))
-                AppField(
-                    value = s.password,
-                    onValueChange = vm::setPassword,
-                    placeholder = "登录密码",
-                    password = !pwdVisible,
-                    error = s.loginError.isNotEmpty(),
-                    trailing = {
-                        IconBtn(
-                            if (pwdVisible) I.eye else I.eyeOff,
-                            onClick = { pwdVisible = !pwdVisible },
-                            size = 26.dp,
-                            iconSize = 17.dp,
-                            tint = C.Placeholder
-                        )
-                    }
-                )
-                if (s.loginError.isNotEmpty()) FieldError(s.loginError)
-
-                Spacer(Modifier.height(18.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.pressable { vm.setRemember(!s.remember) }
-                ) {
-                    AppCheckbox(checked = s.remember, onClick = { vm.setRemember(!s.remember) })
-                    Spacer(Modifier.width(9.dp))
-                    Text("记住密码", style = T.Small.copy(color = C.Ink2))
-                }
+                LoginFields(s, vm, account, password, edited)
             }
         }
         FootColumn {
-            AppButton(
-                if (s.loggingIn) "登录中…" else "登录",
-                onClick = vm::login,
-                modifier = Modifier.fillMaxWidth(),
-                enabled = can,
-                leading = if (s.loggingIn) {
-                    { CircularProgressIndicator(Modifier.size(15.dp), strokeWidth = 1.8.dp, color = Color.White) }
-                } else null
-            )
+            LoginSubmitButton(s, vm, account, password)
             Spacer(Modifier.height(12.dp))
             Text(
                 "登录即表示同意《内部系统使用规范》",
@@ -217,6 +181,86 @@ private fun LoginStep(s: UiState, vm: AppViewModel) {
             )
         }
     }
+}
+
+/** 账号 / 密码逐字输入只重组这个子组合，步骤条与页面外壳保持不动 */
+@Composable
+private fun LoginFields(
+    s: UiState,
+    vm: AppViewModel,
+    account: MutableState<String>,
+    password: MutableState<String>,
+    edited: MutableState<Boolean>
+) {
+    var pwdVisible by remember { mutableStateOf(false) }
+    val acc by account
+    val pwd by password
+    Spacer(Modifier.height(16.dp))
+    Text("登录企业账号", style = T.H1.copy(fontSize = 22.sp))
+    Spacer(Modifier.height(9.dp))
+    Text("使用 OA 域账号登录，密码错误 5 次将锁定 10 分钟。", style = T.Small3.copy(lineHeight = 20.sp))
+
+    Spacer(Modifier.height(26.dp))
+    Text("账号", style = T.Label)
+    Spacer(Modifier.height(6.dp))
+    AppField(
+        value = acc,
+        onValueChange = { onLoginTextChange(account, it, edited, vm) },
+        placeholder = "zhangpeng",
+        keyboard = KeyboardType.Text
+    )
+
+    Spacer(Modifier.height(18.dp))
+    Text("密码", style = T.Label)
+    Spacer(Modifier.height(6.dp))
+    AppField(
+        value = pwd,
+        onValueChange = { onLoginTextChange(password, it, edited, vm) },
+        placeholder = "登录密码",
+        password = !pwdVisible,
+        error = s.loginError.isNotEmpty(),
+        trailing = {
+            IconBtn(
+                if (pwdVisible) I.eye else I.eyeOff,
+                onClick = { pwdVisible = !pwdVisible },
+                size = 26.dp,
+                iconSize = 17.dp,
+                tint = C.Placeholder
+            )
+        }
+    )
+    if (s.loginError.isNotEmpty()) FieldError(s.loginError)
+
+    Spacer(Modifier.height(18.dp))
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.pressable { vm.setRemember(!s.remember) }
+    ) {
+        AppCheckbox(checked = s.remember, onClick = { vm.setRemember(!s.remember) })
+        Spacer(Modifier.width(9.dp))
+        Text("记住密码", style = T.Small.copy(color = C.Ink2))
+    }
+}
+
+@Composable
+private fun LoginSubmitButton(
+    s: UiState,
+    vm: AppViewModel,
+    account: MutableState<String>,
+    password: MutableState<String>
+) {
+    val acc by account
+    val pwd by password
+    val can = acc.trim().isNotEmpty() && pwd.isNotEmpty() && !s.loggingIn
+    AppButton(
+        if (s.loggingIn) "登录中…" else "登录",
+        onClick = { vm.submitLogin(acc, pwd) },
+        modifier = Modifier.fillMaxWidth(),
+        enabled = can,
+        leading = if (s.loggingIn) {
+            { CircularProgressIndicator(Modifier.size(15.dp), strokeWidth = 1.8.dp, color = Color.White) }
+        } else null
+    )
 }
 
 /* ---------------- 3 权限 ---------------- */

@@ -23,12 +23,14 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -78,16 +80,30 @@ fun LogsScreen(vm: AppViewModel) {
 
     LaunchedEffect(paused) {
         if (paused) return@LaunchedEffect
+        // 只在日志真正新增时才更新列表状态：原来每秒无条件塞入新 List，整屏（含全部图标）
+        // 每秒白重绘一次
+        var lastSize = -1
+        var lastTail: String? = null
         while (true) {
-            entries = LogManager.getEntries()
+            val fresh = LogManager.getEntries()
+            val tail = fresh.lastOrNull()?.let { "${it.timestamp}|${it.message}" }
+            if (fresh.size != lastSize || tail != lastTail) {
+                lastSize = fresh.size
+                lastTail = tail
+                entries = fresh
+            }
             delay(1000)
         }
     }
 
-    val visible = entries.filter { e ->
-        (if (level == "all") true else e.level == "ERROR") &&
-            (query.isBlank() ||
-                "${e.timestamp} ${e.level} ${e.tag} ${e.message}".contains(query.trim(), ignoreCase = true))
+    val visible by remember {
+        derivedStateOf {
+            entries.filter { e ->
+                (if (level == "all") true else e.level == "ERROR") &&
+                    (query.isBlank() ||
+                        "${e.timestamp} ${e.level} ${e.tag} ${e.message}".contains(query.trim(), ignoreCase = true))
+            }
+        }
     }
 
     fun reload() {
@@ -232,7 +248,7 @@ fun LogsScreen(vm: AppViewModel) {
                 if (visible.isEmpty()) {
                     item { EmptyLogs(hasAny = entries.isNotEmpty()) }
                 } else {
-                    items(visible) { e -> LogRow(e) }
+                    itemsIndexed(visible, key = { idx, e -> "$idx|${e.timestamp}|${e.message}" }) { _, e -> LogRow(e) }
                 }
             }
 

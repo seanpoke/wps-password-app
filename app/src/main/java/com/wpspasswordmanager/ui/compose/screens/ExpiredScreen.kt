@@ -21,6 +21,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,9 +51,6 @@ import com.wpspasswordmanager.ui.compose.pressable
 /** 屏 02 · 登录状态已失效（就地登录，不跳向导） */
 @Composable
 fun ExpiredScreen(s: UiState, vm: AppViewModel) {
-    var pwdVisible by remember { mutableStateOf(false) }
-    val can = s.account.trim().isNotEmpty() && s.password.isNotEmpty() && !s.expiredBusy
-
     Box(
         Modifier
             .fillMaxSize()
@@ -88,59 +86,10 @@ fun ExpiredScreen(s: UiState, vm: AppViewModel) {
             )
 
             if (s.expiredForm) {
-                Spacer(Modifier.height(22.dp))
+                ExpiredFormSection(s, vm)
+            } else {
+                Spacer(Modifier.height(26.dp))
                 Column(Modifier.fillMaxWidth()) {
-                    Text("账号", style = T.Label)
-                    Spacer(Modifier.height(6.dp))
-                    AppField(
-                        value = s.account,
-                        onValueChange = vm::setAccount,
-                        placeholder = "zhangpeng",
-                        keyboard = KeyboardType.Text
-                    )
-                    Spacer(Modifier.height(14.dp))
-                    Text("密码", style = T.Label)
-                    Spacer(Modifier.height(6.dp))
-                    AppField(
-                        value = s.password,
-                        onValueChange = vm::setPassword,
-                        placeholder = "登录密码",
-                        password = !pwdVisible,
-                        error = s.expiredError.isNotEmpty(),
-                        trailing = {
-                            IconBtn(
-                                if (pwdVisible) I.eye else I.eyeOff,
-                                onClick = { pwdVisible = !pwdVisible },
-                                size = 26.dp,
-                                iconSize = 17.dp,
-                                tint = C.Placeholder
-                            )
-                        }
-                    )
-                    if (s.expiredError.isNotEmpty()) FieldError(s.expiredError)
-                }
-            }
-
-            Spacer(Modifier.height(26.dp))
-            Column(Modifier.fillMaxWidth()) {
-                if (s.expiredForm) {
-                    AppButton(
-                        if (s.expiredBusy) "登录中…" else "登录",
-                        onClick = vm::reLogin,
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = can,
-                        leading = if (s.expiredBusy) {
-                            { CircularProgressIndicator(Modifier.size(15.dp), strokeWidth = 1.8.dp, color = Color.White) }
-                        } else null
-                    )
-                    Spacer(Modifier.height(10.dp))
-                    AppButton(
-                        "取消",
-                        onClick = vm::cancelExpiredForm,
-                        modifier = Modifier.fillMaxWidth(),
-                        style = BtnStyle.Ghost
-                    )
-                } else {
                     AppButton("重新登录", onClick = vm::openExpiredForm, modifier = Modifier.fillMaxWidth())
                 }
             }
@@ -158,4 +107,103 @@ fun ExpiredScreen(s: UiState, vm: AppViewModel) {
             Spacer(Modifier.height(24.dp))
         }
     }
+}
+
+private fun onExpiredTextChange(
+    target: MutableState<String>,
+    value: String,
+    edited: MutableState<Boolean>,
+    vm: AppViewModel
+) {
+    target.value = value
+    if (!edited.value) {
+        edited.value = true
+        vm.markLoginEdited()
+    }
+}
+
+/** 只在「就地重登」展开时创建，因此 remember 能取到 openExpiredForm 预填的账号 */
+@Composable
+private fun ExpiredFormSection(s: UiState, vm: AppViewModel) {
+    val account = remember { mutableStateOf(s.account) }
+    val password = remember { mutableStateOf(s.password) }
+    val edited = remember { mutableStateOf(false) }
+
+    Spacer(Modifier.height(22.dp))
+    Column(Modifier.fillMaxWidth()) {
+        ExpiredFields(s, vm, account, password, edited)
+    }
+    Spacer(Modifier.height(26.dp))
+    Column(Modifier.fillMaxWidth()) {
+        ExpiredSubmit(s, vm, account, password)
+        Spacer(Modifier.height(10.dp))
+        AppButton(
+            "取消",
+            onClick = vm::cancelExpiredForm,
+            modifier = Modifier.fillMaxWidth(),
+            style = BtnStyle.Ghost
+        )
+    }
+}
+
+@Composable
+private fun ExpiredFields(
+    s: UiState,
+    vm: AppViewModel,
+    account: MutableState<String>,
+    password: MutableState<String>,
+    edited: MutableState<Boolean>
+) {
+    var pwdVisible by remember { mutableStateOf(false) }
+    val acc by account
+    val pwd by password
+    Text("账号", style = T.Label)
+    Spacer(Modifier.height(6.dp))
+    AppField(
+        value = acc,
+        onValueChange = { onExpiredTextChange(account, it, edited, vm) },
+        placeholder = "zhangpeng",
+        keyboard = KeyboardType.Text
+    )
+    Spacer(Modifier.height(14.dp))
+    Text("密码", style = T.Label)
+    Spacer(Modifier.height(6.dp))
+    AppField(
+        value = pwd,
+        onValueChange = { onExpiredTextChange(password, it, edited, vm) },
+        placeholder = "登录密码",
+        password = !pwdVisible,
+        error = s.expiredError.isNotEmpty(),
+        trailing = {
+            IconBtn(
+                if (pwdVisible) I.eye else I.eyeOff,
+                onClick = { pwdVisible = !pwdVisible },
+                size = 26.dp,
+                iconSize = 17.dp,
+                tint = C.Placeholder
+            )
+        }
+    )
+    if (s.expiredError.isNotEmpty()) FieldError(s.expiredError)
+}
+
+@Composable
+private fun ExpiredSubmit(
+    s: UiState,
+    vm: AppViewModel,
+    account: MutableState<String>,
+    password: MutableState<String>
+) {
+    val acc by account
+    val pwd by password
+    val can = acc.trim().isNotEmpty() && pwd.isNotEmpty() && !s.expiredBusy
+    AppButton(
+        if (s.expiredBusy) "登录中…" else "登录",
+        onClick = { vm.submitReLogin(acc, pwd) },
+        modifier = Modifier.fillMaxWidth(),
+        enabled = can,
+        leading = if (s.expiredBusy) {
+            { CircularProgressIndicator(Modifier.size(15.dp), strokeWidth = 1.8.dp, color = Color.White) }
+        } else null
+    )
 }

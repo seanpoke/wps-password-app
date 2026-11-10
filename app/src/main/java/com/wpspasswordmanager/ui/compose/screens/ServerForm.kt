@@ -14,6 +14,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,11 +42,39 @@ import com.wpspasswordmanager.ui.compose.UiState
 import com.wpspasswordmanager.ui.compose.card
 
 /**
+ * 服务器地址表单的本地文本容器。
+ * 逐字输入只改这两个 MutableState；只有解引用它们的子组合会重组，
+ * 步骤条 / 页面外壳 / 按钮以外的整棵界面不再跟着每敲一个字符重建。
+ */
+class ServerFormHolder(host0: String, port0: String) {
+    val host: MutableState<String> = mutableStateOf(host0)
+    val port: MutableState<String> = mutableStateOf(port0)
+    var edited: Boolean = false
+
+    /** 首次编辑时让旧的连接测试结果作废，只触发一次全局状态更新 */
+    fun markEdited(vm: AppViewModel) {
+        if (!edited) {
+            edited = true
+            vm.markServerEdited()
+        }
+    }
+}
+
+@Composable
+fun rememberServerFormHolder(vm: AppViewModel): ServerFormHolder =
+    remember { ServerFormHolder(vm.s.host, vm.s.port) }
+
+/**
  * 服务器地址表单：向导第 1 步与设置页「服务器设置」共用同一份 UI 与校验，
  * 只有外壳（步骤条 / 独立页 / 底部按钮）不同。
  */
 @Composable
-fun ServerFormBody(s: UiState, vm: AppViewModel, heading: Boolean = true) {
+fun ServerFormBody(
+    holder: ServerFormHolder,
+    s: UiState,
+    vm: AppViewModel,
+    heading: Boolean = true
+) {
     Column(Modifier.padding(start = 16.dp, end = 16.dp, top = if (heading) 16.dp else 20.dp)) {
         if (heading) {
             Text("连接企业服务器", style = T.H1.copy(fontSize = 22.sp))
@@ -59,34 +91,7 @@ fun ServerFormBody(s: UiState, vm: AppViewModel, heading: Boolean = true) {
             )
         }
         Spacer(Modifier.height(8.dp))
-        Row {
-            AppField(
-                value = s.host,
-                onValueChange = vm::setHost,
-                placeholder = "10.20.1.8",
-                modifier = Modifier.weight(1f),
-                error = s.test is TestState.Fail,
-                ok = s.test is TestState.Ok,
-                prefix = if (s.http) "http://" else "https://",
-                keyboard = KeyboardType.Uri,
-                trailing = {
-                    when (s.test) {
-                        is TestState.Ok -> SvgIcon(I.check, size = 16.dp, tint = C.Ok, strokeWidth = 2.4f)
-                        is TestState.Fail -> SvgIcon(I.info, size = 16.dp, tint = C.Err, strokeWidth = 2.2f)
-                        else -> Unit
-                    }
-                }
-            )
-            Spacer(Modifier.width(10.dp))
-            AppField(
-                value = s.port,
-                onValueChange = vm::setPort,
-                placeholder = "8080",
-                modifier = Modifier.width(96.dp),
-                keyboard = KeyboardType.Number,
-                center = true
-            )
-        }
+        ServerAddressFields(holder, s, vm)
 
         Spacer(Modifier.height(8.dp))
         when (val t = s.test) {
@@ -155,10 +160,58 @@ fun ServerFormBody(s: UiState, vm: AppViewModel, heading: Boolean = true) {
     }
 }
 
+/** 打字只重组这一行输入框 */
+@Composable
+private fun ServerAddressFields(holder: ServerFormHolder, s: UiState, vm: AppViewModel) {
+    val host by holder.host
+    val port by holder.port
+    Row {
+        AppField(
+            value = host,
+            onValueChange = {
+                holder.host.value = it
+                holder.markEdited(vm)
+            },
+            placeholder = "10.20.1.8",
+            modifier = Modifier.weight(1f),
+            error = s.test is TestState.Fail,
+            ok = s.test is TestState.Ok,
+            prefix = if (s.http) "http://" else "https://",
+            keyboard = KeyboardType.Uri,
+            trailing = {
+                when (s.test) {
+                    is TestState.Ok -> SvgIcon(I.check, size = 16.dp, tint = C.Ok, strokeWidth = 2.4f)
+                    is TestState.Fail -> SvgIcon(I.info, size = 16.dp, tint = C.Err, strokeWidth = 2.2f)
+                    else -> Unit
+                }
+            }
+        )
+        Spacer(Modifier.width(10.dp))
+        AppField(
+            value = port,
+            onValueChange = {
+                holder.port.value = it.filter { c -> c.isDigit() }.take(5)
+                holder.markEdited(vm)
+            },
+            placeholder = "8080",
+            modifier = Modifier.width(96.dp),
+            keyboard = KeyboardType.Number,
+            center = true
+        )
+    }
+}
+
 /** 「测试连接」按钮：三态文案 + loading，向导与独立页共用 */
 @Composable
-fun ServerTestButton(s: UiState, vm: AppViewModel, modifier: Modifier = Modifier) {
-    val canTest = s.host.isNotBlank() && vm.portValid()
+fun ServerTestButton(
+    holder: ServerFormHolder,
+    s: UiState,
+    vm: AppViewModel,
+    modifier: Modifier = Modifier
+) {
+    val host by holder.host
+    val port by holder.port
+    val canTest = host.isNotBlank() && (port.toIntOrNull()?.let { it in 1..65535 } == true)
     val loading = s.test is TestState.Testing
     val label = when (s.test) {
         is TestState.Ok -> "已连接 · 重新测试"
@@ -178,7 +231,7 @@ fun ServerTestButton(s: UiState, vm: AppViewModel, modifier: Modifier = Modifier
     }
     AppButton(
         text = label,
-        onClick = vm::testConnection,
+        onClick = { vm.submitServerTest(holder.host.value, holder.port.value) },
         modifier = modifier.fillMaxWidth(),
         enabled = canTest && !loading,
         style = BtnStyle.Ghost,

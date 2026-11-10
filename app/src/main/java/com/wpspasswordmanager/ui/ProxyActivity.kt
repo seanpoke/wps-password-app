@@ -9,7 +9,41 @@ import android.view.accessibility.AccessibilityManager
 
 import com.wpspasswordmanager.utils.FileNameResolver
 import com.wpspasswordmanager.utils.LogManager
+import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.wpspasswordmanager.ui.compose.AppButton
+import com.wpspasswordmanager.ui.compose.AppField
+import com.wpspasswordmanager.ui.compose.AppTheme
+import com.wpspasswordmanager.ui.compose.BtnStyle
+import com.wpspasswordmanager.ui.compose.C
+import com.wpspasswordmanager.ui.compose.T
+import com.wpspasswordmanager.ui.compose.screens.OpenModeDialog
 import com.wpspasswordmanager.R
 import com.wpspasswordmanager.WpsPasswordManagerApplication
 import com.wpspasswordmanager.business.FileMetaFactory
@@ -25,8 +59,14 @@ import java.io.FileOutputStream
 
 class ProxyActivity : AppCompatActivity() {
 
+    private val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
+
     companion object {
         private const val TAG = "ProxyActivity"
+
+        /** App 内已经通过新版「打开方式」选过模式，不要再弹一次选择窗口 */
+        private const val EXTRA_DIRECT_OPEN = "wps_direct_open"
+        private const val EXTRA_DIRECT_PATH = "wps_direct_path"
 
         fun openFileWithWps(context: Context, file: File) {
             val intent = Intent(context, ProxyActivity::class.java)
@@ -37,6 +77,10 @@ class ProxyActivity : AppCompatActivity() {
                 file
             )
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            // 只读查看产生的 cacheView 副本不在 WpsManagement 目录，旧逻辑会误判成外部文件
+            // 再弹一次「打开方式」。这里显式带上来源与真实路径，走直接打开链路。
+            intent.putExtra(EXTRA_DIRECT_OPEN, true)
+            intent.putExtra(EXTRA_DIRECT_PATH, file.absolutePath)
             context.startActivity(intent)
         }
 
@@ -175,6 +219,13 @@ class ProxyActivity : AppCompatActivity() {
         }
 
         // 处理传入的 Intent
+        handleIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        // openFileWithWps 带 FLAG_ACTIVITY_CLEAR_TOP；复用实例时 extras 必须重新解析
+        setIntent(intent)
         handleIntent(intent)
     }
 
@@ -363,7 +414,13 @@ class ProxyActivity : AppCompatActivity() {
             LogManager.log(TAG, "文件名: $fileName", "DEBUG")
             LogManager.log(TAG, "文件 URI: $uri", "DEBUG")
             LogManager.log(TAG, "文件是否在WpsManagement目录中: $isInWpsManagement", "DEBUG")
-            handleFileUri(uri, fileName, isInWpsManagement)
+            handleFileUri(
+                uri,
+                fileName,
+                isInWpsManagement,
+                intent.getBooleanExtra(EXTRA_DIRECT_OPEN, false),
+                intent.getStringExtra(EXTRA_DIRECT_PATH)
+            )
         } catch (e: Exception) {
             LogManager.log(TAG, "处理 Intent 失败: ${e.message}", "ERROR")
             forwardToWps(null, uri)
@@ -479,26 +536,29 @@ class ProxyActivity : AppCompatActivity() {
         return true
     }
 
-    private fun handleFileUri(uri: Uri, fileName: String, isInWpsManagement: Boolean) {
+    private fun handleFileUri(
+        uri: Uri,
+        fileName: String,
+        isInWpsManagement: Boolean,
+        directOpen: Boolean = false,
+        directPath: String? = null
+    ) {
         val fileIdentifier = uri.toString()
         LogManager.log(TAG, "文件标识: $fileIdentifier", "DEBUG")
         LogManager.log(TAG, "传入的文件名: '$fileName'", "DEBUG")
         LogManager.log(TAG, "文件名长度: ${fileName.length}", "DEBUG")
         LogManager.log(TAG, "文件是否来自WpsManagement目录: $isInWpsManagement", "DEBUG")
 
+        // App 内发起（已选过只读/可编辑，或新建文档后直接打开）：直接用真实文件走完整链路
+        if (directOpen && !directPath.isNullOrEmpty() && File(directPath).exists()) {
+            LogManager.log(TAG, "App 内已选打开方式，直接处理: $directPath", "DEBUG")
+            continueWithFile(File(directPath), uri)
+            return
+        }
+
         if (isInWpsManagement) {
             LogManager.log(TAG, "文件是副本文件，直接执行打开流程", "DEBUG")
-            val documentsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOCUMENTS)
-            val wpsManagementDir = File(documentsDir, "WpsManagement")
-            val targetFile = File(wpsManagementDir, fileName)
-            processFile(targetFile) { localFile ->
-                if (localFile != null) {
-                    saveFileUriToPreferences(localFile.absolutePath)
-                } else {
-                    saveFileUriToPreferences(uri.toString())
-                }
-                forwardToWps(localFile, uri)
-            }
+            continueWithFile(File(wpsDir(), fileName), uri)
         } else {
             LogManager.log(TAG, "文件不在当前插件目录，显示【打开方式】弹窗", "DEBUG")
             showOpenModeDialog(uri, fileName)
@@ -506,62 +566,401 @@ class ProxyActivity : AppCompatActivity() {
     }
 
     private fun showOpenModeDialog(uri: Uri, fileName: String) {
-        val dialogBuilder = android.app.AlertDialog.Builder(this, R.style.Theme_WpsPasswordManager_LightDialog)
-        dialogBuilder.setTitle("打开方式")
-
-        val inputLayout = android.widget.LinearLayout(this)
-        inputLayout.orientation = android.widget.LinearLayout.VERTICAL
-        inputLayout.setPadding(48, 24, 48, 16)
-
-        val titleLabel = android.widget.TextView(this)
-        titleLabel.text = "请选择打开方式"
-        titleLabel.setTextColor(resources.getColor(android.R.color.black))
-        titleLabel.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 16f)
-        inputLayout.addView(titleLabel)
-
-        val tipLabel = android.widget.TextView(this)
-        tipLabel.text = "在查看模式下，文档的编辑行为都不会被保存"
-        tipLabel.setTextColor(resources.getColor(android.R.color.holo_red_dark))
-        tipLabel.setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 14f)
-        val tipParams = android.widget.LinearLayout.LayoutParams(
-            android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
-            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
-        )
-        tipParams.topMargin = 24
-        tipLabel.layoutParams = tipParams
-        inputLayout.addView(tipLabel)
-
-        dialogBuilder.setView(inputLayout)
-
-        dialogBuilder.setPositiveButton("编辑") { dialog, which ->
-            dialog.dismiss()
-            LogManager.log(TAG, "用户选择【编辑】模式", "DEBUG")
-            handleEditMode(uri, fileName)
+        // 透明 Activity 里直接用 Compose 渲染遮罩 + 新版卡片，与 App 内「打开方式」完全一致
+        setContent {
+            var visible by remember { mutableStateOf(true) }
+            var busy by remember { mutableStateOf(false) }
+            var mode by remember { mutableStateOf("view") }
+            if (visible) {
+                AppTheme {
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .background(Color(0x73110C1E)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (busy) {
+                            PreparingCard()
+                        } else {
+                            OpenModeDialog(
+                                fileName = fileName,
+                                mode = mode,
+                                onPick = { mode = it },
+                                onCancel = { finish() },
+                                onConfirm = {
+                                    if (mode == "view") {
+                                        LogManager.log(TAG, "用户选择【只读查看】模式", "DEBUG")
+                                        busy = true
+                                        openFileInViewMode(uri, fileName)
+                                    } else {
+                                        LogManager.log(TAG, "用户选择【可编辑】模式", "DEBUG")
+                                        // 收起遮罩，避免后续导入步骤的窗口叠在半透明背景上
+                                        visible = false
+                                        handleEditMode(uri, fileName)
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
+            }
         }
+    }
 
-        dialogBuilder.setNegativeButton("查看") { dialog, which ->
-            dialog.dismiss()
-            LogManager.log(TAG, "用户选择【查看】模式", "DEBUG")
-            openFileInViewMode(uri, fileName)
+    /** 准备只读副本时的进度卡片，替代旧的 AlertDialog loading */
+    @Composable
+    private fun PreparingCard() {
+        Column(
+            Modifier
+                .width(220.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(Color.White)
+                .padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            CircularProgressIndicator(Modifier.size(26.dp), strokeWidth = 2.dp, color = C.Primary)
+            Spacer(Modifier.height(12.dp))
+            Text("正在准备文件…", style = T.Small.copy(fontSize = 13.sp, color = C.Ink2))
         }
+    }
 
-        dialogBuilder.setNeutralButton("取消") { dialog, which ->
-            dialog.dismiss()
-            finish()
+    /* ---------------- 「可编辑」导入链路：全部改用 Compose 弹窗 ---------------- */
+
+    @Composable
+    private fun ProxyScrim(content: @Composable () -> Unit) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(Color(0x73110C1E)),
+            contentAlignment = Alignment.Center
+        ) { content() }
+    }
+
+    private fun showBusyCard() {
+        // 延后一帧替换内容，避免在当前 Compose 手势回调里直接重建 Composition
+        mainHandler.post {
+            if (!isFinishing && !isDestroyed) {
+                setContent { AppTheme { ProxyScrim { PreparingCard() } } }
+            }
         }
+    }
 
-        val dialog = dialogBuilder.create()
-        dialog.show()
+    private fun wpsDir(): File = File(
+        android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOCUMENTS),
+        "WpsManagement"
+    )
 
-        setupDialogButtons(dialog)
+    private fun toast(text: String) {
+        android.widget.Toast.makeText(this, text, android.widget.Toast.LENGTH_SHORT).show()
+    }
 
-        val window = dialog.window
-        if (window != null) {
-            val displayMetrics = resources.displayMetrics
-            val dialogWidth = (displayMetrics.widthPixels * 0.85).toInt()
-            window.setLayout(dialogWidth, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
-            window.setGravity(android.view.Gravity.CENTER)
-            window.setBackgroundDrawableResource(android.R.color.white)
+    /** 复制 / 覆盖完成后的统一收尾：初始化元数据并唤起 WPS */
+    private fun continueWithFile(targetFile: File, uri: Uri) {
+        // processFile 内部会同步等待网络回调（最长 10s），放到后台避免卡住进度卡片 / ANR
+        Thread {
+            processFile(targetFile) { localFile ->
+                runOnUiThread {
+                    if (localFile != null) {
+                        saveFileUriToPreferences(localFile.absolutePath)
+                    } else {
+                        saveFileUriToPreferences(uri.toString())
+                    }
+                    forwardToWps(localFile, uri)
+                }
+            }
+        }.start()
+    }
+
+    private fun openExistingCopy(uri: Uri, fileName: String) {
+        showBusyCard()
+        continueWithFile(File(wpsDir(), fileName), uri)
+    }
+
+    private fun overwriteAndOpen(uri: Uri, fileName: String) {
+        showBusyCard()
+        val targetFile = File(wpsDir(), fileName)
+        Thread {
+            try {
+                if (targetFile.exists()) targetFile.delete()
+                val ok = copyFileFromContentUri(uri, targetFile)
+                runOnUiThread {
+                    if (ok) {
+                        toast("文件覆盖成功")
+                        continueWithFile(targetFile, uri)
+                    } else {
+                        toast("文件覆盖失败")
+                        forwardToWps(null, uri)
+                    }
+                }
+            } catch (e: Exception) {
+                LogManager.log(TAG, "文件覆盖时发生错误: ${e.message}", "ERROR")
+                runOnUiThread { toast("文件操作失败"); forwardToWps(null, uri) }
+            }
+        }.start()
+    }
+
+    private fun saveAsAndOpen(uri: Uri, newFileName: String) {
+        val targetFile = File(wpsDir(), newFileName)
+        if (targetFile.exists() && targetFile.length() > 0) {
+            showFileExistsDialog(uri, newFileName)
+            return
+        }
+        showBusyCard()
+        Thread {
+            try {
+                val ok = copyFileFromContentUri(uri, targetFile)
+                runOnUiThread {
+                    if (ok) {
+                        toast("文件保存成功")
+                        continueWithFile(targetFile, uri)
+                    } else {
+                        toast("文件保存失败")
+                        forwardToWps(null, uri)
+                    }
+                }
+            } catch (e: Exception) {
+                LogManager.log(TAG, "文件保存时发生错误: ${e.message}", "ERROR")
+                runOnUiThread { toast("文件操作失败"); forwardToWps(null, uri) }
+            }
+        }.start()
+    }
+
+    /** 拆成「名称 + 扩展名」：扩展名固定，不参与编辑 */
+    private fun splitFileName(fileName: String): Pair<String, String> {
+        val ext = FileNameResolver.getFileExtension(fileName)
+        val base = if (ext.isEmpty()) fileName else fileName.substring(0, fileName.length - ext.length - 1)
+        return base to ext
+    }
+
+    /** 用户可能连扩展名一起粘进来，剥掉固定后缀，避免出现 a.docx.docx */
+    private fun stripFixedExtension(input: String, ext: String): String {
+        val text = input.trim()
+        return if (ext.isNotEmpty() && text.endsWith(".$ext", ignoreCase = true)) {
+            text.dropLast(ext.length + 1).trim()
+        } else {
+            text
+        }
+    }
+
+    private fun joinFileName(base: String, ext: String): String =
+        if (ext.isEmpty()) base else "$base.$ext"
+
+    /** 「文档已存在」：Compose 版，替代旧 AlertDialog + dialog_file_exists.xml */
+    private fun showFileExistsDialog(uri: Uri, fileName: String) {
+        val (baseName, extension) = splitFileName(fileName)
+        mainHandler.post {
+            if (!isFinishing && !isDestroyed) {
+                setContent {
+                    AppTheme {
+                        ProxyScrim {
+                            ProxyFileExistsCard(
+                                baseName = baseName,
+                                extension = extension,
+                                onOpenCopy = { openExistingCopy(uri, fileName) },
+                                onOverwrite = { overwriteAndOpen(uri, fileName) },
+                                onRename = { name -> saveAsAndOpen(uri, joinFileName(name, extension)) },
+                                onCancel = { finish() }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /** 「文件保存」：Compose 版，替代旧 AlertDialog */
+    private fun showSaveFileDialog(uri: Uri, currentFileName: String, isHashName: Boolean) {
+        val (baseName, extension) = splitFileName(currentFileName)
+        LogManager.log(TAG, "文件保存弹窗: $currentFileName, hashName=$isHashName", "DEBUG")
+        mainHandler.post {
+            if (!isFinishing && !isDestroyed) {
+                setContent {
+                    AppTheme {
+                        ProxyScrim {
+                            ProxySaveCard(
+                                baseName = baseName,
+                                extension = extension,
+                                onCancel = { finish() },
+                                onSave = { name -> saveAsAndOpen(uri, joinFileName(name, extension)) }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Composable
+    private fun ProxyFileExistsCard(
+        baseName: String,
+        extension: String,
+        onOpenCopy: () -> Unit,
+        onOverwrite: () -> Unit,
+        onRename: (String) -> Unit,
+        onCancel: () -> Unit
+    ) {
+        var name by remember(baseName, extension) { mutableStateOf(baseName) }
+        var error by remember(baseName, extension) { mutableStateOf("") }
+        Column(
+            Modifier
+                .width(308.dp)
+                .clip(RoundedCornerShape(18.dp))
+                .background(Color.White)
+                .padding(18.dp)
+        ) {
+            Text("文档已存在", style = T.Body.copy(fontSize = 16.sp, fontWeight = FontWeight.Bold))
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "/Documents/WpsManagement 中已有同名文件，请选择处理方式",
+                style = T.Micro.copy(fontSize = 11.5.sp, lineHeight = 17.sp)
+            )
+            Spacer(Modifier.height(16.dp))
+            AppButton(
+                "打开已有副本",
+                onClick = onOpenCopy,
+                modifier = Modifier.fillMaxWidth(),
+                height = 42.dp,
+                fontSize = 14.sp
+            )
+            Spacer(Modifier.height(8.dp))
+            AppButton(
+                "覆盖并重新导入",
+                onClick = onOverwrite,
+                modifier = Modifier.fillMaxWidth(),
+                style = BtnStyle.Ghost,
+                height = 42.dp,
+                fontSize = 14.sp
+            )
+            Spacer(Modifier.height(16.dp))
+            Text("或重命名后保存", style = T.Small.copy(fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold))
+            Spacer(Modifier.height(6.dp))
+            NameWithFixedExtensionField(
+                name = name,
+                extension = extension,
+                onNameChange = { name = it; error = "" },
+                placeholder = "新文件名",
+                error = error.isNotEmpty()
+            )
+            if (error.isNotEmpty()) {
+                Spacer(Modifier.height(4.dp))
+                Text(error, style = T.Micro.copy(fontSize = 11.sp, color = C.Err))
+            }
+            Spacer(Modifier.height(12.dp))
+            Row {
+                AppButton(
+                    "取消",
+                    onClick = onCancel,
+                    modifier = Modifier.weight(1f),
+                    style = BtnStyle.Ghost,
+                    height = 42.dp,
+                    fontSize = 13.5.sp
+                )
+                Spacer(Modifier.width(8.dp))
+                AppButton(
+                    "重命名保存",
+                    onClick = {
+                        val n = stripFixedExtension(name, extension)
+                        when {
+                            n.isEmpty() -> error = "请输入文件名"
+                            File(wpsDir(), joinFileName(n, extension)).exists() -> error = "文件已存在，请输入其他名称"
+                            else -> onRename(n)
+                        }
+                    },
+                    modifier = Modifier.weight(1f),
+                    height = 42.dp,
+                    fontSize = 13.5.sp
+                )
+            }
+        }
+    }
+
+    @Composable
+    private fun ProxySaveCard(
+        baseName: String,
+        extension: String,
+        onSave: (String) -> Unit,
+        onCancel: () -> Unit
+    ) {
+        var name by remember(baseName, extension) { mutableStateOf(baseName) }
+        var error by remember(baseName, extension) { mutableStateOf("") }
+        Column(
+            Modifier
+                .width(308.dp)
+                .clip(RoundedCornerShape(18.dp))
+                .background(Color.White)
+                .padding(18.dp)
+        ) {
+            Text("文件保存", style = T.Body.copy(fontSize = 16.sp, fontWeight = FontWeight.Bold))
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "当前文件将保存到 /Documents/WpsManagement 目录",
+                style = T.Micro.copy(fontSize = 11.5.sp, lineHeight = 17.sp)
+            )
+            Spacer(Modifier.height(14.dp))
+            NameWithFixedExtensionField(
+                name = name,
+                extension = extension,
+                onNameChange = { name = it; error = "" },
+                placeholder = "请输入文件名称",
+                error = error.isNotEmpty()
+            )
+            if (error.isNotEmpty()) {
+                Spacer(Modifier.height(4.dp))
+                Text(error, style = T.Micro.copy(fontSize = 11.sp, color = C.Err))
+            }
+            Spacer(Modifier.height(16.dp))
+            Row {
+                AppButton(
+                    "取消",
+                    onClick = onCancel,
+                    modifier = Modifier.weight(1f),
+                    style = BtnStyle.Ghost,
+                    height = 42.dp,
+                    fontSize = 13.5.sp
+                )
+                Spacer(Modifier.width(8.dp))
+                AppButton(
+                    "保存",
+                    onClick = {
+                        val n = stripFixedExtension(name, extension)
+                        if (n.isEmpty()) error = "请输入文件名称" else onSave(n)
+                    },
+                    modifier = Modifier.weight(1f),
+                    height = 42.dp,
+                    fontSize = 13.5.sp
+                )
+            }
+        }
+    }
+
+    /** 名称输入框 + 右侧固定扩展名：类型不可编辑 */
+    @Composable
+    private fun NameWithFixedExtensionField(
+        name: String,
+        extension: String,
+        onNameChange: (String) -> Unit,
+        placeholder: String,
+        error: Boolean
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            AppField(
+                value = name,
+                onValueChange = onNameChange,
+                placeholder = placeholder,
+                modifier = Modifier.weight(1f),
+                error = error
+            )
+            if (extension.isNotEmpty()) {
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    ".$extension",
+                    style = T.Small.copy(
+                        fontSize = 13.sp,
+                        color = C.Ink3,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                )
+            }
         }
     }
 
@@ -591,27 +990,14 @@ class ProxyActivity : AppCompatActivity() {
         val targetFileName = generateViewModeFileName(cacheDir, fileName)
         val targetFile = File(cacheDir, targetFileName)
 
-        val loadingBuilder = android.app.AlertDialog.Builder(this, R.style.Theme_WpsPasswordManager_LightDialog)
-        loadingBuilder.setMessage("正在准备文件...")
-        loadingBuilder.setCancelable(false)
-        val loadingDialog = loadingBuilder.create()
-        loadingDialog.show()
-
+        // 进度由 showOpenModeDialog 的 Compose 卡片呈现，不再弹旧 AlertDialog
         Thread {
             try {
                 val copySuccess = copyFileFromContentUri(uri, targetFile)
                 runOnUiThread {
-                    loadingDialog.dismiss()
                     if (copySuccess) {
                         LogManager.log(TAG, "查看模式文件拷贝成功: ${targetFile.absolutePath}", "DEBUG")
-                        processFile(targetFile) { localFile ->
-                            if (localFile != null) {
-                                saveFileUriToPreferences(localFile.absolutePath)
-                            } else {
-                                saveFileUriToPreferences(uri.toString())
-                            }
-                            forwardToWps(localFile, uri)
-                        }
+                        continueWithFile(targetFile, uri)
                     } else {
                         android.widget.Toast.makeText(this, "文件准备失败", android.widget.Toast.LENGTH_SHORT).show()
                         forwardToWps(null, uri)
@@ -619,7 +1005,6 @@ class ProxyActivity : AppCompatActivity() {
                 }
             } catch (e: Exception) {
                 runOnUiThread {
-                    loadingDialog.dismiss()
                     android.widget.Toast.makeText(this, "文件操作失败", android.widget.Toast.LENGTH_SHORT).show()
                     LogManager.log(TAG, "查看模式文件操作失败: ${e.message}", "ERROR")
                     forwardToWps(null, uri)
@@ -663,7 +1048,8 @@ class ProxyActivity : AppCompatActivity() {
         }
     }
 
-    private fun showFileExistsDialog(uri: Uri, fileName: String) {
+    /** 已停用：旧 AlertDialog 实现，仅保留作回退参考，业务流程不再进入 */
+    private fun legacyShowFileExistsDialog(uri: Uri, fileName: String) {
         val dialogView = layoutInflater.inflate(R.layout.dialog_file_exists, null)
         
         val btnOpenCopy = dialogView.findViewById<android.widget.Button>(R.id.btn_open_copy)
@@ -818,7 +1204,8 @@ class ProxyActivity : AppCompatActivity() {
     }
 
 
-    private fun showSaveFileDialog(uri: Uri, currentFileName: String, isHashName: Boolean) {
+    /** 已停用：旧 AlertDialog 实现，仅保留作回退参考，业务流程不再进入 */
+    private fun legacyShowSaveFileDialog(uri: Uri, currentFileName: String, isHashName: Boolean) {
         val extension = FileNameResolver.getFileExtension(currentFileName)
         val dialogBuilder = android.app.AlertDialog.Builder(this, R.style.Theme_WpsPasswordManager_LightDialog)
         dialogBuilder.setTitle("文件保存")

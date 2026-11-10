@@ -2,6 +2,8 @@ package com.wpspasswordmanager.ui.compose
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,14 +67,16 @@ fun AppButton(
     borderColor: Color? = null,
     leading: (@Composable () -> Unit)? = null
 ) {
-    val shape = RoundedCornerShape(12.dp)
+    // 按钮在全局重组里出现次数最多；shape / 渐变刷子只建一次，避免每次重组重新分配
+    val shape = remember { RoundedCornerShape(12.dp) }
+    val primaryBrush = remember { Brush.linearGradient(C.PrimaryBtnGradient) }
     val fg = textColor ?: when (style) {
         BtnStyle.Primary, BtnStyle.Danger -> Color.White
         BtnStyle.Ghost -> C.Ink2
         BtnStyle.Soft -> C.PrimaryDark
     }
     val bgModifier = when (style) {
-        BtnStyle.Primary -> Modifier.background(Brush.linearGradient(C.PrimaryBtnGradient), shape)
+        BtnStyle.Primary -> Modifier.background(primaryBrush, shape)
         BtnStyle.Danger -> Modifier.background(C.Err, shape)
         BtnStyle.Soft -> Modifier.background(C.PrimarySoft, shape)
         BtnStyle.Ghost -> Modifier.background(Color.White, shape)
@@ -154,6 +159,24 @@ fun AppField(
         active -> C.Primary
         else -> C.Field
     }
+    // 逐字输入时 AppField 必然重组；把这些每帧重建的对象/回调固定住，
+    // 避免 BasicTextField 因参数实例变化反复重配 visualTransformation / IME。
+    val cursorBrush = remember { SolidColor(C.Primary) }
+    val pwdTransformation = remember { PasswordVisualTransformation() }
+    val visual = if (password) pwdTransformation else VisualTransformation.None
+    val fieldTextStyle = remember(textStyle, enabled, center) {
+        textStyle.copy(
+            color = if (enabled) C.Ink else C.Ink3,
+            textAlign = if (center) TextAlign.Center else TextAlign.Start
+        )
+    }
+    val keyboardOpts = remember(keyboard, imeAction) {
+        KeyboardOptions(keyboardType = keyboard, imeAction = imeAction)
+    }
+    val currentOnValueChange by rememberUpdatedState(onValueChange)
+    val onTextChange = remember<(String) -> Unit> { { currentOnValueChange(it) } }
+    val currentImeAction by rememberUpdatedState(onImeAction)
+    val keyboardActions = remember { KeyboardActions(onDone = { currentImeAction?.invoke() }) }
     Row(
         modifier = modifier
             .heightIn(min = height)
@@ -169,17 +192,14 @@ fun AppField(
         }
         BasicTextField(
             value = value,
-            onValueChange = onValueChange,
+            onValueChange = onTextChange,
             enabled = enabled,
             singleLine = true,
-            textStyle = textStyle.copy(
-                color = if (enabled) C.Ink else C.Ink3,
-                textAlign = if (center) TextAlign.Center else TextAlign.Start
-            ),
-            cursorBrush = SolidColor(C.Primary),
-            keyboardOptions = KeyboardOptions(keyboardType = keyboard, imeAction = imeAction),
-            keyboardActions = KeyboardActions(onDone = { onImeAction?.invoke() }),
-            visualTransformation = if (password) PasswordVisualTransformation() else VisualTransformation.None,
+            textStyle = fieldTextStyle,
+            cursorBrush = cursorBrush,
+            keyboardOptions = keyboardOpts,
+            keyboardActions = keyboardActions,
+            visualTransformation = visual,
             decorationBox = { inner ->
                 Box(contentAlignment = if (center) Alignment.Center else Alignment.CenterStart) {
                     if (value.isEmpty()) {
@@ -376,35 +396,52 @@ fun DocBadge(fmt: String, size: Dp = 38.dp) {
 fun BottomSheet(
     onDismiss: () -> Unit = {},
     heightFraction: Float? = null,
+    /** 关闭方式收敛为「关闭按钮 / 取消按钮」的抽屉传 false */
+    dismissOnScrimClick: Boolean = true,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Box(Modifier.fillMaxSize()) {
+        // 遮罩固定全屏且不随 IME 变化：键盘动画的每一帧都不再重测量/重绘这层半透明背景。
+        // 不关闭的抽屉也要拦截点击，否则会穿透到下层页面触发别的按钮。
+        val scrimModifier = if (dismissOnScrimClick) {
+            Modifier.pressable { onDismiss() }
+        } else {
+            Modifier.clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = {}
+            )
+        }
         Box(
             Modifier
                 .fillMaxSize()
                 .background(Color(0x8C0F0A1E))
-                .pressable { onDismiss() }
+                .then(scrimModifier)
         )
-        Column(
-            Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .then(if (heightFraction != null) Modifier.fillMaxHeight(heightFraction) else Modifier)
-                .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
-                .background(Color.White)
-                .imePadding()
-                .navigationBarsPadding()
+        // 只有这一层跟随键盘；抽屉是 wrap content，每帧仅重新对齐，内部控件不重测量
+        Box(
+            Modifier.fillMaxSize().imePadding(),
+            contentAlignment = Alignment.BottomCenter
         ) {
-            Box(
+            Column(
                 Modifier
-                    .padding(top = 8.dp, bottom = 2.dp)
-                    .align(Alignment.CenterHorizontally)
-                    .width(38.dp)
-                    .height(4.dp)
-                    .clip(RoundedCornerShape(2.dp))
-                    .background(Color(0xFFE0E0E8))
-            )
-            content()
+                    .fillMaxWidth()
+                    .then(if (heightFraction != null) Modifier.fillMaxHeight(heightFraction) else Modifier)
+                    .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
+                    .background(Color.White)
+                    .navigationBarsPadding()
+            ) {
+                Box(
+                    Modifier
+                        .padding(top = 8.dp, bottom = 2.dp)
+                        .align(Alignment.CenterHorizontally)
+                        .width(38.dp)
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(Color(0xFFE0E0E8))
+                )
+                content()
+            }
         }
     }
 }
