@@ -68,7 +68,7 @@ private fun buildPermLines(state: PermTreeState): List<PermLine> {
     flatten(state.roots, state.expanded, state.selected, false, 0, rows)
     return rows.map { row ->
         val node = row.node
-        val checked = row.inherited || state.selected.contains(node.dn)
+        val checked = row.inherited || state.selected.contains(node.key)
         val indeterminate = !checked && subtreeHasSelected(node, state.selected)
         val peopleHint = when {
             row.inherited -> "含于上级"
@@ -81,7 +81,7 @@ private fun buildPermLines(state: PermTreeState): List<PermLine> {
             checked = checked,
             indeterminate = indeterminate,
             disabled = row.inherited,
-            expanded = state.expanded.contains(node.dn),
+            expanded = state.expanded.contains(node.key),
             peopleHint = peopleHint
         )
     }
@@ -220,7 +220,7 @@ fun AssistantPermTreePanel(
                     }
                     Spacer(Modifier.height(4.dp))
                     LazyColumn {
-                        items(lines, key = { it.node.dn }, contentType = { it.node.isDept }) { line ->
+                        items(lines, key = { it.node.key }, contentType = { it.node.isDept }) { line ->
                             AssistantPermRow(line, actions)
                         }
                         item { Spacer(Modifier.height(10.dp)) }
@@ -286,13 +286,13 @@ private fun AssistantPermRow(line: PermLine, actions: AssistantPermActions) {
     Row(
         Modifier
             .fillMaxWidth()
-            .pressable(enabled = !line.disabled) { actions.toggleNode(node.dn) }
+            .pressable(enabled = !line.disabled) { actions.toggleNode(node.key) }
             .padding(start = 6.dp + (line.depth * 16).dp, end = 4.dp, top = 9.dp, bottom = 9.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (node.isDept && node.children.isNotEmpty()) {
             Box(
-                Modifier.size(20.dp).pressable { actions.toggleExpand(node.dn) },
+                Modifier.size(20.dp).pressable { actions.toggleExpand(node.key) },
                 contentAlignment = Alignment.Center
             ) {
                 SvgIcon(
@@ -312,7 +312,7 @@ private fun AssistantPermRow(line: PermLine, actions: AssistantPermActions) {
             checked = line.checked,
             indeterminate = line.indeterminate,
             disabled = line.disabled,
-            onClick = { actions.toggleNode(node.dn) }
+            onClick = { actions.toggleNode(node.key) }
         )
         Spacer(Modifier.width(9.dp))
 

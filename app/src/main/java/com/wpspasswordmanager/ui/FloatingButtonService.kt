@@ -8,11 +8,9 @@ import android.os.IBinder
 import android.provider.Settings
 import android.util.Log
 import android.view.Gravity
-import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
-import android.widget.Button
 import android.widget.Toast
 import com.wpspasswordmanager.R
 import com.wpspasswordmanager.business.FileMetaFactory
@@ -284,8 +282,6 @@ class FloatingButtonService : Service() {
                 isFloatingButtonVisible = false
             }
 
-            // 移除权限面板
-            removePermissionPanel()
             overlayOwner?.destroy()
             overlayOwner = null
         } catch (e: Exception) {
@@ -593,45 +589,45 @@ class FloatingButtonService : Service() {
 
     private val permActions by lazy {
         com.wpspasswordmanager.ui.compose.assistant.AssistantPermActions(
-            toggleNode = { dn ->
+            toggleNode = { key ->
                 updatePerm { pt ->
                     val sel = pt.selected.toMutableSet()
-                    if (sel.contains(dn)) {
-                        sel.remove(dn)
+                    if (sel.contains(key)) {
+                        sel.remove(key)
                     } else {
-                        sel.add(dn)
+                        sel.add(key)
                         // 选中部门时，子孙由部门代表，移除其显式勾选，避免重复授权
-                        com.wpspasswordmanager.ui.compose.findAuthNode(pt.roots, dn)?.let { node ->
-                            com.wpspasswordmanager.ui.compose.collectAuthDns(node)
-                                .filter { it != dn }
+                        com.wpspasswordmanager.ui.compose.findAuthNode(pt.roots, key)?.let { node ->
+                            com.wpspasswordmanager.ui.compose.collectAuthKeys(node)
+                                .filter { it != key }
                                 .forEach { sel.remove(it) }
                         }
                     }
                     com.wpspasswordmanager.utils.LogManager.log(
                         TAG,
-                        "权限树-勾选: dn=$dn, 选中=${sel.contains(dn)}, 已选总数=${sel.size}" +
+                        "权限树-勾选: key=$key, 选中=${sel.contains(key)}, 已选总数=${sel.size}" +
                             sel.take(20).joinToString("|", prefix="[", postfix="]"),
                         "DEBUG"
                     )
                     pt.copy(selected = sel, saveError = "")
                 }
             },
-            toggleExpand = { dn ->
+            toggleExpand = { key ->
                 updatePerm { pt ->
                     val ex = pt.expanded.toMutableSet()
-                    if (!ex.remove(dn)) ex.add(dn)
+                    if (!ex.remove(key)) ex.add(key)
                     pt.copy(expanded = ex)
                 }
             },
             selectAll = {
-                updatePerm { it.copy(selected = it.roots.map { r -> r.dn }.toSet(), saveError = "") }
+                updatePerm { it.copy(selected = it.roots.map { r -> r.key }.toSet(), saveError = "") }
             },
             invert = {
-                updatePerm { it.copy(selected = it.roots.map { r -> r.dn }.toSet() - it.selected, saveError = "") }
+                updatePerm { it.copy(selected = it.roots.map { r -> r.key }.toSet() - it.selected, saveError = "") }
             },
             expandAll = {
                 updatePerm { pt ->
-                    val all = com.wpspasswordmanager.ui.compose.collectDeptDns(pt.roots).toSet()
+                    val all = com.wpspasswordmanager.ui.compose.collectDeptKeys(pt.roots).toSet()
                     pt.copy(expanded = if (pt.expanded.containsAll(all)) emptySet() else all)
                 }
             },
@@ -668,7 +664,8 @@ class FloatingButtonService : Service() {
         updateOverlay { it.copy(open = true, filled = false, filling = false) }
         permTreeState.value = com.wpspasswordmanager.ui.compose.PermTreeState(
             docName = java.io.File(path).name,
-            docId = uid
+            docId = uid,
+            isTemp = meta?.isTempUid == true
         )
         com.wpspasswordmanager.utils.LogManager.log(TAG, "打开悬浮窗权限树: uid=$uid, isTemp=${meta.isTempUid}", "DEBUG")
         loadPermTreeSheet(uid)
@@ -693,6 +690,8 @@ class FloatingButtonService : Service() {
                 )
                 val obj = runCatching { org.json.JSONObject(response) }.getOrDefault(org.json.JSONObject())
                 mainHandler.post {
+                    // 快速切换文档时丢弃过期回调，避免 A 文档的树覆盖 B 文档
+                    if (permTreeState.value?.docId != docId) return@post
                     if (obj.optInt("status", 0) != 200) {
                         com.wpspasswordmanager.utils.LogManager.log(
                             TAG,
@@ -714,7 +713,7 @@ class FloatingButtonService : Service() {
                     com.wpspasswordmanager.utils.LogManager.log(
                         TAG,
                         "权限树-解析完成: 顶级节点=${roots.size}, 数据长度=${arr.length()}, " +
-                            "顶级DN=${roots.joinToString("|") { it.dn }}, " +
+                            "顶级Key=${roots.joinToString("|") { it.key }}, " +
                             "回显已选=${selected.size}${selected.take(20).joinToString("|", prefix="[", postfix="]")}",
                         "DEBUG"
                     )
@@ -731,6 +730,7 @@ class FloatingButtonService : Service() {
                     "DEBUG"
                 )
                 mainHandler.post {
+                    if (permTreeState.value?.docId != docId) return@post
                     updatePerm { it.copy(loading = false, error = error.ifEmpty { "网络异常，请稍后重试" }) }
                 }
             }
@@ -741,19 +741,23 @@ class FloatingButtonService : Service() {
         val pt = permTreeState.value ?: return
         if (pt.saving) return
         val docId = pt.docId ?: return
+        if (pt.demo) {
+            Toast.makeText(this, "演示数据，不会提交到服务器", Toast.LENGTH_SHORT).show()
+            return
+        }
         updatePerm { it.copy(saving = true, saveError = "") }
 
-        // 服务端已 id 化：只认 sys_dept.id / sys_user.id，传 DN 会被解析成空列表并清空原有授权
+        // 服务端已 id 化：只认 sys_dept.id / sys_user.id；选中集合以 type:id 为键，dn 仅用于日志
         val deptIds = mutableListOf<Long>()
         val userIds = mutableListOf<Long>()
         val deptDns = mutableListOf<String>()
         val accountDns = mutableListOf<String>()
-        var lostDns = 0
+        var lostKeys = 0
         var missingId = 0
-        pt.selected.forEach { dn ->
-            val node = com.wpspasswordmanager.ui.compose.findAuthNode(pt.roots, dn)
+        pt.selected.forEach { key ->
+            val node = com.wpspasswordmanager.ui.compose.findAuthNode(pt.roots, key)
             if (node == null) {
-                lostDns++
+                lostKeys++
                 return@forEach
             }
             if (node.id <= 0L) {
@@ -762,25 +766,23 @@ class FloatingButtonService : Service() {
             }
             if (node.isDept) {
                 deptIds += node.id
-                deptDns += dn
+                deptDns += node.dn ?: "-"
             } else {
                 userIds += node.id
-                accountDns += dn
+                accountDns += node.dn ?: "-"
             }
         }
-        val meta = com.wpspasswordmanager.monitor.WpsAccessibilityService.stableDocumentPath
-            ?.let { com.wpspasswordmanager.business.FileMetaFactory.getFileMeta(it) }
         val body = org.json.JSONObject().apply {
             put("docId", docId)
             put("deptIdList", org.json.JSONArray(deptIds))
             put("userIdList", org.json.JSONArray(userIds))
-            put("isTemp", meta?.isTempUid == true)
+            put("isTemp", pt.isTemp)
         }.toString()
         com.wpspasswordmanager.utils.LogManager.log(
             TAG,
             "权限保存-请求: POST /doc/auth/update, 勾选总数=${pt.selected.size}, " +
                 "部门ID=${deptIds.size}$deptIds, 用户ID=${userIds.size}$userIds, " +
-                "树中未找到=$lostDns, 缺id=$missingId, body=${body.take(2000)}",
+                "树中未找到=$lostKeys, 缺id=$missingId, body=${body.take(2000)}",
             "DEBUG"
         )
         com.wpspasswordmanager.utils.LogManager.log(
@@ -805,6 +807,7 @@ class FloatingButtonService : Service() {
                 )
                 val obj = runCatching { org.json.JSONObject(response) }.getOrDefault(org.json.JSONObject())
                 mainHandler.post {
+                    if (permTreeState.value?.docId != docId) return@post
                     if (obj.optInt("status", 0) == 200) {
                         Toast.makeText(this@FloatingButtonService, "权限已保存", Toast.LENGTH_SHORT).show()
                         // 必须先落 saving=false，否则 reload 期间按钮会永久停在「保存中…」
@@ -829,757 +832,10 @@ class FloatingButtonService : Service() {
                     "DEBUG"
                 )
                 mainHandler.post {
+                    if (permTreeState.value?.docId != docId) return@post
                     updatePerm { it.copy(saving = false, saveError = "上次失败：${error.ifEmpty { "网络异常" }}，选择已保留") }
                 }
             }
         })
-    }
-
-    private fun showDocumentPermissionDialog() {
-        // 显示加载提示
-        Toast.makeText(this, "加载文档权限数据...", Toast.LENGTH_SHORT).show()
-
-        val networkManager = NetworkManager.getInstance(this)
-        val userInfo = ConfigStorage.getInstance(this).getUserInfo()
-        val token = userInfo?.token
-
-        // 获取文档路径
-        val documentPath = WpsAccessibilityService.stableDocumentPath
-        if (documentPath.isNullOrEmpty()) {
-            Toast.makeText(this, "未找到文档路径", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        // 获取FileMeta对象
-        val fileMeta = FileMetaFactory.getFileMeta(documentPath)
-        if (fileMeta == null) {
-            Toast.makeText(this, "未找到文档元数据", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        // 获取docId参数
-        val docId = fileMeta.uid
-        if (docId.isNullOrEmpty()) {
-            Toast.makeText(this, "未找到文档唯一标识", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        // 使用异步方式获取数据，添加docId参数
-        networkManager.executeGetRequest("/doc/auth/tree?docId=$docId", token, object : NetworkCallback {
-            override fun onSuccess(response: String) {
-                // 解析LdapItem数据
-                val ldapItems = parseLdapItems(response)
-
-                // 在主线程中显示对话框
-                runOnUiThread {
-                    showPermissionTreeDialog(ldapItems)
-                }
-            }
-
-            override fun onError(error: String) {
-                // 直接显示错误提示
-                runOnUiThread {
-                    Toast.makeText(this@FloatingButtonService, "获取权限列表失败: $error", Toast.LENGTH_SHORT).show()
-                }
-            }
-
-            override fun onComplete() {}
-        })
-    }
-
-    private fun parseLdapItems(response: String): List<LdapItem> {
-        try {
-            val gson = com.google.gson.Gson()
-            val responseData = gson.fromJson(response, ResponseData::class.java)
-            return responseData.data ?: emptyList()
-        } catch (e: Exception) {
-            e.printStackTrace()
-            return emptyList()
-        }
-    }
-
-    // 响应数据类
-    data class ResponseData(
-        val message: String,
-        val status: Int,
-        val data: List<LdapItem>
-    )
-
-    private var permissionPanelView: android.view.View? = null
-    private var isPermissionPanelExpanded = false
-
-    private var treeAdapter: TreeAdapter? = null
-    private var rootNodes: List<TreeNode> = emptyList()
-    private val allNodes: MutableList<TreeNode> = mutableListOf()
-
-    private fun showPermissionTreeDialog(ldapItems: List<LdapItem>) {
-        // 在WPS应用界面内显示文档权限模块
-        if (permissionPanelView == null) {
-            // 解析LdapItem为TreeNode
-            rootNodes = parseLdapItemsToTreeNodes(ldapItems)
-            // 构建扁平化的全量节点列表（含折叠节点），用于dn前缀包含判定
-            allNodes.clear()
-            collectAllNodes(rootNodes, allNodes)
-            // 初始化时处理已选中部门的子节点置灰状态
-            initGrayedStateForSelectedDepts(rootNodes)
-            // 自动展开所有已选中节点的路径
-            expandSelectedNodePaths(rootNodes)
-            // 创建权限面板视图
-            createPermissionPanel()
-        } else {
-            // 切换面板展开/收起状态
-            togglePermissionPanel()
-        }
-    }
-    
-    /**
-     * 展开所有已选中节点的路径
-     * 在页面首次加载时自动展开至所有已勾选节点所在层级
-     */
-    private fun expandSelectedNodePaths(nodes: List<TreeNode>) {
-        for (node in nodes) {
-            node.expandSelectedPaths()
-        }
-    }
-
-    private fun initializeParentAuthState(nodes: List<TreeNode>) {
-        for (node in nodes) {
-            if (node.children.isNotEmpty()) {
-                initializeParentAuthState(node.children)
-                
-                val (checkedLeafCount, totalLeafCount) = countLeafNodes(node)
-                
-                if (totalLeafCount == 0) {
-                    continue
-                }
-                
-                if (checkedLeafCount == 0) {
-                    node.hasAuth = false
-                    node.isIndeterminate = false
-                } else if (checkedLeafCount == totalLeafCount) {
-                    node.hasAuth = true
-                    node.isIndeterminate = false
-                } else {
-                    node.hasAuth = false
-                    node.isIndeterminate = true
-                }
-            }
-        }
-    }
-
-    private fun parseLdapItemsToTreeNodes(ldapItems: List<LdapItem>): List<TreeNode> {
-        val nodes = mutableListOf<TreeNode>()
-        for (item in ldapItems) {
-            val node = TreeNode(
-                id = item.id,
-                dn = item.dn,
-                name = item.name,
-                account = item.account,
-                type = item.type,
-                hasAuth = item.hasAuth,
-                level = 0
-            )
-            // 递归添加子部门和员工
-            addChildren(node, item)
-            nodes.add(node)
-        }
-        return nodes
-    }
-
-    private fun addChildren(parent: TreeNode, ldapItem: LdapItem) {
-        // 添加子部门
-        for (dept in ldapItem.deptList ?: emptyList()) {
-            val deptNode = TreeNode(
-                id = dept.id,
-                dn = dept.dn,
-                name = dept.name,
-                account = dept.account,
-                type = dept.type,
-                hasAuth = dept.hasAuth,
-                level = parent.level + 1,
-                parent = parent
-            )
-            parent.children.add(deptNode)
-            addChildren(deptNode, dept)
-        }
-
-        // 添加员工
-        for (employee in ldapItem.employList ?: emptyList()) {
-            val employeeNode = TreeNode(
-                id = employee.id,
-                dn = employee.dn,
-                name = employee.name,
-                account = employee.account,
-                type = employee.type,
-                hasAuth = employee.hasAuth,
-                level = parent.level + 1,
-                parent = parent
-            )
-            parent.children.add(employeeNode)
-        }
-    }
-
-    /**
-     * 收集树中所有节点（含折叠节点）到扁平列表，用于 dn 前缀包含判定
-     */
-    private fun collectAllNodes(nodes: List<TreeNode>, out: MutableList<TreeNode>) {
-        for (node in nodes) {
-            out.add(node)
-            if (node.children.isNotEmpty()) {
-                collectAllNodes(node.children, out)
-            }
-        }
-    }
-
-    private fun flattenTree(nodes: List<TreeNode>): List<TreeNode> {
-        val result = mutableListOf<TreeNode>()
-        for (node in nodes) {
-            result.add(node)
-            // 如果是部门(type=0)、已展开、且有子节点，则递归添加子节点
-            if (node.type == 0 && node.isExpanded && node.children.isNotEmpty()) {
-                result.addAll(flattenTree(node.children))
-            }
-        }
-        return result
-    }
-
-    private fun createPermissionPanel() {
-        try {
-            // 检查权限
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                if (!Settings.canDrawOverlays(this)) {
-                    Log.e(TAG, "没有显示在其他应用之上的权限")
-                    showPermissionNotification()
-                    return
-                }
-            }
-
-            val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
-            permissionPanelView = inflater.inflate(R.layout.permission_panel, null)
-
-            val params = WindowManager.LayoutParams(
-                WindowManager.LayoutParams.MATCH_PARENT,
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-                } else {
-                    WindowManager.LayoutParams.TYPE_PHONE
-                },
-                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
-                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
-                PixelFormat.TRANSLUCENT
-            )
-
-            // 设置面板位置在屏幕底部
-            params.gravity = Gravity.BOTTOM
-            params.x = 0
-            params.y = 0
-
-            // 获取面板中的视图
-            val panelHeader = permissionPanelView?.findViewById<android.widget.LinearLayout>(R.id.panel_header)
-            val panelContent = permissionPanelView?.findViewById<android.widget.LinearLayout>(R.id.panel_content)
-            val treeContainer = permissionPanelView?.findViewById<android.widget.LinearLayout>(R.id.tree_container)
-            val btnClose = permissionPanelView?.findViewById<android.widget.Button>(R.id.btn_close)
-            val btnSelectAll = permissionPanelView?.findViewById<android.widget.Button>(R.id.btn_select_all)
-            val btnDeselectAll = permissionPanelView?.findViewById<android.widget.Button>(R.id.btn_deselect_all)
-            val btnSave = permissionPanelView?.findViewById<android.widget.Button>(R.id.btn_save)
-            val btnCancel = permissionPanelView?.findViewById<android.widget.Button>(R.id.btn_cancel)
-            val etSearch = permissionPanelView?.findViewById<android.widget.EditText>(R.id.et_search)
-            val btnSearch = permissionPanelView?.findViewById<android.widget.Button>(R.id.btn_search)
-            val btnClear = permissionPanelView?.findViewById<android.widget.Button>(R.id.btn_clear)
-            val tvError = permissionPanelView?.findViewById<android.widget.TextView>(R.id.tv_error)
-
-            // 替换ScrollView和LinearLayout为RecyclerView
-            treeContainer?.removeAllViews()
-            val recyclerView = androidx.recyclerview.widget.RecyclerView(this)
-            recyclerView.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this)
-            // 初始扁平化列表
-            val initialList = flattenTree(rootNodes).toMutableList()
-            treeAdapter = TreeAdapter(
-                nodes = initialList,
-                onItemClicked = { node ->
-                    if (node.type == 0 && node.children.isNotEmpty()) {
-                        // 切换展开状态
-                        node.isExpanded = !node.isExpanded
-                        // 重新计算扁平化列表并通知适配器更新
-                        val newList = flattenTree(rootNodes).toMutableList()
-                        treeAdapter?.nodes?.clear()
-                        treeAdapter?.nodes?.addAll(newList)
-                        treeAdapter?.notifyDataSetChanged()
-                    }
-                },
-                onAuthStateChanged = { node, hasAuth ->
-                    node.hasAuth = hasAuth
-                    node.isIndeterminate = false
-                    node.isGrayed = false
-
-                    if (node.type == 0) {
-                        if (hasAuth) {
-                            // 勾选部门：将其下所有后代节点（dn前缀匹配）置灰，表示被该部门包含
-                            markDescendantsGrayedByDn(node)
-                        } else {
-                            // 取消勾选部门：解除后代节点的置灰状态
-                            clearDescendantsByDn(node)
-                        }
-                    }
-
-                    val newList = flattenTree(rootNodes).toMutableList()
-                    treeAdapter?.nodes?.clear()
-                    treeAdapter?.nodes?.addAll(newList)
-                    treeAdapter?.notifyDataSetChanged()
-                }
-            )
-            recyclerView.adapter = treeAdapter
-
-            treeContainer?.addView(recyclerView, android.widget.LinearLayout.LayoutParams(
-                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
-                android.widget.LinearLayout.LayoutParams.MATCH_PARENT
-            ))
-
-            // 面板头部点击事件（展开/收起）
-            panelHeader?.setOnClickListener {
-                togglePermissionPanel()
-            }
-
-            // 关闭按钮点击事件
-            btnClose?.setOnClickListener {
-                removePermissionPanel()
-            }
-
-            // 全选按钮点击事件
-            btnSelectAll?.setOnClickListener {
-                selectAllNodes(rootNodes, true)
-                val newList = flattenTree(rootNodes).toMutableList()
-                treeAdapter?.nodes?.clear()
-                treeAdapter?.nodes?.addAll(newList)
-                treeAdapter?.notifyDataSetChanged()
-            }
-
-            // 反选按钮点击事件
-            btnDeselectAll?.setOnClickListener {
-                selectAllNodes(rootNodes, false)
-                val newList = flattenTree(rootNodes).toMutableList()
-                treeAdapter?.nodes?.clear()
-                treeAdapter?.nodes?.addAll(newList)
-                treeAdapter?.notifyDataSetChanged()
-            }
-
-            // 保存按钮点击事件
-            btnSave?.setOnClickListener {
-                // 隐藏之前的错误信息
-                tvError?.visibility = android.view.View.GONE
-                
-                // 置灰按钮并显示"保存中"
-                btnSave?.isEnabled = false
-                btnSave?.text = "保存中"
-                
-                // 处理保存逻辑
-                val selectedItems = getSelectedNodes(rootNodes)
-                
-                // 按 type 分流为 userIdList / deptIdList（使用 id 提交，不提交 dn）
-                val userIdList = mutableListOf<Long>()
-                val deptIdList = mutableListOf<Long>()
-
-                for (node in selectedItems) {
-                    if (node.type == 1) { // 员工
-                        userIdList.add(node.id)
-                    } else if (node.type == 0) { // 部门
-                        deptIdList.add(node.id)
-                    }
-                }
-                
-                // 获取文档路径
-                val documentPath = WpsAccessibilityService.stableDocumentPath
-                if (documentPath.isNullOrEmpty()) {
-                    btnSave?.isEnabled = true
-                    btnSave?.text = "保存"
-                    Toast.makeText(this, "未找到文档路径", Toast.LENGTH_SHORT).show()
-                    return@setOnClickListener
-                }
-                
-                // 获取FileMeta对象
-                val fileMeta = FileMetaFactory.getFileMeta(documentPath)
-                if (fileMeta == null) {
-                    btnSave?.isEnabled = true
-                    btnSave?.text = "保存"
-                    Toast.makeText(this, "未找到文档元数据", Toast.LENGTH_SHORT).show()
-                    return@setOnClickListener
-                }
-                
-                // 获取docId参数
-                val docId = fileMeta.uid
-                if (docId.isNullOrEmpty()) {
-                    btnSave?.isEnabled = true
-                    btnSave?.text = "保存"
-                    Toast.makeText(this, "未找到文档唯一标识", Toast.LENGTH_SHORT).show()
-                    return@setOnClickListener
-                }
-                
-                // 获取isTemp参数（根据uid是否已注册）
-                val isTemp = fileMeta.isTempUid
-                android.util.Log.d(TAG, "权限更新 - docId=$docId, isTemp=$isTemp, userIdList=$userIdList, deptIdList=$deptIdList")
-
-                // 构建请求体：使用内部主键ID列表提交，区分用户与部门
-                val jsonBody = "{\"docId\": \"$docId\", \"userIdList\": [${userIdList.joinToString()}], \"deptIdList\": [${deptIdList.joinToString()}], \"isTemp\": $isTemp}"
-                
-                // 获取token
-                val userInfo = ConfigStorage.getInstance(this).getUserInfo()
-                val token = userInfo?.token
-                
-                // 发送请求
-                val networkManager = NetworkManager.getInstance(this)
-                networkManager.executePostRequest("/doc/auth/update", jsonBody, token, object : NetworkCallback {
-                    override fun onSuccess(response: String) {
-                        runOnUiThread {
-                            try {
-                                val json = org.json.JSONObject(response)
-                                val status = json.getInt("status")
-                                if (status == 200) {
-                                    tvError?.visibility = android.view.View.GONE
-                                    Toast.makeText(this@FloatingButtonService, "权限更新成功", Toast.LENGTH_SHORT).show()
-                                    removePermissionPanel()
-                                } else {
-                                    val message = json.optString("message", "权限更新失败")
-                                    tvError?.text = message
-                                    tvError?.visibility = android.view.View.VISIBLE
-                                }
-                            } catch (e: Exception) {
-                                tvError?.text = "权限更新失败: 解析响应异常"
-                                tvError?.visibility = android.view.View.VISIBLE
-                            } finally {
-                                btnSave?.isEnabled = true
-                                btnSave?.text = "保存"
-                            }
-                        }
-                    }
-                    
-                    override fun onError(error: String) {
-                        runOnUiThread {
-                            tvError?.text = "权限更新失败: $error"
-                            tvError?.visibility = android.view.View.VISIBLE
-                            btnSave?.isEnabled = true
-                            btnSave?.text = "保存"
-                        }
-                    }
-
-                    override fun onComplete() {}
-                })
-            }
-
-            // 取消按钮点击事件
-            btnCancel?.setOnClickListener {
-                removePermissionPanel()
-            }
-
-            btnSearch?.setOnClickListener {
-                val searchText = etSearch?.text?.toString() ?: ""
-                android.util.Log.d(TAG, "搜索按钮点击，搜索文本: $searchText")
-                performSearch(searchText)
-            }
-
-            etSearch?.setOnEditorActionListener { v, actionId, event ->
-                if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH) {
-                    val searchText = etSearch.text.toString()
-                    android.util.Log.d(TAG, "搜索框回车，搜索文本: $searchText")
-                    performSearch(searchText)
-                    true
-                } else {
-                    false
-                }
-            }
-
-            // 清理按钮点击事件
-            btnClear?.setOnClickListener {
-                // 清除搜索框内容
-                etSearch?.text?.clear()
-                // 清除搜索结果，返回默认列表
-                val initialList = flattenTree(rootNodes).toMutableList()
-                treeAdapter?.nodes?.clear()
-                treeAdapter?.nodes?.addAll(initialList)
-                treeAdapter?.notifyDataSetChanged()
-                // 给予用户视觉反馈
-                Toast.makeText(this, "已清理搜索内容", Toast.LENGTH_SHORT).show()
-            }
-
-            // 添加面板到窗口
-            windowManager.addView(permissionPanelView, params)
-            isPermissionPanelExpanded = true
-            Log.d(TAG, "文档权限面板添加成功")
-        } catch (e: Exception) {
-            Log.e(TAG, "创建文档权限面板失败", e)
-        }
-    }
-
-    private fun selectAllNodes(nodes: List<TreeNode>, select: Boolean) {
-        for (node in nodes) {
-            node.hasAuth = select
-            if (node.children.isNotEmpty()) {
-                selectAllNodes(node.children, select)
-            }
-        }
-    }
-
-    private fun getSelectedNodes(nodes: List<TreeNode>): List<TreeNode> {
-        val selected = mutableListOf<TreeNode>()
-        for (node in nodes) {
-            if (node.hasAuth) {
-                selected.add(node)
-                // 如果是部门类型且已被勾选，跳过子节点处理
-                if (node.type == 0) {
-                    continue
-                }
-            }
-            if (node.children.isNotEmpty()) {
-                selected.addAll(getSelectedNodes(node.children))
-            }
-        }
-        return selected
-    }
-    
-    /**
-     * 初始化时处理已选中部门的子节点置灰状态
-     * 跳过已被单独选中的员工节点
-     */
-    private fun initGrayedStateForSelectedDepts(nodes: List<TreeNode>) {
-        for (node in nodes) {
-            if (node.type == 0 && node.hasAuth) {
-                markDescendantsGrayedByDn(node)
-            }
-            if (node.children.isNotEmpty()) {
-                initGrayedStateForSelectedDepts(node.children)
-            }
-        }
-    }
-
-    /**
-     * 勾选部门节点时，基于 dn 前缀判定其包含的后代节点（不递归遍历收集子孙），
-     * 将后代节点置灰（表示被该部门包含，提交时只需提交部门id）。
-     * 使用 HashSet<String> 维护已处理的 dn，避免重复。
-     */
-    private fun markDescendantsGrayedByDn(parent: TreeNode) {
-        val prefix = parent.dn ?: return // 部门节点dn必返回，为null则无法判定，直接返回
-        val separator = "$prefix,"
-        val processed = HashSet<String>()
-        for (node in allNodes) {
-            val dn = node.dn
-            if (node === parent || dn == null) continue
-            // 末尾加逗号分隔符，避免 ou=ab 误匹配 ou=abc
-            if (dn.startsWith(separator) && processed.add(dn)) {
-                node.hasAuth = false
-                node.isGrayed = true
-                node.isIndeterminate = false
-            }
-        }
-    }
-
-    /**
-     * 取消勾选部门节点时，解除其包含的后代节点的置灰状态
-     */
-    private fun clearDescendantsByDn(parent: TreeNode) {
-        val prefix = parent.dn ?: return
-        val separator = "$prefix,"
-        for (node in allNodes) {
-            val dn = node.dn
-            if (node === parent || dn == null) continue
-            if (dn.startsWith(separator)) {
-                node.isGrayed = false
-            }
-        }
-    }
-
-    private fun performSearch(searchText: String) {
-        Log.d(TAG, "开始搜索: $searchText")
-        
-        if (searchText.isEmpty()) {
-            Log.d(TAG, "搜索文本为空，显示完整树")
-            resetAllExpanded(rootNodes)
-            val initialList = flattenTree(rootNodes).toMutableList()
-            treeAdapter?.isSearchMode = false
-            treeAdapter?.nodes?.clear()
-            treeAdapter?.nodes?.addAll(initialList)
-            treeAdapter?.notifyDataSetChanged()
-            return
-        }
-
-        treeAdapter?.isSearchMode = true
-        
-        val matchingNodes = mutableListOf<TreeNode>()
-        findMatchingNodes(rootNodes, searchText, matchingNodes)
-        Log.d(TAG, "找到匹配节点: ${matchingNodes.size}个")
-        matchingNodes.forEach { Log.d(TAG, "匹配节点: ${it.name}") }
-        
-        if (matchingNodes.isEmpty()) {
-            Log.d(TAG, "未找到匹配节点")
-            treeAdapter?.nodes?.clear()
-            treeAdapter?.notifyDataSetChanged()
-            return
-        }
-
-        // 收集匹配节点及其所有祖先节点（按节点引用，避免dn为null时无法定位路径）
-        val toShow = mutableSetOf<TreeNode>()
-        matchingNodes.forEach { node ->
-            var current: TreeNode? = node
-            while (current != null) {
-                toShow.add(current)
-                if (current.type == 0) {
-                    current.isExpanded = true
-                }
-                current = current.parent
-            }
-        }
-
-        val pathNodes = mutableListOf<TreeNode>()
-        collectNodesByMembership(rootNodes, toShow, pathNodes)
-        
-        Log.d(TAG, "收集到的路径节点: ${pathNodes.size}个")
-
-        treeAdapter?.nodes?.clear()
-        treeAdapter?.nodes?.addAll(pathNodes)
-        treeAdapter?.notifyDataSetChanged()
-        Log.d(TAG, "搜索完成")
-    }
-
-    private fun findMatchingNodes(nodes: List<TreeNode>, searchText: String, result: MutableList<TreeNode>) {
-        for (node in nodes) {
-            if (node.name.contains(searchText, ignoreCase = true)) {
-                result.add(node)
-            }
-            if (node.children.isNotEmpty()) {
-                findMatchingNodes(node.children, searchText, result)
-            }
-        }
-    }
-
-    private fun collectNodesByMembership(nodes: List<TreeNode>, toShow: Set<TreeNode>, result: MutableList<TreeNode>) {
-        for (node in nodes) {
-            if (toShow.contains(node)) {
-                result.add(node)
-                if (node.children.isNotEmpty()) {
-                    collectNodesByMembership(node.children, toShow, result)
-                }
-            }
-        }
-    }
-
-    private fun resetAllExpanded(nodes: List<TreeNode>) {
-        for (node in nodes) {
-            node.isExpanded = false
-            if (node.children.isNotEmpty()) {
-                resetAllExpanded(node.children)
-            }
-        }
-    }
-
-    private fun updateParentAuthState(parent: TreeNode?) {
-        if (parent == null) {
-            return
-        }
-        
-        val (checkedLeafCount, totalLeafCount) = countLeafNodes(parent)
-        
-        if (totalLeafCount == 0) {
-            return
-        }
-        
-        if (checkedLeafCount == 0) {
-            parent.hasAuth = false
-            parent.isIndeterminate = false
-        } else if (checkedLeafCount == totalLeafCount) {
-            parent.hasAuth = true
-            parent.isIndeterminate = false
-        } else {
-            parent.hasAuth = false
-            parent.isIndeterminate = true
-        }
-        
-        updateParentAuthState(parent.parent)
-    }
-
-    private fun countLeafNodes(node: TreeNode): Pair<Int, Int> {
-        if (node.type == 1 || node.children.isEmpty()) {
-            // 叶子节点（员工或无子部门）
-            return if (node.hasAuth) Pair(1, 1) else Pair(0, 1)
-        }
-        
-        var checkedCount = 0
-        var totalCount = 0
-        
-        for (child in node.children) {
-            val (childChecked, childTotal) = countLeafNodes(child)
-            checkedCount += childChecked
-            totalCount += childTotal
-        }
-        
-        return Pair(checkedCount, totalCount)
-    }
-
-    private fun filterNodes(nodes: List<TreeNode>, searchText: String): List<TreeNode> {
-        val result = mutableListOf<TreeNode>()
-        for (node in nodes) {
-            if (node.name.contains(searchText, ignoreCase = true)) {
-                result.add(node)
-                if (node.type == 0 && node.children.isNotEmpty()) {
-                    result.addAll(filterNodes(node.children, searchText))
-                }
-            } else if (node.type == 0 && node.children.isNotEmpty()) {
-                val filteredChildren = filterNodes(node.children, searchText)
-                if (filteredChildren.isNotEmpty()) {
-                    result.add(node)
-                    result.addAll(filteredChildren)
-                }
-            }
-        }
-        return result
-    }
-
-    private fun togglePermissionPanel() {
-        permissionPanelView?.let {
-            val panelContent = it.findViewById<android.widget.LinearLayout>(R.id.panel_content)
-            if (isPermissionPanelExpanded) {
-                // 收起面板
-                panelContent.visibility = android.view.View.GONE
-                isPermissionPanelExpanded = false
-            } else {
-                // 展开面板
-                panelContent.visibility = android.view.View.VISIBLE
-                isPermissionPanelExpanded = true
-            }
-        }
-    }
-
-    private fun removePermissionPanel() {
-        try {
-            if (permissionPanelView != null && ::windowManager.isInitialized) {
-                windowManager.removeView(permissionPanelView)
-                permissionPanelView = null
-                isPermissionPanelExpanded = false
-                Log.d(TAG, "文档权限面板移除成功")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "移除文档权限面板失败", e)
-        }
-    }
-
-
-
-    // LdapItem数据类
-    data class LdapItem(
-        val id: Long, // 节点ID：type=0 为部门ID，type=1 为员工ID（仅用于提交，UI不展示）
-        val type: Int, // 节点类型 0 部门 1员工
-        val name: String, // 节点名称
-        val dn: String?, // LDAP完整路径（用户节点可能为null，客户端需兼容缺省）
-        val account: String?, // 账号名（用户专属）
-        val hasAuth: Boolean, // 是否有权限
-        val deptList: List<LdapItem>?, // 子部门列表
-        val employList: List<LdapItem>? // 子员工列表
-    )
-
-
-    private fun runOnUiThread(action: () -> Unit) {
-        android.os.Handler(android.os.Looper.getMainLooper()).post(action)
-    }
-
-    private fun showToast(message: String) {
-        Toast.makeText(this@FloatingButtonService, message, Toast.LENGTH_LONG).show()
     }
 }

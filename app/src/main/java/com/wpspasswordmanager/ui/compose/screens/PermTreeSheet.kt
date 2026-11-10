@@ -65,20 +65,20 @@ internal fun flatten(
 ) {
     nodes.forEach { n ->
         out += PermRow(n, depth, inherited)
-        val childInherited = inherited || selected.contains(n.dn)
-        if (n.isDept && expanded.contains(n.dn) && n.children.isNotEmpty()) {
+        val childInherited = inherited || selected.contains(n.key)
+        if (n.isDept && expanded.contains(n.key) && n.children.isNotEmpty()) {
             flatten(n.children, expanded, selected, childInherited, depth + 1, out)
         }
     }
 }
 
 internal fun subtreeHasSelected(node: AuthNode, selected: Set<String>): Boolean =
-    selected.contains(node.dn) || node.children.any { subtreeHasSelected(it, selected) }
+    selected.contains(node.key) || node.children.any { subtreeHasSelected(it, selected) }
 
 internal fun countUsers(nodes: List<AuthNode>, selected: Set<String>, inherited: Boolean): Int {
     var n = 0
     nodes.forEach { node ->
-        val covered = inherited || selected.contains(node.dn)
+        val covered = inherited || selected.contains(node.key)
         if (!node.isDept && covered) n += 1
         n += countUsers(node.children, selected, covered)
     }
@@ -86,7 +86,7 @@ internal fun countUsers(nodes: List<AuthNode>, selected: Set<String>, inherited:
 }
 
 internal fun countSelectedDepts(nodes: List<AuthNode>, selected: Set<String>): Int =
-    nodes.count { it.isDept && selected.contains(it.dn) } +
+    nodes.count { it.isDept && selected.contains(it.key) } +
         nodes.sumOf { countSelectedDepts(it.children, selected) }
 
 /** 屏 16/17 · 文档权限树 */
@@ -159,13 +159,13 @@ fun PermTreeSheet(state: PermTreeState, vm: AppViewModel) {
                     val rows = buildList { flatten(state.roots, state.expanded, state.selected, false, 0, this) }
                     rows.map { row ->
                         val node = row.node
-                        val checked = row.inherited || state.selected.contains(node.dn)
+                        val checked = row.inherited || state.selected.contains(node.key)
                         PermLine(
                             row = row,
                             checked = checked,
                             indeterminate = !checked && subtreeHasSelected(node, state.selected),
                             disabled = row.inherited,
-                            expanded = state.expanded.contains(node.dn),
+                            expanded = state.expanded.contains(node.key),
                             peopleHint = if (node.isDept) {
                                 "${countUsers(node.children, state.selected, checked)} 人"
                             } else null
@@ -185,7 +185,7 @@ fun PermTreeSheet(state: PermTreeState, vm: AppViewModel) {
                     LazyColumn(Modifier.fillMaxSize()) {
                         items(
                             lines,
-                            key = { it.row.node.dn },
+                            key = { it.row.node.key },
                             contentType = { it.row.node.isDept }
                         ) { line -> PermRowItem(line, vm) }
                         item { Spacer(Modifier.height(8.dp)) }
@@ -266,7 +266,7 @@ private fun PermRowItem(line: PermLine, vm: AppViewModel) {
     Row(
         Modifier
             .fillMaxWidth()
-            .pressable(enabled = !disabled) { vm.togglePermNode(node.dn) }
+            .pressable(enabled = !disabled) { vm.togglePermNode(node.key) }
             .padding(start = 14.dp + (row.depth * 14).dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -274,7 +274,7 @@ private fun PermRowItem(line: PermLine, vm: AppViewModel) {
             Box(
                 Modifier
                     .size(18.dp)
-                    .pressable { vm.togglePermExpand(node.dn) },
+                    .pressable { vm.togglePermExpand(node.key) },
                 contentAlignment = Alignment.Center
             ) {
                 SvgIcon(
@@ -294,7 +294,7 @@ private fun PermRowItem(line: PermLine, vm: AppViewModel) {
             checked = checked,
             indeterminate = indeterminate,
             disabled = disabled,
-            onClick = { vm.togglePermNode(node.dn) }
+            onClick = { vm.togglePermNode(node.key) }
         )
         Spacer(Modifier.width(8.dp))
 

@@ -70,8 +70,8 @@ class HeartbeatService : Service() {
                         val loginResponse = gson.fromJson(response, LoginResponse::class.java)
 
                         if (loginResponse.status == 200) {
-                            // 保存更新后的用户信息
-                            configStorage.saveUserInfo(loginResponse.data)
+                            // refresh-token 的 data 不含 needChangePwd，且 token 与原 token 相同；
+                            // 不整体覆盖本地 UserInfo，避免把 needChangePwd 冲成 false
                             println("[Heartbeat] Success at ${Date()}")
                         } else {
                             println("[Heartbeat] Failed: ${loginResponse.message}")
@@ -91,7 +91,7 @@ class HeartbeatService : Service() {
                     configStorage.clearUserInfo()
                     // 停止心跳服务
                     stopHeartbeat()
-                    // 发送广播通知MainActivity更新UI
+                    // 发送会话失效广播，由 AppActivity 接收并跳转登录/过期页
                     val intent = Intent("com.wpspasswordmanager.ACTION_SESSION_EXPIRED")
                     sendBroadcast(intent)
                 }

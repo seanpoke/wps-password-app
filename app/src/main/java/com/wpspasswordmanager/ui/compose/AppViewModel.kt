@@ -84,7 +84,12 @@ data class UpdateInfo(
     val latestVersion: String,
     val downloadUrl: String,
     val changelog: String,
-    val force: Boolean
+    val force: Boolean,
+    val platform: String = "",
+    val currentVersion: String = "",
+    val minVersion: String? = null,
+    val updateType: String = "",
+    val releaseTime: String = ""
 )
 
 data class ForceChangeState(
@@ -119,7 +124,8 @@ data class OpenModeState(
 )
 
 data class AuthNode(
-    val dn: String,
+    /** LDAP DN，仅用于展示与日志；服务端在账号或部门路径缺失时会省略该字段 */
+    val dn: String?,
     val type: Int,
     val name: String,
     val account: String?,
@@ -129,6 +135,8 @@ data class AuthNode(
     val id: Long = 0L
 ) {
     val isDept: Boolean get() = type == 0
+    /** 稳定唯一键：接口文档允许 dn 为 null，选中/展开/列表 key 一律用 type:id，不得用 dn */
+    val key: String get() = "$type:$id"
 }
 
 /** 三期：自助改密页（整页，需填旧密码） */
@@ -157,7 +165,11 @@ data class PermTreeState(
     val selected: Set<String> = emptySet(),
     val saving: Boolean = false,
     val saveError: String = "",
-    val savedAt: Long = 0L
+    val savedAt: Long = 0L,
+    /** 临时 uid 文档：保存授权时须传给后端以跳过文件存在性/所有者校验 */
+    val isTemp: Boolean = false,
+    /** 演示数据：禁止发起真实的授权保存请求 */
+    val demo: Boolean = false
 )
 
 data class UiState(
@@ -882,11 +894,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         if (p.submitting || !p.ok) return
         val user = storage.getUserInfo()
         val account = user?.account ?: s.account
-        val token = user?.token
         set { it.copy(passwordForm = p.copy(submitting = true, error = "")) }
         viewModelScope.launch {
             try {
-                val resp = call { network.changePassword(account, p.old, p.neu, token, it) }
+                val resp = call { network.changePassword(account, p.old, p.neu, it) }
                 val obj = org.json.JSONObject(resp)
                 if (obj.optInt("status", 0) == 200) {
                     if (storage.getRememberPassword()) storage.savePassword(p.neu)
@@ -1099,7 +1110,18 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         } catch (e: Exception) {
             null
         }
-        set { it.copy(permTree = PermTreeState(docName = doc.name, docId = uid, loading = !uid.isNullOrEmpty())) }
+        val isTemp = com.wpspasswordmanager.business.FileMetaFactory
+            .getFileMeta(doc.file.absolutePath)?.isTempUid == true
+        set {
+            it.copy(
+                permTree = PermTreeState(
+                    docName = doc.name,
+                    docId = uid,
+                    loading = !uid.isNullOrEmpty(),
+                    isTemp = isTemp
+                )
+            )
+        }
         if (uid.isNullOrEmpty()) {
             set {
                 it.copy(
@@ -1123,7 +1145,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             closePermTree()
             return
         }
-        set { it.copy(permTree = pt.copy(loading = true, error = "", saveError = "")) }
+        set { it.copy(permTree = pt.copy(loading = true, error = "", saveError = "", saving = false)) }
         loadPermTree(docId)
     }
 
@@ -1135,7 +1157,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 val resp = call { network.executeGetRequest("/doc/auth/tree?docId=$q", token, it) }
                 val obj = org.json.JSONObject(resp)
                 if (obj.optInt("status", 0) != 200) {
-                    set { st -> st.copy(permTree = st.permTree?.copy(loading = false, error = obj.optString("message", "加载权限树失败"))) }
+                    set { st ->
+                        if (st.permTree?.docId != docId) return@set st
+                        st.copy(permTree = st.permTree?.copy(loading = false, saving = false, error = obj.optString("message", "加载权限树失败")))
+                    }
                     return@launch
                 }
                 val arr = obj.optJSONArray("data") ?: org.json.JSONArray()
@@ -1145,10 +1170,13 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 for (i in 0 until arr.length()) {
                     roots += parseAuthNode(arr.getJSONObject(i), false, selected, expanded, 0)
                 }
-                set {
-                    it.copy(
-                        permTree = it.permTree?.copy(
+                set { st ->
+                    // 快速切换文档时丢弃过期回调，避免 A 文档的树覆盖 B 文档
+                    if (st.permTree?.docId != docId) return@set st
+                    st.copy(
+                        permTree = st.permTree?.copy(
                             loading = false,
+                            saving = false,
                             error = "",
                             roots = roots,
                             selected = selected,
@@ -1158,48 +1186,51 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                     )
                 }
             } catch (e: Exception) {
-                set { st -> st.copy(permTree = st.permTree?.copy(loading = false, error = friendlyError(e))) }
+                set { st ->
+                    if (st.permTree?.docId != docId) return@set st
+                    st.copy(permTree = st.permTree?.copy(loading = false, saving = false, error = friendlyError(e)))
+                }
             }
         }
     }
 
-    fun togglePermNode(dn: String) {
+    fun togglePermNode(key: String) {
         set { st ->
             val pt = st.permTree ?: return@set st
             val sel = pt.selected.toMutableSet()
-            if (sel.contains(dn)) sel.remove(dn) else {
-                sel.add(dn)
+            if (sel.contains(key)) sel.remove(key) else {
+                sel.add(key)
                 // 选中部门时，子孙由部门代表，移除其显式勾选，避免重复授权
-                findAuthNode(pt.roots, dn)?.let { node -> collectAuthDns(node).filter { it != dn }.forEach { sel.remove(it) } }
+                findAuthNode(pt.roots, key)?.let { node -> collectAuthKeys(node).filter { it != key }.forEach { sel.remove(it) } }
             }
             st.copy(permTree = pt.copy(selected = sel, saveError = ""))
         }
     }
 
-    fun togglePermExpand(dn: String) = set { st ->
+    fun togglePermExpand(key: String) = set { st ->
         val pt = st.permTree ?: return@set st
         val ex = pt.expanded.toMutableSet()
-        if (!ex.remove(dn)) ex.add(dn)
+        if (!ex.remove(key)) ex.add(key)
         st.copy(permTree = pt.copy(expanded = ex))
     }
 
-    /** 全部 dns（部门+用户） */
-    fun allAuthDns(nodes: List<AuthNode>): List<String> = nodes.flatMap { listOf(it.dn) + allAuthDns(it.children) }
+    /** 全部节点 key（部门+用户） */
+    fun allAuthKeys(nodes: List<AuthNode>): List<String> = nodes.flatMap { listOf(it.key) + allAuthKeys(it.children) }
 
     fun permSelectAll() = set { st ->
         val pt = st.permTree ?: return@set st
-        st.copy(permTree = pt.copy(selected = pt.roots.map { it.dn }.toSet(), saveError = ""))
+        st.copy(permTree = pt.copy(selected = pt.roots.map { it.key }.toSet(), saveError = ""))
     }
 
     fun permInvert() = set { st ->
         val pt = st.permTree ?: return@set st
-        val roots = pt.roots.map { it.dn }.toSet()
+        val roots = pt.roots.map { it.key }.toSet()
         st.copy(permTree = pt.copy(selected = roots - pt.selected, saveError = ""))
     }
 
     fun permToggleExpandAll() = set { st ->
         val pt = st.permTree ?: return@set st
-        val all = collectDeptDns(pt.roots).toSet()
+        val all = collectDeptKeys(pt.roots).toSet()
         val expanded: Set<String> = if (pt.expanded.containsAll(all)) emptySet() else all
         st.copy(permTree = pt.copy(expanded = expanded))
     }
@@ -1208,15 +1239,20 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val pt = s.permTree ?: return
         if (pt.saving) return
         val docId = pt.docId ?: return
+        // 演示数据不得触碰真实写接口
+        if (pt.demo) {
+            showToast("演示数据，不会提交到服务器")
+            return
+        }
         set { st -> st.copy(permTree = pt.copy(saving = true, saveError = "")) }
         viewModelScope.launch {
             try {
                 val token = storage.getUserInfo()?.token
-                // 服务端已 id 化：只认 sys_dept.id / sys_user.id，传 DN 会被解析成空列表并清空原有授权
+                // 服务端已 id 化：只认 sys_dept.id / sys_user.id；选中集合以 type:id 为键
                 val deptIds = mutableListOf<Long>()
                 val userIds = mutableListOf<Long>()
-                pt.selected.forEach { dn ->
-                    val node = findAuthNode(pt.roots, dn) ?: return@forEach
+                pt.selected.forEach { key ->
+                    val node = findAuthNode(pt.roots, key) ?: return@forEach
                     if (node.id <= 0L) return@forEach
                     if (node.isDept) deptIds += node.id else userIds += node.id
                 }
@@ -1224,25 +1260,30 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                     put("docId", docId)
                     put("deptIdList", org.json.JSONArray(deptIds))
                     put("userIdList", org.json.JSONArray(userIds))
-                    put("isTemp", false)
+                    put("isTemp", pt.isTemp)
                 }.toString()
                 val resp = call { network.executePostRequest("/doc/auth/update", body, token, it) }
                 val obj = org.json.JSONObject(resp)
                 if (obj.optInt("status", 0) == 200) {
-                    set { st -> st.copy(permTree = st.permTree?.copy(saving = false, saveError = "", savedAt = System.currentTimeMillis())) }
+                    set { st ->
+                        if (st.permTree?.docId != docId) return@set st
+                        st.copy(permTree = st.permTree?.copy(saving = false, saveError = "", savedAt = System.currentTimeMillis()))
+                    }
                     showToast("权限已保存")
                     loadPermTree(docId)
                 } else {
-                    set {
-                        st -> st.copy(permTree = st.permTree?.copy(
+                    set { st ->
+                        if (st.permTree?.docId != docId) return@set st
+                        st.copy(permTree = st.permTree?.copy(
                             saving = false,
                             saveError = "上次失败：${obj.optString("message", "保存失败")}，选择已保留"
                         ))
                     }
                 }
             } catch (e: Exception) {
-                set {
-                    st -> st.copy(permTree = st.permTree?.copy(
+                set { st ->
+                    if (st.permTree?.docId != docId) return@set st
+                    st.copy(permTree = st.permTree?.copy(
                         saving = false,
                         saveError = "上次失败：${friendlyError(e)}，选择已保留"
                     ))
@@ -1377,7 +1418,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 set { it.copy(forceChange = fc.copy(submitting = true, error = "")) }
                 viewModelScope.launch {
                     try {
-                        val resp = call { network.changePassword(fc.account, fc.oldPassword, fc.newPassword, fc.tempToken, it) }
+                        val resp = call { network.changePassword(fc.account, fc.oldPassword, fc.newPassword, it) }
                         val obj = org.json.JSONObject(resp)
                         if (obj.optInt("status", 0) == 200) {
                             storage.clearUserInfo()
@@ -1467,7 +1508,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                     latestVersion = data.optString("latestVersion", "").norm(),
                     downloadUrl = data.optString("downloadUrl", "").norm(),
                     changelog = data.optString("changelog", "").norm(),
-                    force = type == "FORCE"
+                    force = type == "FORCE",
+                    platform = data.optString("platform", "").norm(),
+                    currentVersion = data.optString("currentVersion", "").norm(),
+                    minVersion = data.optString("minVersion", "").norm().takeIf { it.isNotEmpty() },
+                    updateType = type,
+                    releaseTime = data.optString("releaseTime", "").norm()
                 )
                 set { it.copy(update = info) }
             } catch (e: Exception) {
@@ -1761,32 +1807,33 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private fun demoPermTree(docName: String): PermTreeState {
-        fun user(dn: String, name: String, account: String?, auth: Boolean) =
-            AuthNode(dn, 1, name, account, auth, emptyList())
-        fun dept(dn: String, name: String, auth: Boolean, children: List<AuthNode>) =
-            AuthNode(dn, 0, name, null, auth, children)
+        fun user(dn: String, name: String, account: String?, auth: Boolean, id: Long) =
+            AuthNode(dn, 1, name, account, auth, emptyList(), id)
+        fun dept(dn: String, name: String, auth: Boolean, children: List<AuthNode>, id: Long) =
+            AuthNode(dn, 0, name, null, auth, children, id)
 
-        val zhanggl = user("cn=zhanggl", "张贵丽", "zhanggl", true)
-        val zhoudan = user("cn=zhoudan", "周丹", null, true)
-        val zhangpeng = user("cn=zhangpeng", "张鹏（我）", "zhangpeng", true)
-        val wangzj = user("cn=wangzj", "王志杰", "wangzj", true)
+        val zhanggl = user("cn=zhanggl", "张贵丽", "zhanggl", true, 101L)
+        val zhoudan = user("cn=zhoudan", "周丹", null, true, 102L)
+        val zhangpeng = user("cn=zhangpeng", "张鹏（我）", "zhangpeng", true, 103L)
+        val wangzj = user("cn=wangzj", "王志杰", "wangzj", true, 104L)
 
-        val xingzheng = dept("ou=行政部", "行政部", false, emptyList())
-        val zhengfu = dept("ou=政府事务与资质部", "政府事务与资质部", true, listOf(zhanggl, zhoudan))
-        val bigdata = dept("ou=大数据技术组", "大数据技术组", true, listOf(zhangpeng, wangzj))
-        val sysdev = dept("ou=系统软件研发部", "系统软件研发部", true, listOf(bigdata))
-        val yunbroad = dept("ou=云宽带系统研发组", "云宽带系统研发组", false, emptyList())
-        val rnd = dept("ou=研发中心", "研发中心", true, listOf(sysdev, yunbroad))
-        val gm = dept("ou=总经理办公室", "总经理办公室", false, listOf(xingzheng, zhengfu))
-        val root = dept("ou=武汉绿网", "武汉绿网", false, listOf(gm, rnd))
+        val xingzheng = dept("ou=行政部", "行政部", false, emptyList(), 1L)
+        val zhengfu = dept("ou=政府事务与资质部", "政府事务与资质部", true, listOf(zhanggl, zhoudan), 2L)
+        val bigdata = dept("ou=大数据技术组", "大数据技术组", true, listOf(zhangpeng, wangzj), 3L)
+        val sysdev = dept("ou=系统软件研发部", "系统软件研发部", true, listOf(bigdata), 4L)
+        val yunbroad = dept("ou=云宽带系统研发组", "云宽带系统研发组", false, emptyList(), 5L)
+        val rnd = dept("ou=研发中心", "研发中心", true, listOf(sysdev, yunbroad), 6L)
+        val gm = dept("ou=总经理办公室", "总经理办公室", false, listOf(xingzheng, zhengfu), 7L)
+        val root = dept("ou=武汉绿网", "武汉绿网", false, listOf(gm, rnd), 8L)
 
         return PermTreeState(
             docName = docName,
             docId = "demo-doc-id",
             loading = false,
             roots = listOf(root),
-            expanded = setOf(root.dn, gm.dn, rnd.dn),
-            selected = setOf(zhengfu.dn, rnd.dn)
+            expanded = setOf(root.key, gm.key, rnd.key),
+            selected = setOf(zhengfu.key, rnd.key),
+            demo = true
         )
     }
 

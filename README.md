@@ -26,26 +26,18 @@ app/src/main/java/com/documentpasswordmanager/
 │   ├── DocumentAppInfo.kt            # 文档编辑器应用信息
 │   ├── DocumentManager.kt            # 文档编辑器应用管理
 │   └── ZipExtraFieldManager.kt       # ZIP扩展字段管理
-├── monitor/                          # 监控服务
-│   ├── AccessibilityServiceManager.kt
-│   ├── MetadataWriteService.kt
-│   └── DocumentAccessibilityService.kt
-├── network/                          # 网络模块
-│   ├── ApiResponse.kt
-│   ├── HeartbeatService.kt           # 心跳服务
-│   └── NetworkManager.kt             # 网络管理
-├── storage/                          # 存储模块
-│   ├── ConfigStorage.kt              # 配置存储
-│   └── ServerConfig.kt               # 服务器配置
-├── ui/                               # UI层
-│   ├── MainActivity.kt               # 主界面
-│   ├── LogActivity.kt                # 日志界面
-│   ├── NotificationManager.kt
-│   ├── FloatingButtonService.kt      # 悬浮按钮
-│   └── adapters/
-└── utils/                            # 工具类
-    └── LogManager.kt                 # 日志管理
+├── monitor/                          # 无障碍服务、悬浮窗管理、元数据写入
+├── network/                          # OkHttp 封装、心跳保活
+├── storage/                          # 本地配置与用户信息
+├── ui/                               # ProxyActivity（文档打开代理）、FloatingButtonService（悬浮按钮）
+│   └── compose/                      # Compose 入口 AppActivity、AppViewModel、组件、页面、悬浮层
+│       ├── assistant/                # 悬浮窗上的 Compose 权限树
+│       └── screens/                  # 各 Compose 页面
+└── utils/                            # 日志等工具
 ```
+
+> UI 已全面迁移到 Compose，入口为 `ui/compose/AppActivity`；旧的 XML Activity（MainActivity / LogActivity 等）已删除。
+> 客户端接口契约以 `.doc/客户端接口文档.md` 为准，该文档已纳入版本控制。
 
 ### 核心技术
 
@@ -58,9 +50,18 @@ app/src/main/java/com/documentpasswordmanager/
 
 ### 环境要求
 
-- Android SDK 26+ (Android 8.0)
-- Gradle 8.1.2
+- Android SDK 26+ (Android 8.0)，compileSdk 34
+- Gradle 8.2
 - Kotlin 1.9.0
+- **JDK 17**（必须）
+
+> 构建注意：若 `JAVA_HOME` 指向 JDK 21，`jlink` 处理 `android-34/core-for-system-modules.jar` 会报
+> `ModuleTarget is malformed: platformString missing delimiter: android` 导致 `compileDebugJavaWithJavac` 失败。
+> 本机 JDK 17 位于 `E:\JDK\jdk-17.0.19`，请显式指定（不要写进 `gradle.properties` 提交绝对路径）：
+
+```powershell
+.\gradlew.bat --no-daemon "-Dorg.gradle.java.home=E:\JDK\jdk-17.0.19" assembleDebug
+```
 
 ### 构建与运行
 

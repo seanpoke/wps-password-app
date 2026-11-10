@@ -191,10 +191,11 @@ class NetworkManager private constructor(context: Context) {
         executePostRequest("/account/logout", "{}", token, callback)
     }
 
-    fun changePassword(account: String, oldPassword: String, newPassword: String, token: String?, callback: NetworkCallback) {
+    /** 接口层不校验 token（后端已排除该路径），按契约不带 token 请求头 */
+    fun changePassword(account: String, oldPassword: String, newPassword: String, callback: NetworkCallback) {
         Log.d(TAG, "执行修改密码请求: account=$account")
         val jsonBody = "{\"account\": \"$account\", \"oldPassword\": \"$oldPassword\", \"newPassword\": \"$newPassword\"}"
-        executePostRequest("/account/change-password", jsonBody, token, callback)
+        executePostRequest("/account/change-password", jsonBody, null, callback)
     }
 
     // 客户端版本检查（免token，接口文档v1 11.1）：platform 固定 android
