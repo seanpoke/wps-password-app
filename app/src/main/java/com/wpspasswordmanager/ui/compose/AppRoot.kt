@@ -66,6 +66,7 @@ fun AppTheme(content: @Composable () -> Unit) {
 fun AppRoot(
     vm: AppViewModel,
     onFixPermission: (String) -> Unit,
+    onRescan: () -> Unit,
     onCreateDoc: () -> Unit,
     onOpenDoc: () -> Unit,
     onOpenLogs: () -> Unit
@@ -76,7 +77,7 @@ fun AppRoot(
             .fillMaxSize()
             .background(C.Bg)
     ) {
-        RouteHost(vm, onFixPermission, onCreateDoc, onOpenDoc, onOpenLogs)
+        RouteHost(vm, onFixPermission, onRescan, onCreateDoc, onOpenDoc, onOpenLogs)
         OverlayLayer(vm)
     }
     BackHandlerLayer(vm)
@@ -140,6 +141,7 @@ private fun BackHandlerLayer(vm: AppViewModel) {
 private fun RouteHost(
     vm: AppViewModel,
     onFixPermission: (String) -> Unit,
+    onRescan: () -> Unit,
     onCreateDoc: () -> Unit,
     onOpenDoc: () -> Unit,
     onOpenLogs: () -> Unit
@@ -148,11 +150,12 @@ private fun RouteHost(
     val mainS by remember { derivedStateOf { vm.s.mainOnly() } }
     when (val r = s.route) {
         is Route.Boot -> BootScreen(s)
-        is Route.Wizard -> WizardScreen(s, r.step, vm, onFixPermission)
+        is Route.Wizard -> WizardScreen(s, r.step, vm, onFixPermission, onRescan)
         is Route.Main -> MainScreen(
             s = mainS,
             vm = vm,
             onFixPermission = onFixPermission,
+            onRescan = onRescan,
             onCreateDoc = onCreateDoc,
             onOpenDoc = onOpenDoc,
             onOpenLogs = onOpenLogs

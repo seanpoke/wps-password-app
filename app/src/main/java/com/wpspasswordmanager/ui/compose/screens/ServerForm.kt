@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
@@ -18,18 +19,18 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wpspasswordmanager.ui.compose.AppButton
 import com.wpspasswordmanager.ui.compose.AppField
-import com.wpspasswordmanager.ui.compose.AppSwitch
 import com.wpspasswordmanager.ui.compose.AppViewModel
 import com.wpspasswordmanager.ui.compose.BtnStyle
 import com.wpspasswordmanager.ui.compose.C
@@ -77,7 +78,26 @@ fun ServerFormBody(
 ) {
     Column(Modifier.padding(start = 16.dp, end = 16.dp, top = if (heading) 16.dp else 20.dp)) {
         if (heading) {
-            Text("连接企业服务器", style = T.H1.copy(fontSize = 22.sp))
+            // 隐藏入口：800ms 内连击三次标题，在 https / http 之间切换服务器协议
+            var tapCount by remember { mutableStateOf(0) }
+            var lastTapAt by remember { mutableStateOf(0L) }
+            Text(
+                "连接企业服务器",
+                style = T.H1.copy(fontSize = 22.sp),
+                modifier = Modifier.pointerInput(Unit) {
+                    detectTapGestures(onTap = {
+                        val now = System.currentTimeMillis()
+                        tapCount = if (now - lastTapAt <= 800L) tapCount + 1 else 1
+                        lastTapAt = now
+                        if (tapCount >= 3) {
+                            tapCount = 0
+                            val useHttp = !vm.s.http
+                            vm.setHttp(useHttp)
+                            vm.showToast(if (useHttp) "已切换为 http://（明文）" else "已切换为 https://")
+                        }
+                    })
+                }
+            )
             Spacer(Modifier.height(24.dp))
         }
 
@@ -140,22 +160,6 @@ fun ServerFormBody(
             )
         }
 
-        Spacer(Modifier.height(10.dp))
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .card()
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            SvgIcon(I.folderCheck, size = 15.dp, tint = C.Ink3, strokeWidth = 1.9f)
-            Spacer(Modifier.width(10.dp))
-            Column(Modifier.weight(1f)) {
-                Text("开发调试：允许 HTTP", style = T.Small.copy(fontWeight = FontWeight.SemiBold, color = C.Ink2))
-                Text("本地联调专用，开启后以 http:// 连接", style = T.Micro, modifier = Modifier.padding(top = 1.dp))
-            }
-            AppSwitch(s.http) { vm.setHttp(!s.http) }
-        }
         Spacer(Modifier.height(20.dp))
     }
 }
@@ -172,7 +176,7 @@ private fun ServerAddressFields(holder: ServerFormHolder, s: UiState, vm: AppVie
                 holder.host.value = it
                 holder.markEdited(vm)
             },
-            placeholder = "10.20.1.8",
+            placeholder = "10.8.5.55",
             modifier = Modifier.weight(1f),
             error = s.test is TestState.Fail,
             ok = s.test is TestState.Ok,
@@ -193,7 +197,7 @@ private fun ServerAddressFields(holder: ServerFormHolder, s: UiState, vm: AppVie
                 holder.port.value = it.filter { c -> c.isDigit() }.take(5)
                 holder.markEdited(vm)
             },
-            placeholder = "8080",
+            placeholder = "8443",
             modifier = Modifier.width(96.dp),
             keyboard = KeyboardType.Number,
             center = true

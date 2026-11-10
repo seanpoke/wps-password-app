@@ -26,7 +26,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wpspasswordmanager.ui.compose.AppBar
-import com.wpspasswordmanager.ui.compose.AppSwitch
 import com.wpspasswordmanager.ui.compose.AppViewModel
 import com.wpspasswordmanager.ui.compose.Badge
 import com.wpspasswordmanager.ui.compose.C
@@ -38,7 +37,7 @@ import com.wpspasswordmanager.ui.compose.pressable
 
 /**
  * 设置 · 高级设置（仅管理员）
- * 目录迁移 / HTTP 调试开关 / 清理缓存。三项都直接作用在本机，不涉及服务端。
+ * 目录迁移 / 清理缓存。两项都直接作用在本机，不涉及服务端。
  */
 @Composable
 fun AdvancedScreen(vm: AppViewModel) {
@@ -78,43 +77,6 @@ fun AdvancedScreen(vm: AppViewModel) {
                     onClick = vm::clearCache
                 )
             }
-
-            Spacer(Modifier.height(16.dp))
-            Badge("网络调试", C.Bg, C.Ink3, height = 18.dp, fontSize = 9.5.sp, modifier = Modifier.padding(start = 2.dp, bottom = 8.dp))
-            Column(Modifier.fillMaxWidth().card()) {
-                Row(
-                    Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        Modifier.size(32.dp).clip(RoundedCornerShape(10.dp)).background(C.PrimarySoft),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        SvgIcon(I.wifi, size = 16.dp, tint = C.Primary, strokeWidth = 1.9f)
-                    }
-                    Spacer(Modifier.width(12.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            "允许 HTTP 连接",
-                            style = T.Small.copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = C.Ink)
-                        )
-                        Text(
-                            "仅本地联调用，正式环境请关闭",
-                            style = T.Micro.copy(fontSize = 11.sp),
-                            modifier = Modifier.padding(top = 1.dp)
-                        )
-                    }
-                    AppSwitch(s.http) { vm.setHttp(!s.http) }
-                }
-            }
-
-            Spacer(Modifier.height(14.dp))
-            Text(
-                "开启 HTTP 后需要在「服务器设置」里重新测试并保存，地址会以 http:// 连接。",
-                style = T.Micro.copy(fontSize = 11.sp, lineHeight = 17.sp, color = Color(0xFF9A9AA4)),
-                modifier = Modifier.padding(horizontal = 2.dp, vertical = 4.dp)
-            )
-            Spacer(Modifier.height(24.dp))
         }
     }
 }

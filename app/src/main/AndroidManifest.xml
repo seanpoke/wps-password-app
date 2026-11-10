@@ -38,6 +38,9 @@
     <uses-permission 
         android:name="android.permission.QUERY_ALL_PACKAGES" 
         tools:ignore="ProtectedPermissions" />
+    <!-- 部分 ROM（Android 14+）把「读取设备应用列表」做成可撤销的运行时权限；
+         声明后才能用 requestPermissions 重新唤起系统授权框。标准 Android 无此权限，声明会被忽略。 -->
+    <uses-permission android:name="com.android.permission.GET_INSTALLED_APPS" />
     <uses-permission android:name="android.permission.BIND_ACCESSIBILITY_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />

@@ -10,12 +10,14 @@ import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
+import com.wpspasswordmanager.business.WpsManager
 import androidx.lifecycle.ViewModelProvider
 
 /**
@@ -29,6 +31,30 @@ class AppActivity : ComponentActivity() {
     private val sessionExpiredReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             vm.onSessionExpired()
+        }
+    }
+
+    /**
+     * 重新请求「读取设备应用列表」。用户在系统弹框误点「禁止」后，
+     * getInstalledPackages 会一直返回空，需要再次给用户一次选择机会。
+     */
+    private val requestAppListPermission =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            // 授权结果出来后重扫一次：允许时列全量，拒绝时 WpsManager 走已知包名探测兜底
+            vm.scanWps()
+            if (!granted && !shouldShowRequestPermissionRationale(WpsManager.PERMISSION_GET_INSTALLED_APPS)) {
+                vm.showToast("系统未再弹出授权框，可在系统设置中允许「读取应用列表」")
+            }
+        }
+
+    /** 「重新扫描已安装应用」的统一入口：先兜底扫一次，权限被拒时再唤起系统授权框 */
+    private fun rescanWps() {
+        vm.scanWps()
+        if (!WpsManager.appListPermissionDenied(this)) return
+        try {
+            requestAppListPermission.launch(WpsManager.PERMISSION_GET_INSTALLED_APPS)
+        } catch (e: Exception) {
+            vm.showToast("无法唤起系统授权，已按已知包名重新扫描")
         }
     }
 
@@ -55,6 +81,7 @@ class AppActivity : ComponentActivity() {
                 AppRoot(
                     vm = vm,
                     onFixPermission = ::fixPermission,
+                    onRescan = ::rescanWps,
                     onCreateDoc = { vm.openCreateDoc() },
                     onOpenDoc = { vm.setTab("docs") },
                     onOpenLogs = { vm.openLogs() }

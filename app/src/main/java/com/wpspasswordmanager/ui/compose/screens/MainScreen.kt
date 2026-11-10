@@ -68,6 +68,7 @@ fun MainScreen(
     s: UiState,
     vm: AppViewModel,
     onFixPermission: (String) -> Unit,
+    onRescan: () -> Unit,
     onCreateDoc: () -> Unit,
     onOpenDoc: () -> Unit,
     onOpenLogs: () -> Unit
@@ -92,7 +93,7 @@ fun MainScreen(
             when (tab) {
                 "overview" -> OverviewTab(s, vm, onFixPermission, onCreateDoc, onOpenDoc)
                 "docs" -> DocsTab(s, vm, onCreateDoc)
-                else -> SettingsTab(s, vm, onOpenLogs, onFixPermission)
+                else -> SettingsTab(s, vm, onOpenLogs, onFixPermission, onRescan)
             }
             if (tab == "docs") {
                 NewDocFab(vm)
@@ -667,7 +668,8 @@ private fun SettingsTab(
     s: UiState,
     vm: AppViewModel,
     onOpenLogs: () -> Unit,
-    onFixPermission: (String) -> Unit
+    onFixPermission: (String) -> Unit,
+    onRescan: () -> Unit
 ) {
     var wpsPickOpen by remember { mutableStateOf(false) }
     // 版本号读取是 PackageManager IPC，切 tab / 重组时不要反复跨进程取
@@ -747,7 +749,7 @@ private fun SettingsTab(
                     s.perm.wpsLabel ?: "未选择受管应用",
                     I.folderCheck
                 ) {
-                    vm.scanWps()
+                    onRescan()
                     wpsPickOpen = true
                 }
             }
@@ -758,7 +760,7 @@ private fun SettingsTab(
                 SettingRow("运行日志", "查看填充、授权与心跳记录", I.doc) { onOpenLogs() }
                 Divider()
                 if (s.role?.equals("admin", true) == true) {
-                    SettingRow("高级设置", "目录迁移 · HTTP 开关 · 清除缓存", I.gear) { vm.openAdvanced() }
+                    SettingRow("高级设置", "目录迁移 · 清除缓存", I.gear) { vm.openAdvanced() }
                     Divider()
                 }
                 SettingRow("关于", versionLine, I.info) { vm.openAbout() }

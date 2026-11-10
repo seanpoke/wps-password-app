@@ -64,7 +64,8 @@ fun WizardScreen(
     s: UiState,
     step: Int,
     vm: AppViewModel,
-    onFixPermission: (String) -> Unit
+    onFixPermission: (String) -> Unit,
+    onRescan: () -> Unit
 ) {
     Column(
         Modifier
@@ -86,7 +87,7 @@ fun WizardScreen(
                 1 -> ServerStep(s, vm)
                 2 -> LoginStep(s, vm)
                 3 -> PermStep(s, vm, onFixPermission)
-                else -> WpsStep(s, vm)
+                else -> WpsStep(s, vm, onRescan)
             }
         }
     }
@@ -206,7 +207,7 @@ private fun LoginFields(
     AppField(
         value = acc,
         onValueChange = { onLoginTextChange(account, it, edited, vm) },
-        placeholder = "zhangpeng",
+        placeholder = "请输入域账号",
         keyboard = KeyboardType.Text
     )
 
@@ -400,7 +401,7 @@ private fun PermissionCard(title: String, desc: String, on: Boolean, onFix: () -
 /* ---------------- 4 受管应用 ---------------- */
 
 @Composable
-private fun WpsStep(s: UiState, vm: AppViewModel) {
+private fun WpsStep(s: UiState, vm: AppViewModel, onRescan: () -> Unit) {
     Column(Modifier.fillMaxSize()) {
         Column(
             Modifier
@@ -482,7 +483,7 @@ private fun WpsStep(s: UiState, vm: AppViewModel) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
-                        .pressable { vm.scanWps() }
+                        .pressable(onClick = onRescan)
                         .padding(vertical = 6.dp)
                 ) {
                     SvgIcon(I.refresh, size = 14.dp, tint = C.Ink3, strokeWidth = 2f)

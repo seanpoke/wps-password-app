@@ -67,7 +67,10 @@ data class PermState(
     val wpsPkg: String? = null,
     val wpsLabel: String? = null
 ) {
-    val ready: Boolean get() = accessibility && overlay && storage && !wpsPkg.isNullOrEmpty()
+    /** 三项系统权限是否已开。向导第 3 步只依赖它，不能要求 wpsPkg（那是第 4 步才设置的） */
+    val permsOk: Boolean get() = accessibility && overlay && storage
+    /** 主界面「全部就绪」用：还额外要求已选定受管 WPS 应用 */
+    val ready: Boolean get() = permsOk && !wpsPkg.isNullOrEmpty()
     val appPermsOk: Boolean get() = accessibility && overlay
 }
 
@@ -654,7 +657,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 val step = (s.route as Route.Wizard).step
                 when (step) {
                     1 -> if (s.test is TestState.Ok) goWizard(2)
-                    3 -> if (s.perm.ready) {
+                    // 只看三项系统权限：wpsPkg 是第 4 步「选择应用」才写入的，
+                    // 若在这里用 ready 判断，全新安装会永远卡在第 3 步且无任何反馈
+                    3 -> if (s.perm.permsOk) {
                         scanWps()
                         goWizard(4)
                     }
@@ -1687,7 +1692,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                     test = TestState.Ok(66)
                 )
             }
-            "wizard3" -> set { it.copy(route = Route.Wizard(3), perm = PermState(false, true, true, null, null)) }
+            // 模拟「全新安装 + 三项权限已开启 + 尚未选受管 WPS 应用」，用于验证向导第 3 步能否跳转
+            "wizard3" -> set { it.copy(route = Route.Wizard(3), perm = PermState(true, true, true, null, null)) }
             "forceChange" -> set {
                 it.copy(
                     route = Route.ForcePassword,
