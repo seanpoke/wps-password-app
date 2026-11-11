@@ -317,6 +317,7 @@ class FileMetaManager private constructor() {
      * 打印文件zip尾部最后1KB的内容，只输出WPPM标记相关的内容
      */
     private fun logFileTail(filePath: String?) {
+        if (filePath == null) return
         try {
             val file = File(filePath)
             if (file.exists() && file.canRead()) {
@@ -354,13 +355,8 @@ class FileMetaManager private constructor() {
                             // 只打印WPPM标记及其后续内容
                             for (pos in wppmPositions) {
                                 // 从WPPM标记开始，取后面的内容（最多200字节）
-                                val endPos = minOf(pos + 200, bufferContent.size)
-                                val wppmContent = bufferContent.sliceArray(pos until endPos)
                                 
-                                // 将内容转换为十六进制字符串，避免乱码
-                                val hexString = wppmContent.joinToString(" ") { "%02X".format(it) }
-                                // 将内容转换为字符字符串，非可打印字符用.代替
-                                val charString = wppmContent.joinToString("") { if (it in 32..126) it.toChar().toString() else "." }
+                                
                                 Log.d(TAG, "WPPM标记位置: $pos")
                             }
                         }

@@ -34,7 +34,7 @@ object C {
     val Err = Color(0xFFC62828)
     val ErrSoft = Color(0xFFFDECEA)
     val Info = Color(0xFF1565C0)
-    val InfoSoft = Color(0xFFE8F0FB)
+
 
     val Ink = Color(0xFF1B1B1F)
     val Ink2 = Color(0xFF4A4A52)
@@ -44,12 +44,12 @@ object C {
     val Divider = Color(0xFFF4F4F8)
     val Bg = Color(0xFFF6F6F9)
     val Field = Color(0xFFDEDEE6)
-    val Muted = Color(0xFF9A9AA4)
+
     val Placeholder = Color(0xFFA8A8B2)
 
     val PrimaryGradient = listOf(Color(0xFF8B4BFF), Primary)
     val PrimaryBtnGradient = listOf(PrimaryMid, Primary)
-    val BootGradient = listOf(Color(0xFF7B2BFF), Primary)
+
 }
 
 object T {

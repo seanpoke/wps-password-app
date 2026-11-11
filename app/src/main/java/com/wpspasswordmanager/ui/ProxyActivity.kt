@@ -420,7 +420,7 @@ class ProxyActivity : AppCompatActivity() {
     }
 
     private fun getFileName(uri: Uri): Pair<String, Boolean> {
-        var fileName = ""
+        var fileName: String
         var isInWpsManagement = false
         
         try {
@@ -1505,7 +1505,7 @@ class ProxyActivity : AppCompatActivity() {
     }
 
     private fun getMimeTypeFromFileExtension(fileName: String): String {
-        val extension = fileName.substringAfterLast('.', "").toLowerCase()
+        val extension = fileName.substringAfterLast('.', "").lowercase()
         return when (extension) {
             "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             "xlsx" -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"

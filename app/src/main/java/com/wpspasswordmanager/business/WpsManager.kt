@@ -61,9 +61,9 @@ object WpsManager {
                 
                 try {
                     val appInfo = pkgInfo.applicationInfo
-                    val label = appInfo.loadLabel(pm).toString().toLowerCase()
-                    val pkgNameLower = pkgName.toLowerCase()
-                    val processName = appInfo.processName?.toLowerCase() ?: ""
+                    val label = appInfo.loadLabel(pm).toString().lowercase()
+                    val pkgNameLower = pkgName.lowercase()
+                    val processName = appInfo.processName?.lowercase() ?: ""
                     
                     if (isWpsApplication(pkgNameLower, label, processName)) {
                         val appLabel = appInfo.loadLabel(pm).toString()
@@ -75,7 +75,7 @@ object WpsManager {
                                 label = appLabel,
                                 packageName = pkgInfo.packageName,
                                 versionName = pkgInfo.versionName ?: "unknown",
-                                versionCode = pkgInfo.versionCode,
+                                versionCode = androidx.core.content.pm.PackageInfoCompat.getLongVersionCode(pkgInfo).toInt(),
                                 icon = icon,
                                 installPath = installPath
                             )
@@ -121,7 +121,7 @@ object WpsManager {
                     label = ai.loadLabel(pm).toString(),
                     packageName = pkg,
                     versionName = pi.versionName ?: "unknown",
-                    versionCode = pi.versionCode,
+                    versionCode = androidx.core.content.pm.PackageInfoCompat.getLongVersionCode(pi).toInt(),
                     icon = ai.loadIcon(pm),
                     installPath = getInstallPath(ai)
                 )

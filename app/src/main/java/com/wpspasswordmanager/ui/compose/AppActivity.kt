@@ -47,6 +47,10 @@ class AppActivity : ComponentActivity() {
             }
         }
 
+    /** Android 13+ 通知权限：Manifest 已声明，但必须运行时申请才会生效 */
+    private val requestNotificationPermission =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+
     /** 「重新扫描已安装应用」的统一入口：先兜底扫一次，权限被拒时再唤起系统授权框 */
     private fun rescanWps() {
         vm.scanWps()
@@ -66,6 +70,18 @@ class AppActivity : ComponentActivity() {
 
         // 调试用场景跳转（仅 debug 包）：adb shell am start ... --es scene overview
         intent?.getStringExtra("scene")?.let { vm.applyDebugScene(it) }
+
+        // 通知权限只主动申请一次；用户拒绝后不再反复弹框
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val prefs = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+            val granted = ContextCompat.checkSelfPermission(
+                this, android.Manifest.permission.POST_NOTIFICATIONS
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+            if (!granted && !prefs.getBoolean("notif_permission_asked", false)) {
+                prefs.edit().putBoolean("notif_permission_asked", true).apply()
+                requestNotificationPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
 
         applyStatusBar(darkIcons = false)
 

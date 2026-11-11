@@ -34,14 +34,12 @@
     </queries>
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission 
         android:name="android.permission.QUERY_ALL_PACKAGES" 
         tools:ignore="ProtectedPermissions" />
     <!-- 部分 ROM（Android 14+）把「读取设备应用列表」做成可撤销的运行时权限；
          声明后才能用 requestPermissions 重新唤起系统授权框。标准 Android 无此权限，声明会被忽略。 -->
     <uses-permission android:name="com.android.permission.GET_INSTALLED_APPS" />
-    <uses-permission android:name="android.permission.BIND_ACCESSIBILITY_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
@@ -63,7 +61,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.WpsPasswordManager"
         android:usesCleartextTraffic="true"
-        android:requestLegacyExternalStorage="true"
         tools:targetApi="31">
         <!-- 新 Compose 界面（启动入口） -->
         <activity
@@ -111,10 +108,6 @@
             android:exported="false"
             android:foregroundServiceType="dataSync"
             android:hardwareAccelerated="false" />
-
-        <service
-            android:name=".monitor.MetadataWriteService"
-            android:exported="false" />
 
         <service
             android:name=".network.HeartbeatService"

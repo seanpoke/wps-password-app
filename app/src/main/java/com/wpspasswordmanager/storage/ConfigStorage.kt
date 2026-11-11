@@ -94,13 +94,6 @@ class ConfigStorage private constructor(context: Context) {
         return sharedPreferences.getBoolean(KEY_REMEMBER_PASSWORD, false)
     }
 
-    // 清除所有缓存
-    fun clearAll() {
-        val editor = sharedPreferences.edit()
-        editor.clear()
-        editor.apply()
-    }
-
     // 清除用户信息和密码缓存（保留服务器配置）
     fun clearUserInfo() {
         val editor = sharedPreferences.edit()

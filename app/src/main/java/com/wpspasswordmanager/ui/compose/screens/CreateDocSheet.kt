@@ -70,7 +70,7 @@ fun CreateDocSheet(state: CreateDocState, vm: AppViewModel) {
             Spacer(Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf(Triple("docx", "文档", "Word"), Triple("xlsx", "表格", "Excel"), Triple("pptx", "演示", "PPT"))
-                    .forEach { (fmt, label, hint) ->
+                    .forEach { (fmt, _, hint) ->
                         val on = state.fmt == fmt
                         Column(
                             Modifier

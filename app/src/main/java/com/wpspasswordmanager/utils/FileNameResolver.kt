@@ -12,8 +12,6 @@ object FileNameResolver {
 
     fun resolveFileName(context: Context, uri: Uri): ResolvedFileName {
         val result = ResolvedFileName()
-        result.originalUri = uri.toString()
-        result.scheme = uri.scheme
         
         Log.d(TAG, "开始解析文件名，URI: $uri")
 
@@ -139,8 +137,6 @@ object FileNameResolver {
     data class ResolvedFileName(
         var fileName: String = "",
         var source: String = "",
-        var originalUri: String = "",
-        var scheme: String? = null,
         var success: Boolean = false
     )
 }

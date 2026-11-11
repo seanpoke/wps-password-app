@@ -77,12 +77,12 @@ object I {
         "M8 20 L16 20",
         "M12 16.5 L12 20"
     )
-    val key = listOf("circle:8.5,15.5,3.5", "M11 13 L20 4", "M17 7 L19.5 9.5", "M15 9 L17 11")
+
     val download = listOf("M12 3.5 L12 14.5", "M7.5 10.5 L12 15 L16.5 10.5", "M4.5 19.5 L19.5 19.5")
     val more = listOf("M12 5 L12 5.01", "M12 12 L12 12.01", "M12 19 L12 19.01")
     val pause = listOf("M9 6 L9 18", "M15 6 L15 18")
     val play = listOf("M8 5.5 L18 12 L8 18.5 Z")
-    val linkOff = listOf("M4 4 L20 20", "M9.5 14.5 L14.5 9.5")
+
     val gear = listOf(
         "M4 7 L11 7", "M15 7 L20 7",
         "M4 12 L7 12", "M11 12 L20 12",

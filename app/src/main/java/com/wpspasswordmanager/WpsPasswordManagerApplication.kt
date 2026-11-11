@@ -170,7 +170,7 @@ class WpsPasswordManagerApplication : Application() {
     /**
      * 简单文件观察者，只监控指定目录
      */
-    private inner class SimpleFileObserver(path: String) : FileObserver(path, ALL_EVENTS) {
+    private inner class SimpleFileObserver(path: String) : FileObserver(File(path), ALL_EVENTS) {
         private val rootPath = path
         private val ALLOWED_EXTENSIONS = arrayOf(".docx", ".xlsx", ".pptx")
 

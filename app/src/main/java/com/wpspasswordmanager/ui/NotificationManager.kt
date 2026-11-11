@@ -12,7 +12,6 @@ import com.wpspasswordmanager.R
 class AppNotificationManager private constructor(private val context: Context) {
 
     companion object {
-        private const val TAG = "NotificationManager"
         private const val CHANNEL_ID_OPERATION = "operation_channel"
         private const val CHANNEL_ID_ERROR = "error_channel"
         private const val CHANNEL_ID_INFO = "info_channel"
@@ -99,21 +98,6 @@ class AppNotificationManager private constructor(private val context: Context) {
     }
 
     /**
-     * 显示信息通知
-     */
-    fun showInfoNotification(title: String, content: String, autoCancel: Boolean = true) {
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID_INFO)
-            .setContentTitle(title)
-            .setContentText(content)
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setAutoCancel(autoCancel)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .build()
-
-        notificationManager.notify(NOTIFICATION_ID_INFO, notification)
-    }
-
-    /**
      * 显示带点击操作的通知
      */
     fun showActionNotification(title: String, content: String, intent: Intent, autoCancel: Boolean = true) {
@@ -134,19 +118,5 @@ class AppNotificationManager private constructor(private val context: Context) {
             .build()
 
         notificationManager.notify(NOTIFICATION_ID_INFO, notification)
-    }
-
-    /**
-     * 取消所有通知
-     */
-    fun cancelAllNotifications() {
-        notificationManager.cancelAll()
-    }
-
-    /**
-     * 取消指定通知
-     */
-    fun cancelNotification(notificationId: Int) {
-        notificationManager.cancel(notificationId)
     }
 }

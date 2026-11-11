@@ -353,11 +353,7 @@ class FloatingButtonService : Service() {
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-            } else {
-                WindowManager.LayoutParams.TYPE_PHONE
-            },
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
             WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
             WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
@@ -658,7 +654,7 @@ class FloatingButtonService : Service() {
         permTreeState.value = com.wpspasswordmanager.ui.compose.PermTreeState(
             docName = java.io.File(path).name,
             docId = uid,
-            isTemp = meta?.isTempUid == true
+            isTemp = meta.isTempUid == true
         )
         com.wpspasswordmanager.utils.LogManager.log(TAG, "打开悬浮窗权限树: uid=$uid, isTemp=${meta.isTempUid}", "DEBUG")
         loadPermTreeSheet(uid)

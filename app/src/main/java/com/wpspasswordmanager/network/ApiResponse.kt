@@ -8,9 +8,3 @@ data class LoginResponse(
     val status: Int,
     val data: UserInfo
 )
-
-// 错误响应数据类
-data class ErrorResponse(
-    val message: String,
-    val status: Int
-)

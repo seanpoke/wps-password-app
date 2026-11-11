@@ -398,7 +398,7 @@ class ZipExtraFieldManager private constructor() {
                             // 跳过WPPM标记及其后续数据
                             // 读取标记类型
                             raf.seek(currentPosition + 6) // 跳过Magic(4)和Version(2)
-                            val type = raf.readByte()
+                            raf.readByte()
 
                             // 读取数据长度
                             val dataLengthBytes = ByteArray(4)

@@ -17,7 +17,7 @@ object LogManager {
     private const val LOG_DIR = "wps_password_logs"
     private const val LOG_FILE_NAME = "app_log.txt"
     private const val MAX_LOG_SIZE = 1024 * 1024 // 1MB
-    private const val MAX_LOG_DAYS = 7 // 保留7天日志
+
     private const val BATCH_WRITE_SIZE = 50 // 批量写入大小
     private const val FLUSH_INTERVAL_MS = 100 // 刷新间隔(毫秒)
     private const val MAX_QUEUE_SIZE = 100000 // 队列最大容量
@@ -72,7 +72,7 @@ object LogManager {
         ) return
 
         val timestamp = dateFormatThreadLocal.get()?.format(Date()) ?: ""
-        val logEntry = LogEntry(timestamp, level.toUpperCase(), tag, message)
+        val logEntry = LogEntry(timestamp, level.uppercase(), tag, message)
         
         printToLogcat(tag, message, level)
         
@@ -92,7 +92,7 @@ object LogManager {
     }
 
     private fun printToLogcat(tag: String, message: String, level: String) {
-        when (level.toUpperCase()) {
+        when (level.uppercase()) {
             "VERBOSE" -> Log.v(tag, message)
             "DEBUG" -> Log.d(tag, message)
             "INFO" -> Log.i(tag, message)
@@ -102,11 +102,6 @@ object LogManager {
         }
     }
 
-    fun logVerbose(tag: String, message: String) = log(tag, message, "VERBOSE")
-    fun logDebug(tag: String, message: String) = log(tag, message, "DEBUG")
-    fun logInfo(tag: String, message: String) = log(tag, message, "INFO")
-    fun logWarn(tag: String, message: String) = log(tag, message, "WARN")
-    fun logError(tag: String, message: String) = log(tag, message, "ERROR")
 
     private fun flushLogs() {
         if (logQueue.isEmpty()) return
@@ -205,92 +200,8 @@ object LogManager {
         }
     }
 
-    fun getLogs(): List<String> {
-        // 从内存缓存队列读取，不读文件
-        return logCacheQueue.toList().map { entry ->
-            "[${entry.timestamp}] [${entry.level}] [${entry.tag}] ${entry.message}"
-        }
-    }
-
     /** 结构化快照（供日志页按 时间/级别/正文 分列渲染，不读文件） */
     fun getEntries(): List<LogEntry> = logCacheQueue.toList()
-    
-    /**
-     * 获取当前日志版本号
-     */
-    fun getLogVersion(): Int {
-        return logVersion.get()
-    }
-    
-    /**
-     * 从指定位置开始获取新增日志（用于增量刷新）
-     * @param fromIndex 起始位置
-     * @return 从 fromIndex 之后的新日志
-     */
-    fun getNewLogs(fromIndex: Int): List<String> {
-        val allLogs = logCacheQueue.toList()
-        if (fromIndex < 0 || fromIndex >= allLogs.size) {
-            return emptyList()
-        }
-        return allLogs.subList(fromIndex, allLogs.size).map { entry ->
-            "[${entry.timestamp}] [${entry.level}] [${entry.tag}] ${entry.message}"
-        }
-    }
-    
-    /**
-     * 获取筛选后的日志列表
-     * @param level 日志级别筛选（null或"所有"表示不筛选）
-     * @param keyword 关键词筛选（null或空表示不筛选）
-     * @return 筛选后的日志列表
-     */
-    fun getFilteredLogs(level: String?, keyword: String?): List<String> {
-        return logCacheQueue.filter { entry ->
-            val matchesLevel = level.isNullOrEmpty() || level == "所有" || entry.level == level
-            val matchesKeyword = keyword.isNullOrEmpty() || entry.message.toLowerCase().contains(keyword.toLowerCase()) ||
-                    entry.tag.toLowerCase().contains(keyword.toLowerCase())
-            matchesLevel && matchesKeyword
-        }.map { entry ->
-            "[${entry.timestamp}] [${entry.level}] [${entry.tag}] ${entry.message}"
-        }
-    }
-    
-    /**
-     * 从文件读取历史日志（包括所有归档文件）
-     * 按时间顺序返回：最早的归档文件 -> 最新的归档文件 -> 当前文件
-     */
-    fun getHistoricalLogs(): List<String> {
-        val logs = mutableListOf<String>()
-        try {
-            val currentFile = getLogFile(ContextProvider.context)
-            val logDir = currentFile.parentFile ?: return logs
-            
-            // 先读取归档文件（从最旧的开始）
-            for (i in MAX_ARCHIVE_COUNT downTo 1) {
-                val archiveFile = File(logDir, "${LOG_FILE_NAME}.${i}")
-                if (archiveFile.exists()) {
-                    BufferedReader(FileReader(archiveFile)).use { reader ->
-                        var line: String?
-                        while (reader.readLine().also { line = it } != null) {
-                            line?.let { logs.add(it) }
-                        }
-                    }
-                }
-            }
-            
-            // 最后读取当前日志文件
-            if (currentFile.exists()) {
-                BufferedReader(FileReader(currentFile)).use { reader ->
-                    var line: String?
-                    while (reader.readLine().also { line = it } != null) {
-                        line?.let { logs.add(it) }
-                    }
-                }
-            }
-        } catch (e: IOException) {
-            printToLogcat("LogManager", "读取历史日志失败: ${e.message}", "ERROR")
-        }
-        return logs
-    }
 
     fun clearLogs() {
         synchronized(flushLock) {
@@ -309,21 +220,6 @@ object LogManager {
             }
     }
     
-
-    fun shutdown() {
-        if (isRunning.compareAndSet(true, false)) {
-            flushLogs()
-            executor.shutdown()
-            try {
-                if (!executor.awaitTermination(1, TimeUnit.SECONDS)) {
-                    executor.shutdownNow()
-                }
-            } catch (e: InterruptedException) {
-                executor.shutdownNow()
-                Thread.currentThread().interrupt()
-            }
-        }
-    }
 
     object ContextProvider {
         lateinit var context: Context

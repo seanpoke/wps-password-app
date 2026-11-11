@@ -25,26 +25,6 @@ class OrderedSet<T> {
     }
     
     /**
-     * 移除元素
-     */
-    fun remove(element: T) {
-        linkedHashMap.remove(element)
-    }
-    
-    /**
-     * 检查集合是否包含元素
-     */
-    fun contains(element: T): Boolean {
-        return linkedHashMap.containsKey(element)
-    }
-    
-    /**
-     * 获取集合大小
-     */
-    val size: Int
-        get() = linkedHashMap.size
-    
-    /**
      * 检查集合是否为空
      */
     fun isEmpty(): Boolean {

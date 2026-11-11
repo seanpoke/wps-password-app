@@ -2,7 +2,6 @@ package com.wpspasswordmanager.monitor
 
 import android.content.Context
 import android.content.Intent
-import android.provider.Settings
 import android.util.Log
 
 class AccessibilityServiceManager private constructor() {
@@ -46,15 +45,6 @@ class AccessibilityServiceManager private constructor() {
     /** 服务侧最终放弃显示（如判定已不在密码窗口）时调用，解除去重占位 */
     fun clearPendingShowRequest() {
         showRequestPending = false
-    }
-
-    fun isServiceEnabled(context: Context): Boolean {
-        val enabledServices = Settings.Secure.getString(
-            context.contentResolver,
-            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
-        )
-        val packageName = context.packageName
-        return enabledServices?.contains("$packageName/${WpsAccessibilityService::class.java.name}") ?: false
     }
 
     fun fillPassword(password: String) {

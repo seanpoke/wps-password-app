@@ -17,9 +17,7 @@ class HeartbeatService : Service() {
     private lateinit var networkManager: NetworkManager
     private lateinit var configStorage: ConfigStorage
 
-    inner class LocalBinder : Binder() {
-        fun getService(): HeartbeatService = this@HeartbeatService
-    }
+    inner class LocalBinder : Binder()
 
     override fun onCreate() {
         super.onCreate()

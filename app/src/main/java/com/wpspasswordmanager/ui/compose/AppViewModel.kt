@@ -584,7 +584,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             try {
                 val resp = call { network.login(acc, pwd, it) }
                 val parsed = gson.fromJson(resp, LoginResponse::class.java)
-                if (parsed.status != 200 || parsed.data == null) {
+                if (parsed.status != 200) {
                     set { it.copy(loggingIn = false, loginError = parsed.message.ifEmpty { "登录失败" }) }
                     return@launch
                 }
@@ -1180,7 +1180,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 if (obj.optInt("status", 0) != 200) {
                     set { st ->
                         if (st.permTree?.docId != docId) return@set st
-                        st.copy(permTree = st.permTree?.copy(loading = false, saving = false, error = obj.optString("message", "加载权限树失败")))
+                        st.copy(permTree = st.permTree.copy(loading = false, saving = false, error = obj.optString("message", "加载权限树失败")))
                     }
                     return@launch
                 }
@@ -1195,7 +1195,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                     // 快速切换文档时丢弃过期回调，避免 A 文档的树覆盖 B 文档
                     if (st.permTree?.docId != docId) return@set st
                     st.copy(
-                        permTree = st.permTree?.copy(
+                        permTree = st.permTree.copy(
                             loading = false,
                             saving = false,
                             error = "",
@@ -1209,7 +1209,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             } catch (e: Exception) {
                 set { st ->
                     if (st.permTree?.docId != docId) return@set st
-                    st.copy(permTree = st.permTree?.copy(loading = false, saving = false, error = friendlyError(e)))
+                    st.copy(permTree = st.permTree.copy(loading = false, saving = false, error = friendlyError(e)))
                 }
             }
         }
@@ -1288,14 +1288,14 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 if (obj.optInt("status", 0) == 200) {
                     set { st ->
                         if (st.permTree?.docId != docId) return@set st
-                        st.copy(permTree = st.permTree?.copy(saving = false, saveError = "", savedAt = System.currentTimeMillis()))
+                        st.copy(permTree = st.permTree.copy(saving = false, saveError = "", savedAt = System.currentTimeMillis()))
                     }
                     showToast("权限已保存")
                     loadPermTree(docId)
                 } else {
                     set { st ->
                         if (st.permTree?.docId != docId) return@set st
-                        st.copy(permTree = st.permTree?.copy(
+                        st.copy(permTree = st.permTree.copy(
                             saving = false,
                             saveError = "上次失败：${obj.optString("message", "保存失败")}，选择已保留"
                         ))
@@ -1304,7 +1304,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             } catch (e: Exception) {
                 set { st ->
                     if (st.permTree?.docId != docId) return@set st
-                    st.copy(permTree = st.permTree?.copy(
+                    st.copy(permTree = st.permTree.copy(
                         saving = false,
                         saveError = "上次失败：${friendlyError(e)}，选择已保留"
                     ))
@@ -1353,7 +1353,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             try {
                 val resp = call { network.login(acc, pwd, it) }
                 val parsed = gson.fromJson(resp, LoginResponse::class.java)
-                if (parsed.status == 200 && parsed.data != null) {
+                if (parsed.status == 200) {
                     val data = parsed.data
                     if (data.needChangePwd == true) {
                         set {

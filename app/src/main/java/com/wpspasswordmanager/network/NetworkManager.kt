@@ -6,7 +6,7 @@ import com.wpspasswordmanager.business.EccEncryptor
 import com.wpspasswordmanager.storage.ConfigStorage
 import com.wpspasswordmanager.storage.ServerConfig
 import okhttp3.*
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
@@ -27,10 +27,6 @@ class NetworkManager private constructor(context: Context) {
                 instance ?: NetworkManager(context).also { instance = it }
             }
         }
-
-        fun resetInstance() {
-            instance = null
-        }
     }
 
     init {
@@ -39,17 +35,7 @@ class NetworkManager private constructor(context: Context) {
     }
 
     private fun refreshHttpClient() {
-        val config = configStorage.getServerConfig()
-        okHttpClient = if (config != null) {
-            try {
-                val httpUrl = SSLUtils.parseUserAddress("${config.ipAddress}:${config.port}", configStorage.getAllowHttp())
-                SSLUtils.getUnsafeOkHttpClient(httpUrl)
-            } catch (e: IllegalArgumentException) {
-                SSLUtils.getUnsafeOkHttpClient("https://default".toHttpUrlOrNull()!!)
-            }
-        } else {
-            SSLUtils.getUnsafeOkHttpClient("https://default".toHttpUrlOrNull()!!)
-        }
+        okHttpClient = SSLUtils.getUnsafeOkHttpClient()
     }
 
     fun onServerConfigChanged() {
@@ -285,14 +271,6 @@ class NetworkManager private constructor(context: Context) {
     fun getLatestKey(callback: NetworkCallback) {
         Log.d(TAG, "执行获取最新密钥信息请求")
         executeGetRequest("/config/latest-key", null, callback)
-    }
-
-    fun executeApiRequest(method: String, path: String, body: String? = null, token: String? = null, callback: NetworkCallback) {
-        when (method.toUpperCase()) {
-            "GET" -> executeGetRequest(path, token, callback)
-            "POST" -> if (body != null) executePostRequest(path, body, token, callback) else callback.onError("Body required for POST")
-            else -> callback.onError("Unsupported method")
-        }
     }
 
     fun reportSaveLog(docId: String, path: String, beforePassword: String? = null, afterPassword: String? = null, possiblePassword: List<String>? = null, platform: String = "android", token: String? = null, callback: NetworkCallback) {

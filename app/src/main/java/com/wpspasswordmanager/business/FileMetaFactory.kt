@@ -218,13 +218,4 @@ object FileMetaFactory {
         return currentPassword
     }
 
-    /**
-     * 获取文件的当前密码
-     */
-    fun getCurrentPassword(filePath: String): String? {
-        val fileMeta = map[filePath]
-        return fileMeta?.currentPassword
-    }
-
-
 }

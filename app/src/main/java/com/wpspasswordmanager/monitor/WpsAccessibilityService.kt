@@ -93,7 +93,6 @@ class WpsAccessibilityService : AccessibilityService() {
             eventTypes = AccessibilityEvent.TYPES_ALL_MASK
             feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC
             flags = AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS or
-                    AccessibilityServiceInfo.FLAG_REQUEST_ENHANCED_WEB_ACCESSIBILITY or
                     AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS
             packageNames = WPS_PACKAGES
             notificationTimeout = 100
@@ -187,7 +186,7 @@ class WpsAccessibilityService : AccessibilityService() {
             var password = ""
 
             // 方法1: 尝试从 AccessibilityEvent 获取文本
-            if (event.text != null && event.text.size > 0) {
+            if (event.text.size > 0) {
                 password = event.text.joinToString("")
             }
 
@@ -1311,7 +1310,7 @@ class WpsAccessibilityService : AccessibilityService() {
 
         // 尝试从窗口标题或其他元素中提取文档路径
         // 这里可以根据实际WPS界面结构进行调整
-        var detectedPath: String? = null
+        var detectedPath: String?
 
         if (enableLogging) {
             Log.d(TAG, "开始检测文档路径")
@@ -1418,13 +1417,13 @@ class WpsAccessibilityService : AccessibilityService() {
         }
 
         // 检查是否是真实的文件路径
-        val isRealFilePath = detectedPath?.contains(".docx") == true ||
-                detectedPath?.contains(".xlsx") == true ||
-                detectedPath?.contains(".pptx") == true ||
-                detectedPath?.contains("/storage/") == true ||
-                detectedPath?.contains("SD卡") == true ||
-                detectedPath?.contains("Internal storage") == true ||
-                detectedPath?.contains("file:/") == true
+        val isRealFilePath = detectedPath.contains(".docx") == true ||
+                detectedPath.contains(".xlsx") == true ||
+                detectedPath.contains(".pptx") == true ||
+                detectedPath.contains("/storage/") == true ||
+                detectedPath.contains("SD卡") == true ||
+                detectedPath.contains("Internal storage") == true ||
+                detectedPath.contains("file:/") == true
 
         if (enableLogging) {
             Log.d(TAG, "检测到的文档路径: $detectedPath")
@@ -1636,7 +1635,7 @@ class WpsAccessibilityService : AccessibilityService() {
             // 检查节点文本是否可能是文件名
             val text = currentNode.text?.toString() ?: ""
             val contentDescription = currentNode.contentDescription?.toString() ?: ""
-            val className = currentNode.className?.toString() ?: ""
+            
 
             // 检查是否是文件名（包含常见的文档扩展名）
             if (text.isNotEmpty() && (text.contains(".docx") ||
@@ -1787,7 +1786,7 @@ class WpsAccessibilityService : AccessibilityService() {
             val text = currentNode.text?.toString() ?: ""
             val contentDescription = currentNode.contentDescription?.toString() ?: ""
             val className = currentNode.className?.toString() ?: ""
-            val viewId = currentNode.viewIdResourceName ?: ""
+            
 
             // 检查是否是WPS的标题栏或文件信息区域
             if (className.contains("Title") || className.contains("title") ||
@@ -1856,7 +1855,7 @@ class WpsAccessibilityService : AccessibilityService() {
             // 检查节点文本是否可能是文件路径
             val text = currentNode.text?.toString() ?: ""
             val contentDescription = currentNode.contentDescription?.toString() ?: ""
-            val className = currentNode.className?.toString() ?: ""
+            
 
 //            Log.d(TAG, "检查节点: 类名=$className, 文本=$text, 内容描述=$contentDescription")
 
@@ -1900,19 +1899,15 @@ class WpsAccessibilityService : AccessibilityService() {
             // 尝试从节点的其他属性中获取文件路径
             try {
                 // 检查节点是否有与文件路径相关的属性
-                val nodeInfo = currentNode
-                if (nodeInfo != null) {
-                    // 尝试获取节点的包名和类名，可能包含文件信息
-                    val className = nodeInfo.className?.toString() ?: ""
-                    if (className.contains("Title") || className.contains("title") ||
-                        className.contains("bar") || className.contains("Bar")
-                    ) {
-                        // 对于标题栏节点，尝试获取其文本或子节点的文本
-                        val titleText = nodeInfo.text?.toString() ?: ""
-                        if (titleText.isNotEmpty()) {
-                            Log.d(TAG, "标题栏节点文本: $titleText")
-                            return titleText
-                        }
+                val className = currentNode.className?.toString() ?: ""
+                if (className.contains("Title") || className.contains("title") ||
+                    className.contains("bar") || className.contains("Bar")
+                ) {
+                    // 对于标题栏节点，尝试获取其文本或子节点的文本
+                    val titleText = currentNode.text?.toString() ?: ""
+                    if (titleText.isNotEmpty()) {
+                        Log.d(TAG, "标题栏节点文本: $titleText")
+                        return titleText
                     }
                 }
             } catch (e: Exception) {
