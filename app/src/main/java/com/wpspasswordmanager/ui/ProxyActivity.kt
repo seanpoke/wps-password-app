@@ -85,18 +85,12 @@ class ProxyActivity : AppCompatActivity() {
         }
 
         fun readPasswordFromFile(context: Context, filePath: String, uid: String, keyVersion: String? = null): String? {
-            LogManager.log(TAG, "开始读取密码并存储到缓存，文件路径: $filePath", "DEBUG")
+            LogManager.log(TAG, "开始读取文档口令", "DEBUG")
             try {
-                val file = File(filePath)
-                LogManager.log(TAG, "文件存在: ${file.exists()}", "DEBUG")
-                LogManager.log(TAG, "文件可读: ${file.canRead()}", "DEBUG")
-                LogManager.log(TAG, "文件大小: ${file.length()} 字节", "DEBUG")
-
                 val localPassword = FileMetaManager.getInstance().getPasswordFromFile(context, filePath)
                 if (localPassword != null) {
-                    LogManager.log(TAG, "从本地文件读取到密码: $localPassword", "DEBUG")
+                    LogManager.log(TAG, "已读取本地加密口令", "DEBUG")
                     val token = getStaticTokenFromStorage(context)
-                    LogManager.log(TAG, "获取到token: ${if (token.isNullOrEmpty()) "空" else "已获取"}", "DEBUG")
 
                     // 如果未传入keyVersion，从文件读取或使用全局默认值
                     val finalKeyVersion = if (!keyVersion.isNullOrEmpty()) {
@@ -109,8 +103,6 @@ class ProxyActivity : AppCompatActivity() {
                             ConfigStorage.getInstance(context).getKeyVersion()
                         }
                     }
-                    LogManager.log(TAG, "使用的keyVersion: $finalKeyVersion", "DEBUG")
-
                     val latch = java.util.concurrent.CountDownLatch(1)
                     var resultPassword: String? = null
 
@@ -122,13 +114,13 @@ class ProxyActivity : AppCompatActivity() {
                         keyVersion = finalKeyVersion,
                         callback = object : NetworkCallback {
                             override fun onSuccess(response: String) {
-                                LogManager.log(TAG, "获取文档密码响应: $response", "DEBUG")
+                                LogManager.log(TAG, "获取文档密码接口已响应", "DEBUG")
                                 try {
                                     val json = org.json.JSONObject(response)
                                     if (json.getInt("status") == 200) {
                                         val data = json.getJSONObject("data")
                                         val documentPassword = data.optString("password")
-                                        LogManager.log(TAG, "从接口获取到文档密码: $documentPassword", "DEBUG")
+                                        LogManager.log(TAG, "已获取文档口令（长度 ${documentPassword.length}）", "DEBUG")
                                         resultPassword = documentPassword
                                     } else {
                                         LogManager.log(TAG, "获取文档密码失败，响应状态码不是200", "ERROR")
@@ -494,26 +486,10 @@ class ProxyActivity : AppCompatActivity() {
             return false
         }
         
-        if (!wpsManagementDir.exists()) {
-            LogManager.log(TAG, "WpsManagement目录不存在", "DEBUG")
-            return false
-        }
+        if (!wpsManagementDir.exists()) return false
         
         val targetFile = File(wpsManagementDir, fileName)
-        val exists = targetFile.exists() && targetFile.length() > 0
-        LogManager.log(TAG, "WpsManagement目录中是否存在文件 $fileName: $exists", "DEBUG")
-        
-        if (!exists) {
-            val files = wpsManagementDir.listFiles()
-            if (files != null) {
-                LogManager.log(TAG, "WpsManagement目录中的文件列表:", "DEBUG")
-                for (file in files) {
-                    LogManager.log(TAG, "- ${file.name} (${file.length()} bytes)", "DEBUG")
-                }
-            }
-        }
-        
-        return exists
+        return targetFile.exists() && targetFile.length() > 0
     }
 
     /**
@@ -530,12 +506,6 @@ class ProxyActivity : AppCompatActivity() {
         return ""
     }
 
-    private fun isEncryptedFile(fileName: String): Boolean {
-        // 这里可以根据文件类型或其他特征判断是否加密
-        // 暂时简单返回 true，实际应用中需要根据具体情况判断
-        return true
-    }
-
     private fun handleFileUri(
         uri: Uri,
         fileName: String,
@@ -543,12 +513,6 @@ class ProxyActivity : AppCompatActivity() {
         directOpen: Boolean = false,
         directPath: String? = null
     ) {
-        val fileIdentifier = uri.toString()
-        LogManager.log(TAG, "文件标识: $fileIdentifier", "DEBUG")
-        LogManager.log(TAG, "传入的文件名: '$fileName'", "DEBUG")
-        LogManager.log(TAG, "文件名长度: ${fileName.length}", "DEBUG")
-        LogManager.log(TAG, "文件是否来自WpsManagement目录: $isInWpsManagement", "DEBUG")
-
         // App 内发起（已选过只读/可编辑，或新建文档后直接打开）：直接用真实文件走完整链路
         if (directOpen && !directPath.isNullOrEmpty() && File(directPath).exists()) {
             LogManager.log(TAG, "App 内已选打开方式，直接处理: $directPath", "DEBUG")
@@ -1097,7 +1061,7 @@ class ProxyActivity : AppCompatActivity() {
             fileName = fileName,
             callback = object : NetworkCallback {
                 override fun onSuccess(response: String) {
-                    LogManager.log(TAG, "获取文档权限响应: $response", "DEBUG")
+                    LogManager.log(TAG, "获取文档权限接口已响应", "DEBUG")
                     try {
                         val json = JSONObject(response)
                         if (json.getInt("status") == 200) {
@@ -1237,7 +1201,7 @@ class ProxyActivity : AppCompatActivity() {
             isTemp = isTemp,
             callback = object : NetworkCallback {
                 override fun onSuccess(response: String) {
-                    LogManager.log(TAG, "获取文档密码响应: $response", "DEBUG")
+                    LogManager.log(TAG, "获取文档密码接口已响应", "DEBUG")
                     try {
                         val json = org.json.JSONObject(response)
                         if (json.getInt("status") == 200) {

@@ -270,8 +270,8 @@ private fun LoginSubmitButton(
 private fun PermStep(s: UiState, vm: AppViewModel, onFixPermission: (String) -> Unit) {
     val items = listOf(
         Triple("文件访问", "可读取 WpsManagement 目录内的文档元数据", s.perm.storage),
-        Triple("无障碍服务", "识别 WPS 密码弹窗并自动填充，是核心能力", s.perm.accessibility),
-        Triple("悬浮窗", "在 WPS 内显示密码助手入口，可关闭", s.perm.overlay)
+        Triple("无障碍服务", "识别 WPS 密码弹窗并自动填充", s.perm.accessibility),
+        Triple("悬浮窗", "在 WPS 内显示密码助手入口", s.perm.overlay)
     )
     val ready = items.count { it.third }
     val all = ready == items.size
@@ -328,9 +328,11 @@ private fun PermStep(s: UiState, vm: AppViewModel, onFixPermission: (String) -> 
 
                 Spacer(Modifier.height(14.dp))
                 Text(
-                    "返回本页时自动刷新状态，无需手动点击",
-                    style = T.Tiny,
-                    modifier = Modifier.fillMaxWidth(),
+                    "返回本页会自动刷新；若状态未更新，点此重新检测",
+                    style = T.Small.copy(fontSize = 11.5.sp, color = C.Primary),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .pressable { vm.refreshPerms() },
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
                 Spacer(Modifier.height(16.dp))

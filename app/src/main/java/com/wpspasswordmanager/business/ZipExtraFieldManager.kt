@@ -129,7 +129,7 @@ object EccEncryptor {
             // 确保Base64编码格式正确，移除可能的换行符和空格
             val cleanEncryptedData = encryptedData.replace("\n", "").replace("\r", "").trim()
             Log.d("EccEncryptor", "加密成功，密文长度: ${cleanEncryptedData.length}")
-            Log.d("EccEncryptor", "加密后的密码$cleanEncryptedData")
+            Log.d("EccEncryptor", "密码加密完成")
             return cleanEncryptedData
             
         } catch (e: Exception) {
@@ -535,7 +535,7 @@ class ZipExtraFieldManager private constructor() {
                             val password = parseExtraFieldData(raf)
                             if (password != null) {
                                 Log.d(TAG, "找到WPPM签名，位置: ${startPosition + i}")
-                                Log.d(TAG, "成功读取密码: $password")
+                                Log.d(TAG, "成功读取密码数据")
                                 return password
                             }
                         }
@@ -643,7 +643,7 @@ class ZipExtraFieldManager private constructor() {
                         )
                         val password = parseExtraFieldData(passwordInputStream)
                         if (password != null) {
-                            Log.d(TAG, "成功读取密码: $password")
+                            Log.d(TAG, "成功读取密码数据")
                             return password
                         }
                     } else {

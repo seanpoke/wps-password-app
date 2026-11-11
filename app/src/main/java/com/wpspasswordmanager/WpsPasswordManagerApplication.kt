@@ -68,10 +68,25 @@ class WpsPasswordManagerApplication : Application() {
         }
     }
 
+    /** 上次发起密钥拉取时的服务器地址，避免测试连接 / 登录连续保存配置时重复请求 */
+    @Volatile
+    private var lastKeyFetchBase: String? = null
+
     /**
-     * 获取最新密钥信息并持久化存储
+     * 获取最新密钥信息并持久化：
+     * - 未配置服务器时直接跳过，不产生误导性的 ERROR
+     * - 服务器地址变化时才重新拉取，同一地址不重复请求
+     * - 失败时清除记录，下次配置变更可重试
      */
-    private fun fetchLatestKeyInfo() {
+    fun fetchLatestKeyInfo() {
+        val base = NetworkManager.getInstance(this).getServerBaseUrl()
+        if (base == null) {
+            LogManager.log(TAG, "尚未配置服务器，跳过密钥信息拉取", "DEBUG")
+            return
+        }
+        if (base == lastKeyFetchBase) return
+        lastKeyFetchBase = base
+
         LogManager.log(TAG, "开始获取最新密钥信息", "DEBUG")
         NetworkManager.getInstance(this).getLatestKey(object : com.wpspasswordmanager.network.NetworkCallback {
             override fun onSuccess(response: String) {
@@ -86,23 +101,20 @@ class WpsPasswordManagerApplication : Application() {
 
                         // 持久化存储到本地
                         val configStorage = ConfigStorage.getInstance(this@WpsPasswordManagerApplication)
-                        if (keyVersion.isNotEmpty()) {
-                            configStorage.saveKeyVersion(keyVersion)
-                            LogManager.log(TAG, "keyVersion已保存到本地存储", "DEBUG")
-                        }
-                        if (publicKey.isNotEmpty()) {
-                            configStorage.savePublicKey(publicKey)
-                            LogManager.log(TAG, "publicKey已保存到本地存储", "DEBUG")
-                        }
+                        if (keyVersion.isNotEmpty()) configStorage.saveKeyVersion(keyVersion)
+                        if (publicKey.isNotEmpty()) configStorage.savePublicKey(publicKey)
                     } else {
+                        lastKeyFetchBase = null
                         LogManager.log(TAG, "获取最新密钥信息失败，响应状态码不是200", "ERROR")
                     }
                 } catch (e: Exception) {
+                    lastKeyFetchBase = null
                     LogManager.log(TAG, "解析密钥信息响应失败: ${e.message}", "ERROR")
                 }
             }
 
             override fun onError(error: String) {
+                lastKeyFetchBase = null
                 LogManager.log(TAG, "获取最新密钥信息失败: $error", "ERROR")
                 // 网络请求失败时使用默认值，ConfigStorage已设置默认值
             }
@@ -119,33 +131,18 @@ class WpsPasswordManagerApplication : Application() {
             android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOCUMENTS)
         val wpsManagementDir = File(documentsDir, WPS_MANAGEMENT_DIR)
 
-        // 确保目录存在
+        // 确保目录存在且可访问；不再逐文件列举目录内容（文件名属于业务数据，且会刷屏）
         if (!wpsManagementDir.exists()) {
             wpsManagementDir.mkdirs()
-            LogManager.log(TAG, "创建 WpsManagement 目录: ${wpsManagementDir.absolutePath}", "DEBUG")
+        }
+        if (!(wpsManagementDir.exists() && wpsManagementDir.isDirectory && wpsManagementDir.canRead())) {
+            LogManager.log(TAG, "WpsManagement 目录不存在或不可访问", "ERROR")
         }
 
-        // 检查目录是否存在且可访问
-        if (wpsManagementDir.exists() && wpsManagementDir.isDirectory && wpsManagementDir.canRead()) {
-            LogManager.log(TAG, "WpsManagement 目录存在且可访问: ${wpsManagementDir.absolutePath}", "DEBUG")
-            // 列出目录内容
-            val files = wpsManagementDir.listFiles()
-            if (files != null && files.isNotEmpty()) {
-                LogManager.log(TAG, "WpsManagement 目录包含 ${files.size} 个文件/目录", "DEBUG")
-                for (file in files) {
-                    LogManager.log(TAG, "  - ${file.name} (${if (file.isDirectory) "目录" else "文件"})")
-                }
-            } else {
-                LogManager.log(TAG, "WpsManagement 目录为空", "DEBUG")
-            }
-        } else {
-            LogManager.log(TAG, "WpsManagement 目录不存在或不可访问: ${wpsManagementDir.absolutePath}", "ERROR")
-        }
-
-        // 使用简单文件观察者，只监控WpsManagement目录
+        // 使用简单文件观察者，只监控 WpsManagement 目录
         fileObserver = SimpleFileObserver(wpsManagementDir.absolutePath)
         fileObserver?.startWatching()
-        LogManager.log(TAG, "文件观察者已启动，监听目录: ${wpsManagementDir.absolutePath}", "DEBUG")
+        LogManager.log(TAG, "文件观察者已启动", "DEBUG")
     }
 
     override fun onTerminate() {
@@ -179,55 +176,29 @@ class WpsPasswordManagerApplication : Application() {
 
         override fun onEvent(event: Int, path: String?) {
             if (path == null) return
-
-            if (isViewModeFile(path)) {
-                LogManager.log(TAG, "忽略\$n_开头的文件事件: $path", "DEBUG")
-                return
-            }
+            if (isViewModeFile(path)) return
 
             val fullPath = File(rootPath, path).absolutePath
             
             // 文件类型验证：仅处理 .docx、.xlsx、.pptx 三种类型的文件
-            if (!isValidFileType(fullPath)) {
-                LogManager.log(TAG, "忽略不支持的文件类型事件: $fullPath", "DEBUG")
-                return
-            }
+            if (!isValidFileType(fullPath)) return
 
             when (event and ALL_EVENTS) {
                 CLOSE_WRITE -> {
-                    LogManager.log(TAG, "监听到文件写入完成事件: $fullPath", "DEBUG")
-                    if (isPluginOperation()) {
-                        LogManager.log(TAG, "跳过由插件引起的CLOSE_WRITE事件: $fullPath", "DEBUG")
-                    } else {
+                    if (!isPluginOperation()) {
                         handleFileCloseWrite(fullPath)
-                        LogManager.log(TAG, "文件删除: $fullPath", "DEBUG")
                     }
                 }
 
-                DELETE -> {
-                    if (isPluginOperation()) {
-                        LogManager.log(TAG, "跳过由插件引起的DELETE事件: $fullPath", "DEBUG")
-                    } else {
+                DELETE, MOVED_FROM -> {
+                    if (!isPluginOperation()) {
                         FileMetaFactory.clearFile(fullPath)
-                        LogManager.log(TAG, "文件删除: $fullPath", "DEBUG")
-                    }
-                }
-
-                MOVED_FROM -> {
-                    if (isPluginOperation()) {
-                        LogManager.log(TAG, "跳过由插件引起的文件删除事件: $fullPath", "DEBUG")
-                    } else {
-                        FileMetaFactory.clearFile(fullPath)
-                        LogManager.log(TAG, "文件删除: $fullPath", "DEBUG")
                     }
                 }
 
                 MOVED_TO -> {
-                    LogManager.log(TAG, "监听到文件移动完成: $fullPath", "DEBUG")
                     if (!isPluginOperation()) {
                         handleFileCloseWrite(fullPath)
-                    } else {
-                        LogManager.log(TAG, "跳过由插件引起的MOVED_TO事件: $fullPath", "DEBUG")
                     }
                 }
             }
@@ -248,8 +219,6 @@ class WpsPasswordManagerApplication : Application() {
      * 使用异步防抖处理模式，参考 FileSystemEventListener 的实现
      */
     private fun handleFileCloseWrite(filePath: String) {
-        LogManager.log(TAG, "[时间戳: ${System.currentTimeMillis()}] 监听到文件写入完成事件: $filePath", "DEBUG")
-
         // 防抖处理：取消之前的任务，只处理最后一次事件
         debounceRunnable?.let { handler?.removeCallbacks(it) }
 
@@ -259,31 +228,13 @@ class WpsPasswordManagerApplication : Application() {
 
         val runnable = Runnable {
             try {
-                // 检查是否已经处理过此事件
                 if (isHandlingEvent) {
-                    LogManager.log(
-                    TAG,
-                    "[时间戳: ${System.currentTimeMillis()}] 事件已在处理中，跳过: $filePath",
-                    "DEBUG"
-                )
+                    LogManager.log(TAG, "文件写入事件仍在处理中，跳过: $filePath", "DEBUG")
                     return@Runnable
                 }
                 isHandlingEvent = true
 
-                LogManager.log(
-                    TAG,
-                    "[时间戳: ${System.currentTimeMillis()}] 开始处理文件写入事件: $filePath",
-                    "DEBUG"
-                )
-
-                // 检查文件状态
                 val file = File(filePath)
-                LogManager.log(
-                    TAG,
-                    "文件状态 - 存在: ${file.exists()}, 可写: ${file.canWrite()}, 大小: ${file.length()} 字节",
-                    "DEBUG"
-                )
-
                 val fileMeta = FileMetaFactory.getFileMeta(filePath)
                 if (fileMeta == null) {
                     LogManager.log(TAG, "未找到文件相关元数据: $filePath", "DEBUG")
@@ -292,11 +243,10 @@ class WpsPasswordManagerApplication : Application() {
 
                 // 检查是否为临时uid，如果是则先注册到服务端
                 if (fileMeta.isTempUid && fileMeta.uid != null) {
-                    LogManager.log(TAG, "检测到临时uid，需要先注册到服务端: ${fileMeta.uid}", "DEBUG")
                     registerTempUidToServer(filePath, fileMeta.uid!!) { registered ->
                         try {
                             if (registered) {
-                                LogManager.log(TAG, "临时uid注册成功，更新isTempUid为false", "DEBUG")
+                                LogManager.log(TAG, "临时uid注册成功", "INFO")
                                 val updatedMeta = FileMetaFactory.getFileMeta(filePath)
                                 updatedMeta?.isTempUid = false
                             } else {
@@ -312,7 +262,6 @@ class WpsPasswordManagerApplication : Application() {
                     return@Runnable // 等待异步注册完成
                 } else {
                     // 非临时uid，直接写入元数据
-                    LogManager.log(TAG, "非临时uid，直接写入元数据", "DEBUG")
                     FileMetaManager.getInstance().writeMetaDataToFile(file, fileMeta)
                 }
 
@@ -320,18 +269,12 @@ class WpsPasswordManagerApplication : Application() {
                 LogManager.log(TAG, "处理文件写入事件失败: ${e.message}", "ERROR")
             } finally {
                 isHandlingEvent = false
-                LogManager.log(TAG, "文件写入事件处理完成: $filePath", "DEBUG")
             }
         }
 
         debounceRunnable = runnable
 
         // 延迟执行，确保只处理最后一次事件
-        LogManager.log(
-            TAG,
-            "[时间戳: ${System.currentTimeMillis()}] 延迟 ${debounceDelay}ms 执行密码写入: $filePath",
-            "DEBUG"
-        )
         handler?.postDelayed(runnable, debounceDelay)
     }
 
@@ -367,7 +310,7 @@ class WpsPasswordManagerApplication : Application() {
             fileName = fileName,
             callback = object : com.wpspasswordmanager.network.NetworkCallback {
                 override fun onSuccess(response: String) {
-                    LogManager.log(TAG, "临时uid注册成功: $response", "DEBUG")
+                    LogManager.log(TAG, "临时uid注册成功", "DEBUG")
                     callback(true)
                 }
 
@@ -411,7 +354,7 @@ class WpsPasswordManagerApplication : Application() {
                     return
                 }
 
-                LogManager.log(TAG, "准备上报保存记录: docId=$docId, path=$filePath, beforePassword=$beforePassword, afterPassword=$afterPassword, possiblePassword=$possiblePassword", "DEBUG")
+                LogManager.log(TAG, "准备上报保存记录: docId=$docId", "DEBUG")
 
                 NetworkManager.getInstance(this).reportSaveLog(
                     docId = docId!!,
@@ -423,7 +366,7 @@ class WpsPasswordManagerApplication : Application() {
                     token = token,
                     callback = object : com.wpspasswordmanager.network.NetworkCallback {
                         override fun onSuccess(response: String) {
-                            LogManager.log(TAG, "保存记录上报成功: $response", "DEBUG")
+                            LogManager.log(TAG, "保存记录上报成功", "DEBUG")
                         }
 
                         override fun onError(error: String) {
@@ -435,7 +378,7 @@ class WpsPasswordManagerApplication : Application() {
                             val updatedFileMeta = FileMetaFactory.getFileMeta(filePath)
                             if (updatedFileMeta != null && afterPassword != null) {
                                 updatedFileMeta.currentPassword = afterPassword
-                                LogManager.log(TAG, "上报完成后更新currentPassword: $afterPassword", "DEBUG")
+                                LogManager.log(TAG, "上报完成后更新本地密码状态", "DEBUG")
 
                                 // 清空pendingPasswordList
                                 updatedFileMeta.pendingPasswordList?.clear()

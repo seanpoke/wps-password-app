@@ -124,15 +124,11 @@ class FloatingButtonService : Service() {
 
         val onScreen = com.wpspasswordmanager.monitor.AccessibilityServiceManager.getInstance()
             .isPasswordDialogOnScreen()
-        com.wpspasswordmanager.utils.LogManager.log(
-            TAG, "showIfPasswordDialog attempt=$attempt onScreen=$onScreen", "DEBUG"
-        )
 
         when {
             onScreen == true -> {
                 com.wpspasswordmanager.monitor.AccessibilityServiceManager.getInstance().clearPendingShowRequest()
                 initFloatingButton()
-                com.wpspasswordmanager.utils.LogManager.log(TAG, "服务就绪，当前处于密码窗口，立即显示气泡", "DEBUG")
                 Log.d(TAG, "服务就绪，当前处于密码窗口，立即显示气泡")
             }
 
@@ -142,9 +138,6 @@ class FloatingButtonService : Service() {
 
             else -> {
                 com.wpspasswordmanager.monitor.AccessibilityServiceManager.getInstance().clearPendingShowRequest()
-                com.wpspasswordmanager.utils.LogManager.log(
-                    TAG, "服务就绪但当前不在添加/修改密码窗口（onScreen=$onScreen），不显示气泡", "DEBUG"
-                )
                 Log.d(TAG, "服务就绪但当前不在添加/修改密码窗口（onScreen=$onScreen），不显示气泡")
             }
         }
@@ -434,7 +427,7 @@ class FloatingButtonService : Service() {
     private fun generateAndFillPassword() {
         // 生成密码
         val password = PasswordGenerator.getInstance().generatePassword()
-        Log.d(TAG, "生成密码: $password")
+        Log.d(TAG, "已生成密码")
         updateOverlay { it.copy(open = true, filling = true) }
 
         // 填充密码到WPS
@@ -474,7 +467,7 @@ class FloatingButtonService : Service() {
             showOperationNotification("复制密码", "密码已复制到剪贴板")
             // 显示Toast提示
             Toast.makeText(this, "密码已复制到剪贴板", Toast.LENGTH_LONG).show()
-            Log.d(TAG, "获取密码成功: $password")
+            Log.d(TAG, "获取密码成功")
         } else {
             showOperationNotification("复制密码", "未找到存储的密码")
             Toast.makeText(this, "未找到存储的密码", Toast.LENGTH_SHORT).show()

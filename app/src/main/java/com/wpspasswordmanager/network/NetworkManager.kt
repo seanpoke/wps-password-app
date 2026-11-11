@@ -159,7 +159,7 @@ class NetworkManager private constructor(context: Context) {
                 Log.d(TAG, "请求响应: code=${response.code}, message=${response.message}")
                 if (response.isSuccessful) {
                     val responseBody = response.body?.string() ?: ""
-                    Log.d(TAG, "响应成功: $responseBody")
+                    Log.d(TAG, "接口响应成功")
                     callback.onSuccess(responseBody)
                 } else {
                     val errorMessage = "HTTP ${response.code}: ${response.message}"
@@ -178,7 +178,7 @@ class NetworkManager private constructor(context: Context) {
     fun login(account: String, password: String, callback: NetworkCallback) {
         Log.d(TAG, "执行登录请求: account=$account")
         val jsonBody = "{\"account\": \"$account\", \"password\": \"$password\"}"
-        Log.d(TAG, "登录请求体: $jsonBody")
+        Log.d(TAG, "登录（参数已省略）")
         executePostRequest("/account/login", jsonBody, null, callback)
     }
 
@@ -271,14 +271,14 @@ class NetworkManager private constructor(context: Context) {
             fileName?.let { append(", \"fileName\": \"$it\"") }
             append("}")
         }
-        Log.d(TAG, "获取文档权限请求体: $jsonBody")
+        Log.d(TAG, "获取文档权限（参数已省略）")
         executePostRequest("/doc/owner", jsonBody, token, callback)
     }
 
     fun getDocumentPassword(docId: String, encryPassword: String, token: String?, keyVersion: String = "default", isTemp: Boolean = false, callback: NetworkCallback) {
         Log.d(TAG, "执行获取文档密码请求: docId=$docId, keyVersion=$keyVersion, isTemp=$isTemp")
         val jsonBody = "{\"docId\": \"$docId\", \"encryPassword\": \"$encryPassword\", \"keyVersion\": \"$keyVersion\", \"isTemp\": $isTemp}"
-        Log.d(TAG, "获取文档密码请求体: $jsonBody")
+        Log.d(TAG, "获取文档密码（参数已省略）")
         executePostRequest("/doc/password", jsonBody, token, callback)
     }
 
@@ -330,7 +330,7 @@ class NetworkManager private constructor(context: Context) {
             }
             append("}")
         }
-        Log.d(TAG, "保存记录上报请求体: $jsonBody")
+        Log.d(TAG, "保存记录上报（参数已省略）")
         executePostRequest("/doc/save/log", jsonBody, token, callback)
     }
 }

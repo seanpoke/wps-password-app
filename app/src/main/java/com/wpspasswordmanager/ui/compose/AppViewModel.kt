@@ -187,7 +187,7 @@ data class UiState(
 
     // 向导
     val host: String = "",
-    val port: String = "8080",
+    val port: String = "8443",
     val http: Boolean = false,
     val test: TestState = TestState.Untested,
     val account: String = "",
@@ -390,10 +390,14 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     /* ---------------- 系统状态 ---------------- */
 
     fun onResumeRefresh() {
-        if (debugScene != null) return
         val perms = readPerms()
-        set { it.copy(perm = perms) }
-        if (s.route is Route.Main) reloadDocs()
+        // 3/4 权限页必须刷新：用户从系统设置返回时状态要立刻反映。
+        // 调试场景下其它页面保留硬编码状态，但权限页不能跳过，否则会永远停在旧的 0/3。
+        val onPermStep = (s.route as? Route.Wizard)?.step == 3
+        if (debugScene == null || onPermStep) {
+            set { it.copy(perm = perms) }
+        }
+        if (debugScene == null && s.route is Route.Main) reloadDocs()
     }
 
     private fun startHeartbeat() {
@@ -408,8 +412,14 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val ctx = getApplication<Application>()
         val accessibility = try {
             val am = ctx.getSystemService(android.content.Context.ACCESSIBILITY_SERVICE) as AccessibilityManager
-            am.getEnabledAccessibilityServiceList(android.accessibilityservice.AccessibilityServiceInfo.FEEDBACK_GENERIC)
+            // FEEDBACK_GENERIC 在部分 ROM 上过滤不到已启用服务，再用系统设置值兜底
+            val listed = am.getEnabledAccessibilityServiceList(android.accessibilityservice.AccessibilityServiceInfo.FEEDBACK_ALL_MASK)
                 .any { it.id.contains("WpsAccessibilityService") }
+            val enabled = Settings.Secure.getString(
+                ctx.contentResolver,
+                Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+            ).orEmpty().contains("${ctx.packageName}/")
+            listed || enabled
         } catch (e: Exception) {
             false
         }
@@ -441,7 +451,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         set {
             it.copy(
                 host = cfg?.ipAddress ?: "",
-                port = cfg?.port?.takeIf { p -> p.isNotEmpty() } ?: "8080",
+                port = cfg?.port?.takeIf { p -> p.isNotEmpty() } ?: "8443",
                 http = storage.getAllowHttp(),
                 account = cfg?.username?.takeIf { a -> a.isNotEmpty() } ?: (user?.account ?: ""),
                 remember = storage.getRememberPassword(),
@@ -529,6 +539,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     fun portValid(): Boolean = s.port.toIntOrNull()?.let { it in 1..65535 } == true
 
+    /** 服务器配置落盘后：重建网络客户端，并在地址变化时重新拉取密钥（同一地址不重复请求） */
+    private fun onServerConfigSaved() {
+        network.onServerConfigChanged()
+        runCatching { com.wpspasswordmanager.WpsPasswordManagerApplication.instance.fetchLatestKeyInfo() }
+    }
+
     fun testConnection() {
         normalizeServerAddress()
         if (s.host.isBlank() || !portValid()) return
@@ -537,7 +553,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         // 先落盘，NetworkManager 依配置构建 URL
         storage.saveServerConfig(ServerConfig(s.host.trim(), s.port, s.account))
         storage.saveAllowHttp(s.http)
-        network.onServerConfigChanged()
+        onServerConfigSaved()
         viewModelScope.launch {
             val result = try {
                 val resp = call { network.checkVersion(currentVersion(), it) }
@@ -562,7 +578,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
         storage.saveServerConfig(ServerConfig(s.host.trim(), s.port, acc))
         storage.saveAllowHttp(s.http)
-        network.onServerConfigChanged()
+        onServerConfigSaved()
 
         viewModelScope.launch {
             try {
@@ -855,7 +871,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
         storage.saveServerConfig(ServerConfig(st.host.trim(), st.port, st.account))
         storage.saveAllowHttp(st.http)
-        network.onServerConfigChanged()
+        onServerConfigSaved()
 
         val user = storage.getUserInfo()
         if (user == null) {
@@ -1642,8 +1658,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                     name = "张鹏",
                     role = "admin",
                     account = "zhangpeng",
-                    host = it.host.ifEmpty { "10.20.1.8" },
-                    port = it.port.ifEmpty { "8080" },
+                    host = it.host.ifEmpty { "10.8.5.55" },
+                    port = it.port.ifEmpty { "8443" },
                     tokenOk = true,
                     perm = PermState(true, true, true, "cn.wps.moffice_pro", "WPS Office"),
                     docs = demo

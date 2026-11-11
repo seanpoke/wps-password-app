@@ -65,6 +65,12 @@ object LogManager {
     }
 
     fun log(tag: String, message: String, level: String = "INFO") {
+        // 正式包直接丢弃调试级日志：既不落盘、也不进「运行日志」列表、也不写 logcat。
+        // 开发包保留全部，方便本地联调；判断在构造字符串之前，避免无谓开销。
+        if (!com.wpspasswordmanager.BuildConfig.DEBUG &&
+            (level.equals("DEBUG", true) || level.equals("VERBOSE", true))
+        ) return
+
         val timestamp = dateFormatThreadLocal.get()?.format(Date()) ?: ""
         val logEntry = LogEntry(timestamp, level.toUpperCase(), tag, message)
         
@@ -142,7 +148,8 @@ object LogManager {
                     logQueue.offer(entry.copy(retryCount = entry.retryCount + 1))
                 } else {
                     // 超过最大重试次数，记录错误日志
-                    printToLogcat("LogManager", "Log entry dropped after ${MAX_RETRY_COUNT} retries: [${entry.timestamp}] [${entry.level}] [${entry.tag}] ${entry.message}", "ERROR")
+                    // 不回显原始正文，避免把可能含敏感信息的日志二次扩散到 logcat
+                    printToLogcat("LogManager", "Log entry dropped after ${MAX_RETRY_COUNT} retries: [${entry.level}] [${entry.tag}]", "ERROR")
                 }
             }
         }

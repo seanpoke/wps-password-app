@@ -41,7 +41,7 @@ object FileMetaFactory {
         // 输出日志
         Log.d(
             TAG,
-            "initFileStateWithPermissions - FileMeta: filePath='$filePath', currentPassword='${oldPass ?: "null"}', uid='$finalUid', keyVersion='$finalKeyVersion', ownerAccount='${ownerAccount ?: "null"}', ownerName='${ownerName ?: "null"}', readAuth=$readAuth, writeAuth=$writeAuth, isTempUid=false"
+            "initFileStateWithPermissions - FileMeta: filePath='$filePath', currentPassword=已脱敏, uid='$finalUid', keyVersion='$finalKeyVersion', ownerAccount='${ownerAccount ?: "null"}', ownerName='${ownerName ?: "null"}', readAuth=$readAuth, writeAuth=$writeAuth, isTempUid=false"
         )
     }
 
@@ -67,7 +67,7 @@ object FileMetaFactory {
         // 输出日志
         Log.d(
             TAG,
-            "initFileMetaWithTempUid - FileMeta: filePath='$filePath', currentPassword='${oldPass ?: "null"}', uid='$uid', keyVersion='$finalKeyVersion', readAuth=true, writeAuth=true, isTempUid=true"
+            "initFileMetaWithTempUid - FileMeta: filePath='$filePath', currentPassword=已脱敏, uid='$uid', keyVersion='$finalKeyVersion', readAuth=true, writeAuth=true, isTempUid=true"
         )
     }
 
@@ -106,7 +106,7 @@ object FileMetaFactory {
             // 输出日志
             Log.d(
                 TAG,
-                "[时间戳: ${System.currentTimeMillis()}] updatePendingPassword - FileCryptoState: filePath='$filePath', currentPassword='${fileMeta.currentPassword ?: "null"}', pendingPasswordList='${fileMeta.pendingPasswordList?.toList()}'"
+                "[时间戳: ${System.currentTimeMillis()}] updatePendingPassword - FileCryptoState: filePath='$filePath', currentPassword=已脱敏, pendingPasswordList=已脱敏"
             )
         } else {
             // 如果状态不存在，自动初始化一个新的状态
@@ -123,7 +123,7 @@ object FileMetaFactory {
             // 输出日志
             Log.d(
                 TAG,
-                "[时间戳: ${System.currentTimeMillis()}] updatePendingPassword - FileCryptoState not found, created new state: filePath='$filePath', uid='$uid', pendingPasswordList='${fileMeta.pendingPasswordList?.toList()}'"
+                "[时间戳: ${System.currentTimeMillis()}] updatePendingPassword - FileCryptoState not found, created new state: filePath='$filePath', uid='$uid', pendingPasswordList=已脱敏"
             )
         }
     }
@@ -179,7 +179,7 @@ object FileMetaFactory {
                 for (pendingPassword in pendingPasswords) {
                     Log.d(
                         TAG,
-                        "[时间戳: ${System.currentTimeMillis()}] 验证待定密码是否可以打开文件: '$pendingPassword'"
+                        "[时间戳: ${System.currentTimeMillis()}] 验证待定密码是否可以打开文件"
                     )
                     val isPasswordValid = OfficeEncryptUtils.verifyPassword(file, pendingPassword)
                     if (isPasswordValid) {
@@ -191,7 +191,7 @@ object FileMetaFactory {
                     } else {
                         Log.e(
                             TAG,
-                            "[时间戳: ${System.currentTimeMillis()}] 待定密码验证失败: '$pendingPassword'"
+                            "[时间戳: ${System.currentTimeMillis()}] 待定密码验证失败"
                         )
                     }
                 }

@@ -210,7 +210,7 @@ class WpsAccessibilityService : AccessibilityService() {
             if (password.isNotEmpty()) {
                 Log.d(
                     TAG,
-                    "[时间戳: ${System.currentTimeMillis()}] 密码输入框文本变化: '$password'，长度: ${password.length}"
+                    "[时间戳: ${System.currentTimeMillis()}] 密码输入框文本变化（长度 ${password.length}）"
                 )
                 Log.d(
                     TAG,
@@ -220,7 +220,7 @@ class WpsAccessibilityService : AccessibilityService() {
                 tempPassword = password
                 Log.i(
                     TAG,
-                    "[时间戳: ${System.currentTimeMillis()}] 已将用户输入的密码临时存储，等待用户确认: '$password'"
+                    "[时间戳: ${System.currentTimeMillis()}] 已将用户输入的密码临时存储，等待用户确认"
                 )
                 Log.d(
                     TAG,
@@ -262,7 +262,7 @@ class WpsAccessibilityService : AccessibilityService() {
                 if (password != null && password.isNotEmpty()) {
                     Log.i(
                         TAG,
-                        "[时间戳: ${System.currentTimeMillis()}] 从临时存储中获取到密码: '$password'，长度: ${password.length}"
+                        "[时间戳: ${System.currentTimeMillis()}] 从临时存储中获取到密码（长度 ${password.length}）"
                     )
                     // 清除临时密码
                     tempPassword = null
@@ -360,7 +360,7 @@ class WpsAccessibilityService : AccessibilityService() {
             if (tempPassword != null && tempPassword!!.isNotEmpty()) {
                 Log.i(
                     TAG,
-                    "[时间戳: ${System.currentTimeMillis()}] 检测到从密码弹框切换到文档编辑界面，处理未确认的临时密码: '$tempPassword'"
+                    "[时间戳: ${System.currentTimeMillis()}] 检测到从密码弹框切换到文档编辑界面，处理未确认的临时密码"
                 )
 
                 val filePath = currentFileUri ?: stableDocumentPath
@@ -564,7 +564,7 @@ class WpsAccessibilityService : AccessibilityService() {
             if (tempPassword != null && tempPassword!!.isNotEmpty()) {
                 Log.i(
                     TAG,
-                    "[时间戳: ${System.currentTimeMillis()}] 检测到密码弹框关闭，处理未确认的临时密码: '$tempPassword'"
+                    "[时间戳: ${System.currentTimeMillis()}] 检测到密码弹框关闭，处理未确认的临时密码"
                 )
                 // 更新待定密码到密码状态管理器
                 val filePath = currentFileUri ?: stableDocumentPath
@@ -1183,7 +1183,7 @@ class WpsAccessibilityService : AccessibilityService() {
                 val fileMeta = FileMetaFactory.getFileMeta(filePath)
                 if (fileMeta != null) {
                     password = fileMeta.currentPassword
-                    Log.i(TAG, "从FileMeta读取密码: $password")
+                    Log.i(TAG, "从FileMeta读取到密码数据")
                 }
             }
 
@@ -2187,7 +2187,7 @@ class WpsAccessibilityService : AccessibilityService() {
             val passwordInputNodes = findPasswordInputNodes(rootNode)
 
             Log.i(TAG, "开始执行密码填充操作，时间: ${System.currentTimeMillis()}")
-            Log.i(TAG, "填充的明文密码: '$password'")
+            Log.i(TAG, "开始填充密码")
             Log.i(TAG, "当前对话框类型: $currentDialogType")
             showOperationNotification("密码填充", "正在填充密码...")
 
@@ -2218,7 +2218,7 @@ class WpsAccessibilityService : AccessibilityService() {
                                 node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments)
                             if (success) {
                                 Log.i(TAG, "密码填充成功")
-                                Log.i(TAG, "明文密码填充成功: '$password'")
+                                Log.i(TAG, "密码填充成功")
                                 fillSuccess = true
                             } else {
                                 Log.e(TAG, "密码填充失败")
@@ -2232,7 +2232,7 @@ class WpsAccessibilityService : AccessibilityService() {
                         showOperationNotification("密码填充", "密码填充成功，弹窗保持打开状态")
                         // 临时存储密码
                         tempPassword = password
-                        Log.i(TAG, "已将密码临时存储，等待用户确认: '$password'")
+                        Log.i(TAG, "已将密码临时存储，等待用户确认")
                     } else {
                         Log.e(TAG, "所有密码输入框填充失败")
                         showOperationNotification("密码填充", "密码填充失败，请重试")

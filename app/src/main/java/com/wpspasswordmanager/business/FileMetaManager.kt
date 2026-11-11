@@ -361,7 +361,7 @@ class FileMetaManager private constructor() {
                                 val hexString = wppmContent.joinToString(" ") { "%02X".format(it) }
                                 // 将内容转换为字符字符串，非可打印字符用.代替
                                 val charString = wppmContent.joinToString("") { if (it in 32..126) it.toChar().toString() else "." }
-                                Log.d(TAG, "WPPM标记位置: $pos, 内容（十六进制）: $hexString, 内容（字符）: $charString")
+                                Log.d(TAG, "WPPM标记位置: $pos")
                             }
                         }
                     }

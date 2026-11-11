@@ -37,36 +37,22 @@ object WpsManager {
     )
 
     fun scanInstalledWpsApps(context: Context): List<WpsAppInfo> {
-        LogManager.log(TAG, "========== 开始扫描 WPS 应用 ==========", "DEBUG")
-        LogManager.log(TAG, "当前进程ID: ${android.os.Process.myPid()}", "DEBUG")
-        
         val wpsApps = mutableListOf<WpsAppInfo>()
         
         wpsApps.addAll(scanByPackageEnumeration(context))
         // 全量枚举在「读取应用列表」被拒时会返回空，再用 <queries> 已声明的已知包名显式探测兜底
-        val probed = probeKnownWpsPackages(context)
-        LogManager.log(TAG, "显式包名探测补充 ${probed.size} 个应用", "DEBUG")
-        wpsApps.addAll(probed)
+        wpsApps.addAll(probeKnownWpsPackages(context))
         
-        val result = wpsApps.distinctBy { it.packageName }
+        return wpsApps.distinctBy { it.packageName }
             .sortedBy { it.label }
-        
-        LogManager.log(TAG, "========== 扫描完成: 找到 ${result.size} 个应用 ==========", "DEBUG")
-        result.forEach { LogManager.log(TAG, "  - ${it.label} (${it.packageName}) [${it.versionName}]", "DEBUG") }
-        
-        return result
     }
 
     private fun scanByPackageEnumeration(context: Context): List<WpsAppInfo> {
-        LogManager.log(TAG, "--- 扫描: 枚举所有已安装应用 ---", "DEBUG")
-        
         val wpsApps = mutableListOf<WpsAppInfo>()
         val pm = context.packageManager
         
         try {
-            val flags = PackageManager.GET_META_DATA
-            val packages = pm.getInstalledPackages(flags)
-            LogManager.log(TAG, "  找到 ${packages.size} 个已安装应用", "DEBUG")
+            val packages = pm.getInstalledPackages(PackageManager.GET_META_DATA)
             
             for (pkgInfo in packages) {
                 val pkgName = pkgInfo.packageName
@@ -94,43 +80,22 @@ object WpsManager {
                                 installPath = installPath
                             )
                         )
-                        LogManager.log(TAG, "  ✓ 识别到应用: $appLabel ($pkgName)", "DEBUG")
                     }
                 } catch (e: Exception) {
-                    LogManager.log(TAG, "  ✗ 加载失败: $pkgName, 错误: ${e.message}", "ERROR")
+                    LogManager.log(TAG, "加载应用信息失败: $pkgName, 错误: ${e.message}", "ERROR")
                 }
             }
         } catch (e: Exception) {
-            LogManager.log(TAG, "  ✗ 枚举失败: ${e.message}", "ERROR")
+            LogManager.log(TAG, "枚举已安装应用失败: ${e.message}", "ERROR")
         }
         
-        LogManager.log(TAG, "--- 扫描完成: 找到 ${wpsApps.size} 个应用 ---", "DEBUG")
         return wpsApps
     }
 
     private fun isWpsApplication(packageName: String, label: String, processName: String): Boolean {
-        LogManager.log(TAG, "  检查WPS应用: pkg=$packageName, label=$label, process=$processName", "DEBUG")
-        
-        val patternMatch = WPS_PACKAGE_PATTERNS.any { packageName.contains(it) }
-        if (patternMatch) {
-            LogManager.log(TAG, "  ✓ 包名模式匹配", "DEBUG")
-            return true
-        }
-        
-        val keywordMatch = WPS_KEYWORDS.any { packageName.contains(it) } || WPS_KEYWORDS.any { processName.contains(it) }
-        if (keywordMatch) {
-            LogManager.log(TAG, "  ✓ 关键字匹配", "DEBUG")
-            return true
-        }
-        
-        val labelMatch = WPS_LABEL_KEYWORDS.any { label.contains(it) }
-        if (labelMatch) {
-            LogManager.log(TAG, "  ✓ 标签匹配", "DEBUG")
-            return true
-        }
-        
-        LogManager.log(TAG, "  ✗ 不匹配", "DEBUG")
-        return false
+        if (WPS_PACKAGE_PATTERNS.any { packageName.contains(it) }) return true
+        if (WPS_KEYWORDS.any { packageName.contains(it) } || WPS_KEYWORDS.any { processName.contains(it) }) return true
+        return WPS_LABEL_KEYWORDS.any { label.contains(it) }
     }
 
     /**
